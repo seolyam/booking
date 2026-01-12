@@ -36,10 +36,14 @@ yarn-error.log*
 .env.local
 # internal docs / notes (do not commit)
 context/
-
 # vercel
 .vercel
-
+context.md
+instruction.md
+error.md
+DOCUMENTATION.md
+SUPABASE_SETUP.md
+/context
 # typescript
 *.tsbuildinfo
 next-env.d.ts
