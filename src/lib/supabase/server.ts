@@ -13,8 +13,13 @@ export async function createSupabaseServerClient() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          cookieStore.set(name, value, options);
+        // In Server Components we must not mutate cookies; swallow writes instead of throwing.
+        try {
+          for (const { name, value, options } of cookiesToSet) {
+            cookieStore.set(name, value, options);
+          }
+        } catch {
+          // No-op when writes are disallowed (Server Component render path).
         }
       },
     },
