@@ -66,7 +66,9 @@ export default function LoginPage() {
       setError("");
       setLoading(false);
       // Ideally show success message, for now switch to login or notify check email
-      alert("Registration successful! Please check your email to verify account.");
+      alert(
+        "Registration successful! Please check your email to verify account."
+      );
       setIsLogin(true);
     }
   };
@@ -77,11 +79,11 @@ export default function LoginPage() {
       <div className="hidden md:flex md:w-[45%] bg-linear-to-br from-[#A8C738] via-[#4DA44E] to-[#2F5E3D] items-center justify-center p-12 relative overflow-hidden">
         {/* Placeholder for Image */}
         <div className="relative z-10 w-full max-w-100 aspect-square flex items-center justify-center bg-white/10 rounded-full border-4 border-white/20">
-             {/* PASTE PNG IMAGE HERE */}
-             <div className="text-white font-semibold flex flex-col items-center">
-                <span>Logo Placeholder</span>
-                <span className="text-xs opacity-75 mt-2">(Paste PNG here)</span>
-             </div>
+          {/* PASTE PNG IMAGE HERE */}
+          <div className="text-white font-semibold flex flex-col items-center">
+            <span>Logo Placeholder</span>
+            <span className="text-xs opacity-75 mt-2">(Paste PNG here)</span>
+          </div>
         </div>
       </div>
 
@@ -105,7 +107,9 @@ export default function LoginPage() {
 
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-900">User ID / Email</Label>
+                  <Label htmlFor="email" className="text-gray-900">
+                    User ID / Email
+                  </Label>
                   <Input
                     id="email"
                     placeholder="Enter your ID / Email"
@@ -116,7 +120,9 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-900">Password</Label>
+                  <Label htmlFor="password" className="text-gray-900">
+                    Password
+                  </Label>
                   <div className="relative">
                     <Input
                       id="password"
@@ -187,20 +193,24 @@ export default function LoginPage() {
               </div>
 
               <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-gray-900">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      placeholder="David Goliath"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                    />
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-gray-900">
+                    Full Name
+                  </Label>
+                  <Input
+                    id="fullName"
+                    placeholder="David Goliath"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="idNumber" className="text-gray-900">ID Number</Label>
+                    <Label htmlFor="idNumber" className="text-gray-900">
+                      ID Number
+                    </Label>
                     <Input
                       id="idNumber"
                       placeholder="1234"
@@ -210,7 +220,9 @@ export default function LoginPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reg-email" className="text-gray-900">Email Address</Label>
+                    <Label htmlFor="reg-email" className="text-gray-900">
+                      Email Address
+                    </Label>
                     <Input
                       id="reg-email"
                       type="email"
@@ -223,7 +235,9 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-900">Select your Department</Label>
+                  <Label className="text-gray-900">
+                    Select your Department
+                  </Label>
                   <Select value={department} onValueChange={setDepartment}>
                     <SelectTrigger className="w-full h-11 bg-white text-black border-input">
                       <SelectValue placeholder="Finance" />
@@ -254,7 +268,9 @@ export default function LoginPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="reg-password" className="text-gray-900">Password</Label>
+                    <Label htmlFor="reg-password" className="text-gray-900">
+                      Password
+                    </Label>
                     <div className="relative">
                       <Input
                         id="reg-password"
@@ -269,16 +285,18 @@ export default function LoginPage() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 focus:outline-none"
                       >
-                         {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reg-confirm" className="text-gray-900">Confirm password</Label>
+                    <Label htmlFor="reg-confirm" className="text-gray-900">
+                      Confirm password
+                    </Label>
                     <div className="relative">
                       <Input
                         id="reg-confirm"
@@ -290,14 +308,16 @@ export default function LoginPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 focus:outline-none"
                       >
-                         {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
