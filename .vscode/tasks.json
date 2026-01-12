@@ -1,0 +1,133 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Install @supabase/ssr",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"add",
+				"@supabase/ssr"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Lint",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"lint"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Lint",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"lint"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "LintVerbose",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"lint",
+				"--",
+				"--format",
+				"stylish"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "LintVerbose2",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"run",
+				"lint",
+				"--",
+				"--format",
+				"stylish"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "EslintDirect",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"exec",
+				"eslint",
+				"."
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "EslintStylish",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"exec",
+				"eslint",
+				".",
+				"--format",
+				"stylish"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Lint2",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"lint"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "EslintVersion",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"exec",
+				"eslint",
+				"--version"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "EslintDot",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"exec",
+				"eslint",
+				"."
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Lint",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"lint"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
