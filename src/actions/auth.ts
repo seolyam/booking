@@ -12,7 +12,12 @@ const AuthSchema = z.object({
 export async function signUp(
   email: string,
   password: string,
-  redirectTo = "/onboard"
+  data?: {
+    fullName: string;
+    idNumber: string;
+    department: string;
+    position: string;
+  }
 ) {
   const validated = AuthSchema.safeParse({ email, password });
   if (!validated.success) {
@@ -32,6 +37,7 @@ export async function signUp(
       emailRedirectTo: `${
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
       }/auth/callback`,
+      data: data,
     },
   });
 
@@ -39,7 +45,7 @@ export async function signUp(
     return { error: error.message };
   }
 
-  return { success: true, redirectTo };
+  return { success: true, redirectTo: "/onboard" };
 }
 
 export async function signIn(email: string, password: string) {
