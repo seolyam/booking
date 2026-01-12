@@ -25,7 +25,10 @@ const CreateBudgetSchema = z.object({
   fiscalYear: z.number().int().min(2025).max(2030),
 });
 
-export async function createBudgetDraft(prevState: unknown, formData: FormData) {
+export async function createBudgetDraft(
+  prevState: unknown,
+  formData: FormData
+) {
   const user = await getUser();
   if (!user) {
     return { message: "Unauthorized" };
