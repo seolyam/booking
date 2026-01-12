@@ -13,7 +13,7 @@ type AuthedUser = {
 };
 
 async function getUser(): Promise<AuthedUser | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
   return { id: data.user.id, email: data.user.email ?? null };
