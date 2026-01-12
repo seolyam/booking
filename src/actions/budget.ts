@@ -1,20 +1,34 @@
 "use server";
 
 import { db } from "@/db";
-import { budgets, budgetItems, auditLogs } from "@/db/schema";
+import { budgets, budgetItems, auditLogs, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// Mock getUser function - in a real app this would use Supabase Auth
-async function getUser() {
-  // TODO: Implement actual Supabase Auth check
-  // const supabase = createClient(cookies());
-  // const { data: { user } } = await supabase.auth.getUser();
-  // return user;
+type AuthedUser = {
+  id: string;
+  email: string | null;
+};
 
-  // Returning a mock user for now to make code compile/show intent
-  return { id: "00000000-0000-0000-0000-000000000000", role: "requester" };
+async function getUser(): Promise<AuthedUser | null> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return null;
+  return { id: data.user.id, email: data.user.email ?? null };
+}
+
+async function ensureAppUser(authedUserId: string) {
+  const appUser = await db.query.users.findFirst({
+    where: eq(users.id, authedUserId),
+  });
+
+  if (!appUser) {
+    return null;
+  }
+
+  return appUser;
 }
 
 const VARIANCE_THRESHOLD = 50000;
@@ -32,6 +46,14 @@ export async function createBudgetDraft(
   const user = await getUser();
   if (!user) {
     return { message: "Unauthorized" };
+  }
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser) {
+    return {
+      message:
+        "Your account is not yet provisioned in the app. Ask an admin to create your profile (role/department).",
+    };
   }
 
   const budgetType = formData.get("budgetType") as "capex" | "opex";
@@ -80,6 +102,14 @@ export async function submitBudget(
 ) {
   const user = await getUser();
   if (!user) return { message: "Unauthorized" };
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser) {
+    return {
+      message:
+        "Your account is not yet provisioned in the app. Ask an admin to create your profile (role/department).",
+    };
+  }
 
   // Fetch current budget to check total amount
   const existingBudget = await db.query.budgets.findFirst({
@@ -132,6 +162,15 @@ export async function reviewBudget(
 ) {
   const user = await getUser();
   // Validations for role should go here (reviewer only)
+  if (!user) return { message: "Unauthorized" };
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser) {
+    return {
+      message:
+        "Your account is not yet provisioned in the app. Ask an admin to create your profile (role/department).",
+    };
+  }
 
   const existingBudget = await db.query.budgets.findFirst({
     where: eq(budgets.id, budgetId),
@@ -168,6 +207,15 @@ export async function finalizeBudget(
 ) {
   const user = await getUser();
   // Validations for role should go here (approver only)
+  if (!user) return { message: "Unauthorized" };
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser) {
+    return {
+      message:
+        "Your account is not yet provisioned in the app. Ask an admin to create your profile (role/department).",
+    };
+  }
 
   const existingBudget = await db.query.budgets.findFirst({
     where: eq(budgets.id, budgetId),
@@ -203,6 +251,17 @@ const AddItemSchema = z.object({
 });
 
 export async function addBudgetItem(prevState: unknown, formData: FormData) {
+  const user = await getUser();
+  if (!user) return { message: "Unauthorized" };
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser) {
+    return {
+      message:
+        "Your account is not yet provisioned in the app. Ask an admin to create your profile (role/department).",
+    };
+  }
+
   const budgetId = formData.get("budgetId") as string;
   const description = formData.get("description") as string;
   const quantity = parseInt(formData.get("quantity") as string);
