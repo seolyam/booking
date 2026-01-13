@@ -79,7 +79,9 @@ export async function rejectUser(userId: string, reason: string) {
   return { success: true };
 }
 
-export async function getSignedIdUrl(storagePath: string): Promise<string | null> {
+export async function getSignedIdUrl(
+  storagePath: string
+): Promise<string | null> {
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient.storage
     .from("id-documents")

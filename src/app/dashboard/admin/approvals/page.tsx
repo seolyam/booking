@@ -40,7 +40,10 @@ export default async function AdminApprovalsPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">User Approvals</h1>
-          <a href="/dashboard" className="text-sm text-gray-600 hover:underline">
+          <a
+            href="/dashboard"
+            className="text-sm text-gray-600 hover:underline"
+          >
             ← Back to dashboard
           </a>
         </div>
@@ -93,7 +96,9 @@ export default async function AdminApprovalsPage() {
                       </div>
                       <div>
                         <p className="text-gray-600">Department</p>
-                        <p className="font-medium text-gray-900">{u.department}</p>
+                        <p className="font-medium text-gray-900">
+                          {u.department}
+                        </p>
                       </div>
                       <div>
                         <p className="text-gray-600">Position</p>
@@ -117,7 +122,9 @@ export default async function AdminApprovalsPage() {
 
                     {idUrl && (
                       <div>
-                        <p className="text-gray-600 text-sm mb-2">ID Document</p>
+                        <p className="text-gray-600 text-sm mb-2">
+                          ID Document
+                        </p>
                         <a
                           href={idUrl}
                           target="_blank"
@@ -141,7 +148,9 @@ export default async function AdminApprovalsPage() {
 
                     {u.rejection_reason && (
                       <div>
-                        <p className="text-gray-600 text-sm">Rejection reason</p>
+                        <p className="text-gray-600 text-sm">
+                          Rejection reason
+                        </p>
                         <p className="text-red-700">{u.rejection_reason}</p>
                       </div>
                     )}
