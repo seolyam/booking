@@ -15,6 +15,7 @@ export default function RequesterShell({
   active?: "dashboard" | "create" | "mine" | "list";
 }) {
   const pathname = usePathname();
+  const showDashboardHeader = pathname === "/dashboard";
 
   const inferredActive: "dashboard" | "create" | "mine" | "list" = (() => {
     if (!pathname) return "dashboard";
@@ -93,23 +94,25 @@ export default function RequesterShell({
 
           {/* Main */}
           <section className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 p-8">
-            <div className="flex items-start justify-between gap-6 mb-8">
-              <div className="min-w-0">
-                <div className="text-3xl font-semibold text-gray-900 truncate">
-                  Welcome back, {profile.fullName.split(" ")[0]}
+            {showDashboardHeader && (
+              <div className="flex items-start justify-between gap-6 mb-8">
+                <div className="min-w-0">
+                  <div className="text-3xl font-semibold text-gray-900 truncate">
+                    Welcome back, {profile.fullName.split(" ")[0]}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Requester Dashboard
+                  </div>
                 </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  Requester Dashboard
-                </div>
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  className="rounded-full p-2 text-gray-700 hover:bg-black/5"
+                >
+                  <Bell className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                aria-label="Notifications"
-                className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-              >
-                <Bell className="h-5 w-5" />
-              </button>
-            </div>
+            )}
 
             {children}
           </section>

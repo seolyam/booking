@@ -45,11 +45,7 @@ export default async function DashboardLayout({
       > | null,
     });
 
-    return (
-      <RequesterShell profile={profile}>
-        {children}
-      </RequesterShell>
-    );
+    return <RequesterShell profile={profile}>{children}</RequesterShell>;
   }
 
   return <>{children}</>;
