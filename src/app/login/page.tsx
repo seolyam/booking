@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { signIn, signUp } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,14 +77,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Left Side - Branding */}
-      <div className="hidden md:flex md:w-[45%] bg-linear-to-br from-[#A8C738] via-[#4DA44E] to-[#2F5E3D] items-center justify-center p-12 relative overflow-hidden">
-        {/* Placeholder for Image */}
-        <div className="relative z-10 w-full max-w-100 aspect-square flex items-center justify-center bg-white/10 rounded-full border-4 border-white/20">
-          {/* PASTE PNG IMAGE HERE */}
-          <div className="text-white font-semibold flex flex-col items-center">
-            <span>Logo Placeholder</span>
-            <span className="text-xs opacity-75 mt-2">(Paste PNG here)</span>
-          </div>
+      <div className="hidden md:flex md:w-[45%] bg-linear-to-br from-[#A8C738] via-[#4DA44E] to-[#2F5E3D] items-center justify-center relative overflow-hidden">
+        <div className="flex items-center justify-center">
+          <Image
+            src="/images/nepc-logo.png"
+            alt="NEPC Logo  "
+            width={400}
+            height={400}
+            priority
+            className="object-contain"
+          />
         </div>
       </div>
 
