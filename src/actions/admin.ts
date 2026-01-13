@@ -7,14 +7,14 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function approveUser(userId: string) {
+export async function approveUser(userId: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
 
   if (!currentUser) {
-    return { error: "Unauthorized" };
+    throw new Error("Unauthorized");
   }
 
   const appUser = await db.query.users.findFirst({
@@ -22,7 +22,7 @@ export async function approveUser(userId: string) {
   });
 
   if (!appUser || appUser.role !== "superadmin") {
-    return { error: "Forbidden: superadmin only" };
+    throw new Error("Forbidden: superadmin only");
   }
 
   const targetUser = await db.query.users.findFirst({
@@ -30,7 +30,7 @@ export async function approveUser(userId: string) {
   });
 
   if (!targetUser) {
-    return { error: "User not found" };
+    throw new Error("User not found");
   }
 
   await db
@@ -44,17 +44,16 @@ export async function approveUser(userId: string) {
     .where(eq(users.id, userId));
 
   revalidatePath("/dashboard/admin/approvals");
-  return { success: true };
 }
 
-export async function rejectUser(userId: string, reason: string) {
+export async function rejectUser(userId: string, reason: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
 
   if (!currentUser) {
-    return { error: "Unauthorized" };
+    throw new Error("Unauthorized");
   }
 
   const appUser = await db.query.users.findFirst({
@@ -62,7 +61,7 @@ export async function rejectUser(userId: string, reason: string) {
   });
 
   if (!appUser || appUser.role !== "superadmin") {
-    return { error: "Forbidden: superadmin only" };
+    throw new Error("Forbidden: superadmin only");
   }
 
   await db
@@ -76,7 +75,6 @@ export async function rejectUser(userId: string, reason: string) {
     .where(eq(users.id, userId));
 
   revalidatePath("/dashboard/admin/approvals");
-  return { success: true };
 }
 
 export async function getSignedIdUrl(

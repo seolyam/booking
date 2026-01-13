@@ -63,9 +63,9 @@ export const users = pgTable("users", {
   id_number: text("id_number"),
   id_document_path: text("id_document_path"),
   approved_at: timestamp("approved_at", { withTimezone: true }),
-  approved_by: uuid("approved_by").references(() => users.id),
+  approved_by: uuid("approved_by"),
   rejected_at: timestamp("rejected_at", { withTimezone: true }),
-  rejected_by: uuid("rejected_by").references(() => users.id),
+  rejected_by: uuid("rejected_by"),
   rejection_reason: text("rejection_reason"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });

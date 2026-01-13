@@ -1,28 +1,20 @@
-## Error Type
+./src/app/dashboard/admin/approvals/page.tsx:160:31
+Type error: Type '() => Promise<{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }>' is not assignable to type 'string | ((formData: FormData) => void | Promise<void>) | undefined'.
+Type '() => Promise<{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }>' is not assignable to type '(formData: FormData) => void | Promise<void>'.  
+ Type 'Promise<{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }>' is not assignable to type 'void | Promise<void>'.
+Type 'Promise<{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }>' is not assignable to type 'Promise<void>'.
+Type '{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }' is not assignable to type 'void'.
+Type '{ error: string; success?: undefined; }' is not assignable to type 'void'.
 
-Runtime Error
+158 | {u.approval_status === "pending" && (
+159 | <div className="flex gap-3 pt-2">
 
-## Error Message
+> 160 | <form action={approveUser.bind(null, u.id)}>
 
-Failed query: insert into "users" ("id", "email", "role", "department", "created_at") values ($1, $2, $3, $4, default) returning "id", "email", "role", "department", "created_at"
-params: a5907823-e0e0-43dd-93f5-e9d5ef428202,lhiamlingco@gmail.com,requester,Finance
+      |                               ^
 
-    at PostgresJsPreparedQuery.queryWithCache (node_modules\.pnpm\drizzle-orm@0.45.1_postgres@3.4.8\node_modules\src\pg-core\session.ts:73:11)
-    at <anonymous> (node_modules\.pnpm\drizzle-orm@0.45.1_postgres@3.4.8\node_modules\src\postgres-js\session.ts:58:17)
-    at  getOrCreateAppUserFromAuthUser (src\lib\appUser.ts:73:22)
-    at  DashboardPage (src\app\dashboard\page.tsx:37:19)
-
-## Code Frame
-
-71 | return await query();
-72 | } catch (e) {
-
-> 73 | throw new DrizzleQueryError(queryString, params, e as Error);
-
-     | 				      ^
-
-74 | }
-75 | }
-76 |
-
-Next.js version: 16.1.1 (Turbopack)
+161 | <Button
+162 | type="submit"
+163 | className="bg-green-600 hover:bg-green-700"
+Next.js build worker exited with code: 1 and signal: null
+ ELIFECYCLE  Command failed with exit code 1.
