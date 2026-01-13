@@ -31,6 +31,11 @@ export default async function DashboardLayout({
     > | null,
   });
 
+  // Superadmins bypass approval checks
+  if (appUser.role !== "superadmin" && appUser.approvalStatus !== "approved") {
+    redirect("/dashboard/pending");
+  }
+
   if (appUser.role === "requester") {
     const profile = getDisplayProfileFromAuthUser({
       email: user.email ?? null,
