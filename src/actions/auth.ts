@@ -17,6 +17,7 @@ export async function signUp(
     idNumber: string;
     department: string;
     position: string;
+    requestedRole?: string;
   }
 ) {
   const validated = AuthSchema.safeParse({ email, password });
@@ -30,7 +31,7 @@ export async function signUp(
 
   const supabase = await createSupabaseServerClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data: authData, error } = await supabase.auth.signUp({
     email: validated.data.email,
     password: validated.data.password,
     options: {
@@ -45,7 +46,8 @@ export async function signUp(
     return { error: error.message };
   }
 
-  return { success: true, redirectTo: "/onboard" };
+  // Return the user ID so the client can upload the ID document to the correct path
+  return { success: true, userId: authData.user?.id };
 }
 
 export async function signIn(email: string, password: string) {
