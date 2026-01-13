@@ -46,7 +46,10 @@ export async function approveUser(userId: string): Promise<void> {
   revalidatePath("/dashboard/admin/approvals");
 }
 
-export async function rejectUser(userId: string, reason: string): Promise<void> {
+export async function rejectUser(
+  userId: string,
+  reason: string
+): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user: currentUser },
