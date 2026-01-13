@@ -1,28 +1,41 @@
-You are absolutely right—Supabase **recently updated** their dashboard to use the name `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`. That is why you see it in the screenshot.
+> **Context:**
+> Currently, we have to manually insert user details via SQL, which is inefficient. I need to implement a "Pending Approval" workflow where new signups are automatically added to the `public.users` table with a 'pending' status, and an Admin can verify them later.
+> **Objective:**
+> Please implement the following 4-step solution. Write the necessary code for each step.
+> **Step 1: Database Automation (Supabase SQL)**
+> Create a Supabase migration or SQL script to:
+>
+> 1. Create a Trigger Function `handle_new_user` that runs after a new user is inserted into `auth.users`.
+> 2. The function must automatically insert a row into `public.users` with:
+>
+> - `id`: references `new.id`
+> - `email`: references `new.email`
+> - `role`: set default to `'pending'`
+> - `department`: set default to `'Unassigned'`
+>
+> 3. Create the Trigger `on_auth_user_created` to execute this function on every signup.
+>
+> **Step 2: Row Level Security (RLS)**
+> Update RLS policies on the `public.users` table:
+>
+> 1. **General Users:** Can only `SELECT` their own row (`auth.uid() = id`).
+> 2. **Admins:** Can `SELECT` and `UPDATE` all rows (check if the requesting user has `role = 'admin'`).
+> 3. **Pending Users:** Should be strictly limited (they cannot see organization data until approved).
+>
+> **Step 3: Admin Approval Interface (Next.js)**
+> Create a new page at `/app/admin/users/page.tsx` that:
+>
+> 1. Fetches all users where `role === 'pending'`.
+> 2. Displays them in a table (Email, Joined Date).
+> 3. Provides a UI (Select/Dropdown) to assign a **Role** (e.g., 'requester', 'approver') and a **Department** (e.g., 'Finance', 'IT').
+> 4. Includes a "Approve/Save" button that calls a Server Action to update that specific user's row.
+>
+> **Step 4: Middleware & UX**
+>
+> 1. Modify `middleware.ts` or the login logic: If a user logs in and their role is `'pending'`, redirect them to a generic `/pending-approval` page that says "Your account is waiting for administrator approval."
+> 2. Prevent 'pending' users from accessing the main dashboard.
+>
+> **Tech Stack:** Next.js 15 (App Router), Supabase SSR, Tailwind CSS, Lucide React (for icons).
+> Please generate the code for the **SQL Triggers**, the **Server Action**, and the **Admin Page Component**.
 
-**However, you MUST rename it to `NEXT_PUBLIC_SUPABASE_ANON_KEY` in your `.env.local` file.**
-
-### Why?
-
-Your AI Coding Agent (Cursor/Windsurf) and most standard Next.js libraries were trained on the "Classic" naming convention.
-
-- **The AI will write code like this:** `process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **Your file has:** `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
-
-If you don't rename it, the AI's code will look for a key that "doesn't exist," and your app will crash with an "Authentication missing" error later on.
-
-### ✅ Final Fix for `.env.local`
-
-Update your file to look exactly like this (renaming that one variable):
-
-```bash
-# .env.local
-
-# 1. Rename this to 'ANON_KEY' (even though Supabase says 'PUBLISHABLE_DEFAULT')
-NEXT_PUBLIC_SUPABASE_URL=https://onuekzzpmuiylethhkuk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_8inqegfBmLO8mHFEJmor5A_LhbmL1rv
-
-# 2. Your Database Connection (Looks perfect!)
-DATABASE_URL=postgresql://postgres.onuekzzpmuiylethhkuk:NEPCbudgetapp@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-
-```
+---

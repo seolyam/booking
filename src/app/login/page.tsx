@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { signIn, signUp } from "@/actions/auth";
+import { updateUserIdDocumentPath } from "@/actions/user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +15,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Eye, EyeOff, Upload } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Check } from "lucide-react";
+import { compressImage } from "@/lib/imageCompression";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,6 +34,8 @@ export default function LoginPage() {
   const [idNumber, setIdNumber] = useState("");
   const [department, setDepartment] = useState("");
   const [position, setPosition] = useState("");
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState("");
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,27 +55,76 @@ export default function LoginPage() {
       setError("Passwords do not match");
       return;
     }
+    if (!idFile) {
+      setError("Please upload a valid ID document");
+      return;
+    }
     setError("");
     setLoading(true);
+    setUploadProgress("Creating account...");
 
-    const result = await signUp(email, password, {
-      fullName,
-      idNumber,
-      department,
-      position,
-    });
+    try {
+      const result = await signUp(email, password, {
+        fullName,
+        idNumber,
+        department,
+        position,
+        requestedRole: position.toLowerCase(),
+      });
 
-    if (result?.error) {
-      setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+        setUploadProgress("");
+        return;
+      }
+
+      if (!result.userId) {
+        setError("Failed to create account");
+        setLoading(false);
+        setUploadProgress("");
+        return;
+      }
+
+      // Compress and upload ID document
+      setUploadProgress("Compressing ID document...");
+      const compressed = await compressImage(idFile, {
+        maxDimension: 1600,
+        quality: 0.75,
+        format: "webp",
+      });
+
+      setUploadProgress("Uploading ID document...");
+      const supabase = createSupabaseBrowserClient();
+      const filePath = `${result.userId}/id-document.webp`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("id-documents")
+        .upload(filePath, compressed, {
+          upsert: true,
+          contentType: "image/webp",
+        });
+
+      if (uploadError) {
+        setError(`Upload failed: ${uploadError.message}`);
+        setLoading(false);
+        setUploadProgress("");
+        return;
+      }
+
+      // Update user record with storage path
+      await updateUserIdDocumentPath(result.userId, filePath);
+
+      setUploadProgress("");
       setLoading(false);
-    } else if (result?.success) {
-      setError("");
-      setLoading(false);
-      // Ideally show success message, for now switch to login or notify check email
       alert(
-        "Registration successful! Please check your email to verify account."
+        "Registration successful! Please check your email to verify account. Your application is pending admin approval."
       );
       setIsLogin(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed");
+      setLoading(false);
+      setUploadProgress("");
     }
   };
 
@@ -202,7 +256,7 @@ export default function LoginPage() {
                   </Label>
                   <Input
                     id="fullName"
-                    placeholder="David Goliath"
+                    placeholder="Enter your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
@@ -246,11 +300,19 @@ export default function LoginPage() {
                       <SelectValue placeholder="Select your department" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-black">
-                      <SelectItem value="Office of the President">Office of the President</SelectItem>
+                      <SelectItem value="Office of the President">
+                        Office of the President
+                      </SelectItem>
                       <SelectItem value="CESRA">CESRA</SelectItem>
-                      <SelectItem value="Customer Care">Customer Care</SelectItem>
-                      <SelectItem value="Controllership">Controllership</SelectItem>
-                      <SelectItem value="Admin/Gen Services">Admin/Gen Services</SelectItem>
+                      <SelectItem value="Customer Care">
+                        Customer Care
+                      </SelectItem>
+                      <SelectItem value="Controllership">
+                        Controllership
+                      </SelectItem>
+                      <SelectItem value="Admin/Gen Services">
+                        Admin/Gen Services
+                      </SelectItem>
                       <SelectItem value="Finance">Finance</SelectItem>
                       <SelectItem value="Procurement">Procurement</SelectItem>
                       <SelectItem value="Legal">Legal</SelectItem>
@@ -269,7 +331,6 @@ export default function LoginPage() {
                       <SelectItem value="Requester">Requester</SelectItem>
                       <SelectItem value="Reviewer">Reviewer</SelectItem>
                       <SelectItem value="Approver">Approver</SelectItem>
-                      <SelectItem value="Superadmin">Superadmin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -332,22 +393,51 @@ export default function LoginPage() {
                 </div>
 
                 <div className="pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11 border-green-600 text-[#358334] hover:bg-green-50"
-                  >
-                    Upload ID picture PNG
-                    <Upload className="ml-2 h-4 w-4" />
-                  </Button>
+                  <Label htmlFor="id-upload" className="text-gray-900">
+                    Upload ID picture
+                  </Label>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Input
+                      id="id-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 10 * 1024 * 1024) {
+                            setError("Image must be smaller than 10MB");
+                            return;
+                          }
+                          setIdFile(file);
+                          setError("");
+                        }
+                      }}
+                      className="flex-1"
+                      required
+                    />
+                    {idFile && (
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    )}
+                  </div>
+                  {idFile && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {idFile.name} ({(idFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  )}
                 </div>
+
+                {uploadProgress && (
+                  <p className="text-sm text-gray-600">{uploadProgress}</p>
+                )}
 
                 <Button
                   type="submit"
                   className="w-full bg-[#358334] hover:bg-[#2F5E3D] h-11 text-base mt-2"
                   disabled={loading}
                 >
-                  {loading ? "Creating account..." : "Submit application"}
+                  {loading
+                    ? uploadProgress || "Processing..."
+                    : "Submit application"}
                 </Button>
               </form>
             </div>

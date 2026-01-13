@@ -41,6 +41,8 @@ export type AppUser = {
   email: string;
   role: "requester" | "reviewer" | "approver" | "superadmin";
   department: string;
+  approvalStatus: "pending" | "approved" | "rejected";
+  requestedRole: "requester" | "reviewer" | "approver" | "superadmin";
 };
 
 export async function getOrCreateAppUserFromAuthUser(authUser: {
@@ -58,6 +60,8 @@ export async function getOrCreateAppUserFromAuthUser(authUser: {
       email: existing.email,
       role: existing.role,
       department: existing.department,
+      approvalStatus: existing.approval_status,
+      requestedRole: existing.requested_role,
     };
   }
 
@@ -68,23 +72,42 @@ export async function getOrCreateAppUserFromAuthUser(authUser: {
   }
 
   const department = getDepartmentFromMetadata(authUser.user_metadata);
-  const role = getRoleFromMetadata(authUser.user_metadata);
+  const requestedRole = getRoleFromMetadata(authUser.user_metadata);
+  const fullName = asNonEmptyString(authUser.user_metadata?.fullName);
+  const position = asNonEmptyString(authUser.user_metadata?.position);
+  const idNumber = asNonEmptyString(authUser.user_metadata?.idNumber);
 
-  const [inserted] = await db
+  // Avoid race conditions: the auth callback and the dashboard can both attempt
+  // to provision the same app user concurrently.
+  await db
     .insert(users)
     .values({
       id: authUser.id,
       email,
       department: department as never,
-      role,
+      role: "requester", // New users start as requesters; admin promotes after approval
+      requested_role: requestedRole,
+      full_name: fullName,
+      position: position,
+      id_number: idNumber,
     })
-    .returning();
+    .onConflictDoNothing({ target: users.id });
+
+  const createdOrExisting = await db.query.users.findFirst({
+    where: eq(users.id, authUser.id),
+  });
+
+  if (!createdOrExisting) {
+    throw new Error("Failed to provision app user record");
+  }
 
   return {
-    id: inserted.id,
-    email: inserted.email,
-    role: inserted.role,
-    department: inserted.department,
+    id: createdOrExisting.id,
+    email: createdOrExisting.email,
+    role: createdOrExisting.role,
+    department: createdOrExisting.department,
+    approvalStatus: createdOrExisting.approval_status,
+    requestedRole: createdOrExisting.requested_role,
   };
 }
 
