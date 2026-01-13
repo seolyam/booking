@@ -23,15 +23,30 @@ function formatDateShort(d: Date) {
   return `${mm}-${dd}-${yy}`;
 }
 
-function statusPillForLabel(label: "Approved" | "Pending" | "Revision") {
+function statusLabel(status: string) {
+  return status
+    .split("_")
+    .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
+function statusPill(status: string) {
   const base = "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
-  if (label === "Approved") return `${base} bg-green-100 text-green-700`;
-  if (label === "Pending") return `${base} bg-amber-100 text-amber-700`;
-  return `${base} bg-orange-100 text-orange-700`;
+  if (status === "approved") return `${base} bg-green-100 text-green-700`;
+  if (status === "revision_requested") return `${base} bg-orange-100 text-orange-700`;
+  if (status === "rejected") return `${base} bg-red-100 text-red-700`;
+  if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
+  // submitted / verified / verified_by_reviewer -> pending-ish
+  return `${base} bg-amber-100 text-amber-700`;
+}
+
+function shortBudgetId(id: string) {
+  return id.split("-")[0]!.toUpperCase();
 }
 
 function typePill(type: "capex" | "opex") {
-  const base = "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
+  const base =
+    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
   return type === "capex"
     ? `${base} bg-blue-100 text-blue-700`
     : `${base} bg-purple-100 text-purple-700`;
@@ -87,7 +102,9 @@ export default async function BudgetIndexPage() {
   const requesterById = new Map(
     requesterRows.map((u) => [u.id, u.full_name || u.email])
   );
-  const departmentById = new Map(requesterRows.map((u) => [u.id, u.department]));
+  const departmentById = new Map(
+    requesterRows.map((u) => [u.id, u.department])
+  );
 
   return (
     <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 p-8">
@@ -106,7 +123,7 @@ export default async function BudgetIndexPage() {
       </div>
 
       <div className="mt-8 rounded-xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden">
-        <div className="p-6">
+        <div className="p-8">
           <div className="flex items-center gap-4">
             <div className="relative w-65">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -117,9 +134,9 @@ export default async function BudgetIndexPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className={statusPillForLabel("Approved")}>Approved</span>
-              <span className={statusPillForLabel("Pending")}>Pending</span>
-              <span className={statusPillForLabel("Revision")}>Revision</span>
+              <span className={statusPill("approved")}>Approved</span>
+              <span className={statusPill("submitted")}>Pending</span>
+              <span className={statusPill("revision_requested")}>Revision</span>
             </div>
 
             <div className="ml-auto">
@@ -132,17 +149,17 @@ export default async function BudgetIndexPage() {
             </div>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
+          <div className="mt-7 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-gray-500">
-                  <th className="py-3 px-4 font-medium">BUDGET ID</th>
-                  <th className="py-3 px-4 font-medium">PROJECT NAME</th>
-                  <th className="py-3 px-4 font-medium">TYPE</th>
-                  <th className="py-3 px-4 font-medium">AMOUNT</th>
-                  <th className="py-3 px-4 font-medium">STATUS</th>
-                  <th className="py-3 px-4 font-medium">DATE</th>
-                  <th className="py-3 px-4 font-medium text-right">ACTION</th>
+                  <th className="py-4 px-6 font-medium">BUDGET ID</th>
+                  <th className="py-4 px-6 font-medium">PROJECT NAME</th>
+                  <th className="py-4 px-6 font-medium">TYPE</th>
+                  <th className="py-4 px-6 font-medium">AMOUNT</th>
+                  <th className="py-4 px-6 font-medium">STATUS</th>
+                  <th className="py-4 px-6 font-medium">DATE</th>
+                  <th className="py-4 px-6 font-medium text-right">ACTION</th>
                 </tr>
               </thead>
               <tbody>
@@ -153,39 +170,44 @@ export default async function BudgetIndexPage() {
                     </td>
                   </tr>
                 ) : (
-                  allBudgets.map((b, idx) => {
-                    const displayId = `BUD-${String(idx + 1).padStart(3, "0")}`;
-                    const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
+                  allBudgets.map((b) => {
+                    const projectName =
+                      firstItemByBudgetId.get(b.id) ?? "Budget Request";
                     const sub = departmentById.get(b.user_id) ?? "";
                     const requesterName = requesterById.get(b.user_id);
 
-                    const statusLabel: "Approved" | "Pending" | "Revision" =
-                      b.status === "approved"
-                        ? "Approved"
-                        : b.status === "revision_requested"
-                          ? "Revision"
-                          : "Pending";
+                    const statusText = statusLabel(b.status);
 
                     return (
                       <tr key={b.id} className="border-t border-black/10">
-                        <td className="py-4 px-4 text-gray-900 font-medium">{displayId}</td>
-                        <td className="py-4 px-4">
-                          <div className="font-medium text-gray-900">{projectName}</div>
+                        <td className="py-5 px-6 text-gray-900 font-medium whitespace-nowrap">
+                          {shortBudgetId(b.id)}
+                        </td>
+                        <td className="py-5 px-6">
+                          <div className="font-medium text-gray-900">
+                            {projectName}
+                          </div>
                           <div className="text-xs text-gray-500">
                             {sub || requesterName || b.user_id}
                           </div>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-5 px-6">
                           <span className={typePill(b.budget_type)}>
                             {b.budget_type === "capex" ? "CapEx" : "OpEx"}
                           </span>
                         </td>
-                        <td className="py-4 px-4 text-gray-900">{formatPhp(b.total_amount)}</td>
-                        <td className="py-4 px-4">
-                          <span className={statusPillForLabel(statusLabel)}>{statusLabel}</span>
+                        <td className="py-5 px-6 text-gray-900 whitespace-nowrap">
+                          {formatPhp(b.total_amount)}
                         </td>
-                        <td className="py-4 px-4 text-gray-700">{formatDateShort(b.created_at)}</td>
-                        <td className="py-4 px-4 text-right">
+                        <td className="py-5 px-6">
+                          <span className={statusPill(b.status)}>
+                            {statusText}
+                          </span>
+                        </td>
+                        <td className="py-5 px-6 text-gray-700 whitespace-nowrap">
+                          {formatDateShort(b.created_at)}
+                        </td>
+                        <td className="py-5 px-6 text-right whitespace-nowrap">
                           <Link
                             href={`/dashboard/budget/${b.id}`}
                             className="inline-flex items-center gap-2 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300"
