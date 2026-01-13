@@ -45,9 +45,8 @@ export default async function DashboardLayout({
       > | null,
     });
 
-    // Default active state is "dashboard"; pages can override by rendering their own shell if needed.
     return (
-      <RequesterShell profile={profile} active="dashboard">
+      <RequesterShell profile={profile}>
         {children}
       </RequesterShell>
     );
