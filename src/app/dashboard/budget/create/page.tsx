@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useId, useMemo, useState } from "react";
 import { Bell, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/navigation";
+import {
+  addBudgetItem,
+  createBudgetDraft,
+  submitBudget,
+} from "@/actions/budget";
 import {
   Select,
   SelectContent,
@@ -15,9 +21,12 @@ import {
 } from "@/components/ui/select";
 
 export default function CreateBudgetPage() {
-  const timelineRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const reactId = useId();
   const [budgetType, setBudgetType] = useState<"capex" | "opex" | "">("");
   const [projectTitle, setProjectTitle] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState([
     { category: "", description: "", quantity: 1, unitCost: 0 },
   ]);
@@ -27,16 +36,14 @@ export default function CreateBudgetPage() {
   const [milestones, setMilestones] = useState<string[]>([]);
   const [varianceExplanation, setVarianceExplanation] = useState("");
 
-  // Generate unique Project ID
-  const generateProjectId = () => {
+  const projectId = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
-    const random = Math.random().toString(36).substring(2, 7).toUpperCase();
-    return `PROJ-${year}${month}-${random}`;
-  };
-
-  const projectId = generateProjectId();
+    const suffix = reactId.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const short = (suffix.slice(-5) || "00000").padStart(5, "0");
+    return `PROJ-${year}${month}-${short}`;
+  }, [reactId]);
 
   const addItem = () => {
     setItems([
@@ -71,10 +78,6 @@ export default function CreateBudgetPage() {
     0
   );
 
-  const scrollToTimeline = () => {
-    timelineRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const categories = [
     "Equipment",
     "Labor",
@@ -86,6 +89,79 @@ export default function CreateBudgetPage() {
     "Testing",
     "Installation",
   ];
+
+  const persistBudget = async (mode: "draft" | "submit") => {
+    setError(null);
+
+    const selectedType = budgetType || "";
+    if (!selectedType) {
+      setError("Please select a Budget Type.");
+      return;
+    }
+
+    const hasAnyValidItem = items.some(
+      (it) => it.description.trim() && it.quantity > 0 && it.unitCost > 0
+    );
+    if (!hasAnyValidItem) {
+      setError(
+        "Please add at least one cost item with quantity and unit cost."
+      );
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const draftFd = new FormData();
+      draftFd.set("budgetType", selectedType);
+      draftFd.set("fiscalYear", String(new Date().getFullYear()));
+
+      const draftRes = await createBudgetDraft(null, draftFd);
+      if (!draftRes?.budgetId) {
+        setError(draftRes?.message ?? "Failed to create budget draft.");
+        return;
+      }
+
+      const budgetId = draftRes.budgetId;
+
+      for (const item of items) {
+        const desc = item.description.trim();
+        if (!desc || item.quantity <= 0 || item.unitCost <= 0) continue;
+
+        const itemFd = new FormData();
+        itemFd.set("budgetId", budgetId);
+        itemFd.set(
+          "description",
+          item.category ? `${item.category} - ${desc}` : desc
+        );
+        itemFd.set("quantity", String(item.quantity));
+        itemFd.set("unitCost", String(item.unitCost));
+        itemFd.set("quarter", "Q1");
+
+        const itemRes = await addBudgetItem(null, itemFd);
+        if (itemRes?.message && itemRes.message !== "Item added") {
+          setError(itemRes.message);
+          return;
+        }
+      }
+
+      if (mode === "submit") {
+        const submitRes = await submitBudget(
+          budgetId,
+          varianceExplanation.trim() ? varianceExplanation.trim() : undefined
+        );
+        if (submitRes?.message !== "Budget submitted successfully") {
+          setError(submitRes?.message ?? "Failed to submit budget.");
+          return;
+        }
+      }
+
+      router.push("/dashboard/requests");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -101,6 +177,11 @@ export default function CreateBudgetPage() {
         </div>
         <Bell className="h-6 w-6 text-gray-400" />
       </div>
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
       {/* Project Information Section */}
       <section className="mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -339,20 +420,9 @@ export default function CreateBudgetPage() {
             </div>
           </div>
         </div>
-
-        {/* Next Button */}
-        <div className="flex justify-end mt-6">
-          <Button
-            type="button"
-            onClick={scrollToTimeline}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Next →
-          </Button>
-        </div>
       </section>
       {/* Timeline Section */}
-      <section ref={timelineRef} className="mb-8 pt-8 scroll-mt-8">
+      <section className="mb-8 pt-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span>📅</span> Timeline
         </h2>
@@ -444,7 +514,7 @@ export default function CreateBudgetPage() {
             placeholder="Explain why this budget differs from forecasted amounts, previous similar projects, or standard costs..."
             value={varianceExplanation}
             onChange={(e) => setVarianceExplanation(e.target.value)}
-            className="border-gray-300 min-h-[120px]"
+            className="border-gray-300 min-h-30"
           />
         </div>
       </section>
@@ -453,6 +523,8 @@ export default function CreateBudgetPage() {
         <Button
           type="button"
           className="bg-orange-600 hover:bg-orange-700 text-white"
+          onClick={() => router.push("/dashboard/requests")}
+          disabled={isSaving}
         >
           Cancel
         </Button>
@@ -461,6 +533,8 @@ export default function CreateBudgetPage() {
           type="button"
           variant="outline"
           className="border-gray-300 text-gray-700 hover:bg-gray-50"
+          onClick={() => persistBudget("draft")}
+          disabled={isSaving}
         >
           📄 Save as draft
         </Button>
@@ -468,8 +542,10 @@ export default function CreateBudgetPage() {
         <Button
           type="button"
           className="bg-green-600 hover:bg-green-700 text-white ml-auto"
+          onClick={() => persistBudget("submit")}
+          disabled={isSaving}
         >
-          ✓ Submit request
+          {isSaving ? "Submitting…" : "✓ Submit request"}
         </Button>
       </div>{" "}
     </div>
