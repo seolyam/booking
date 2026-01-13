@@ -243,13 +243,18 @@ export default function LoginPage() {
                   </Label>
                   <Select value={department} onValueChange={setDepartment}>
                     <SelectTrigger className="w-full h-11 bg-white text-black border-input">
-                      <SelectValue placeholder="Finance" />
+                      <SelectValue placeholder="Select your department" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-black">
+                      <SelectItem value="Office of the President">Office of the President</SelectItem>
+                      <SelectItem value="CESRA">CESRA</SelectItem>
+                      <SelectItem value="Customer Care">Customer Care</SelectItem>
+                      <SelectItem value="Controllership">Controllership</SelectItem>
+                      <SelectItem value="Admin/Gen Services">Admin/Gen Services</SelectItem>
                       <SelectItem value="Finance">Finance</SelectItem>
-                      <SelectItem value="HR">Human Resources</SelectItem>
-                      <SelectItem value="IT">Information Technology</SelectItem>
-                      <SelectItem value="Operations">Operations</SelectItem>
+                      <SelectItem value="Procurement">Procurement</SelectItem>
+                      <SelectItem value="Legal">Legal</SelectItem>
+                      <SelectItem value="NDOG">NDOG</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -258,13 +263,13 @@ export default function LoginPage() {
                   <Label className="text-gray-900">Select your Position</Label>
                   <Select value={position} onValueChange={setPosition}>
                     <SelectTrigger className="w-full h-11 bg-white text-black border-input">
-                      <SelectValue placeholder="Chief" />
+                      <SelectValue placeholder="Select your position" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-black">
-                      <SelectItem value="Staff">Staff</SelectItem>
-                      <SelectItem value="Analyst">Analyst</SelectItem>
-                      <SelectItem value="Manager">Manager</SelectItem>
-                      <SelectItem value="Director">Chief/Director</SelectItem>
+                      <SelectItem value="Requester">Requester</SelectItem>
+                      <SelectItem value="Reviewer">Reviewer</SelectItem>
+                      <SelectItem value="Approver">Approver</SelectItem>
+                      <SelectItem value="Superadmin">Superadmin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
