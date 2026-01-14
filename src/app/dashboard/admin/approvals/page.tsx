@@ -65,7 +65,7 @@ export default async function AdminApprovalsPage() {
             // Construct public URL directly (Supabase best practice for public buckets)
             const idDocumentUrl = u.id_document_path
               ? `${PUBLIC_STORAGE_URL}/${u.id_document_path}`
-              : null;
+              : "";
 
             return (
               <Card key={u.id}>
