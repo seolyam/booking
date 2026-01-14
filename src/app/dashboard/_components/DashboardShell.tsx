@@ -5,7 +5,10 @@ import Link from "next/link";
 import {
   ArrowLeftRight,
   Bell,
+  LayoutGrid,
   LogOut,
+  Maximize2,
+  Minimize2,
   RotateCcw,
   ShieldCheck,
   LayoutDashboard,
@@ -44,6 +47,8 @@ type Panel = {
   z: number;
 };
 
+type PanelKey = "sidebar" | "main";
+
 const DEFAULT_LAYOUT: ShellLayout = {
   mode: "floating",
   sidebarWidth: 260,
@@ -61,6 +66,11 @@ const PANEL_MAX_HEIGHT = 1200;
 const MAIN_MIN_WIDTH = 520;
 const LAYOUT_STORAGE_KEY = "budget.dashboard.shell.layout.v1";
 
+function isDesktopViewport() {
+  if (typeof window === "undefined") return true;
+  return window.matchMedia("(min-width: 768px)").matches;
+}
+
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -76,7 +86,10 @@ function readLayoutFromStorage(): ShellLayout {
     const mode = parsed.mode;
     const floating = parsed.floating as ShellLayout["floating"] | undefined;
 
-    const coercePanel = (p: Partial<Panel> | undefined, fallback: Panel): Panel => {
+    const coercePanel = (
+      p: Partial<Panel> | undefined,
+      fallback: Panel
+    ): Panel => {
       const x = Number(p?.x);
       const y = Number(p?.y);
       const width = Number(p?.width);
@@ -99,7 +112,10 @@ function readLayoutFromStorage(): ShellLayout {
         : DEFAULT_LAYOUT.sidebarWidth,
       sidebarSide: sidebarSide === "right" ? "right" : "left",
       floating: {
-        sidebar: coercePanel(floating?.sidebar, DEFAULT_LAYOUT.floating.sidebar),
+        sidebar: coercePanel(
+          floating?.sidebar,
+          DEFAULT_LAYOUT.floating.sidebar
+        ),
         main: coercePanel(floating?.main, DEFAULT_LAYOUT.floating.main),
       },
     };
@@ -108,8 +124,13 @@ function readLayoutFromStorage(): ShellLayout {
   }
 }
 
-function clampPanelToContainer(panel: Panel, containerWidth: number, containerHeight: number) {
-  const width = clampNumber(panel.width, SIDEBAR_MIN_WIDTH, containerWidth);
+function clampPanelToContainer(
+  panel: Panel,
+  containerWidth: number,
+  containerHeight: number,
+  minWidth: number
+) {
+  const width = clampNumber(panel.width, minWidth, containerWidth);
   const height = clampNumber(panel.height, PANEL_MIN_HEIGHT, containerHeight);
   const x = clampNumber(panel.x, 0, Math.max(0, containerWidth - width));
   const y = clampNumber(panel.y, 0, Math.max(0, containerHeight - height));
@@ -189,37 +210,47 @@ export default function DashboardShell({
   const sections = buildNav(role);
 
   const [{ sidebarWidth, sidebarSide, mode, floating }, setLayout] =
-    React.useState<ShellLayout>(
-    () => readLayoutFromStorage()
-  );
+    React.useState<ShellLayout>(() => readLayoutFromStorage());
 
+  const persistTimerRef = React.useRef<number | null>(null);
   React.useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        LAYOUT_STORAGE_KEY,
-        JSON.stringify(
-          { sidebarWidth, sidebarSide, mode, floating } satisfies ShellLayout
-        )
-      );
-    } catch {
-      // ignore write failures (private mode, etc.)
-    }
+    if (typeof window === "undefined") return;
+    if (persistTimerRef.current) window.clearTimeout(persistTimerRef.current);
+    persistTimerRef.current = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          LAYOUT_STORAGE_KEY,
+          JSON.stringify({
+            sidebarWidth,
+            sidebarSide,
+            mode,
+            floating,
+          } satisfies ShellLayout)
+        );
+      } catch {
+        // ignore write failures (private mode, etc.)
+      }
+    }, 150);
+    return () => {
+      if (persistTimerRef.current) window.clearTimeout(persistTimerRef.current);
+    };
   }, [sidebarWidth, sidebarSide, mode, floating]);
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const nextZRef = React.useRef(3);
-  const floatingDragRef = React.useRef<
-    | null
-    | {
-        panel: "sidebar" | "main";
-        action: "move" | "resize";
-        pointerId: number;
-        startClientX: number;
-        startClientY: number;
-        startPanel: Panel;
-        containerRect: DOMRect;
-      }
-  >(null);
+  const [containerSize, setContainerSize] = React.useState({
+    width: 0,
+    height: 0,
+  });
+  const floatingDragRef = React.useRef<null | {
+    panel: "sidebar" | "main";
+    action: "move" | "resize";
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startPanel: Panel;
+    containerRect: DOMRect;
+  }>(null);
 
   React.useEffect(() => {
     if (!containerRef.current) return;
@@ -230,23 +261,20 @@ export default function DashboardShell({
       const containerWidth = rect.width;
       const containerHeight = rect.height;
 
+      setContainerSize({ width: containerWidth, height: containerHeight });
+
       setLayout((prev) => {
         const sidebarNext = clampPanelToContainer(
           prev.floating.sidebar,
           containerWidth,
-          containerHeight
+          containerHeight,
+          SIDEBAR_MIN_WIDTH
         );
         const mainNext = clampPanelToContainer(
-          {
-            ...prev.floating.main,
-            width: clampNumber(
-              prev.floating.main.width,
-              MAIN_MIN_WIDTH,
-              containerWidth
-            ),
-          },
+          prev.floating.main,
           containerWidth,
-          containerHeight
+          containerHeight,
+          MAIN_MIN_WIDTH
         );
 
         const sidebarUnchanged =
@@ -268,8 +296,28 @@ export default function DashboardShell({
     };
 
     normalize();
+
+    const ro = new ResizeObserver(() => normalize());
+    ro.observe(containerRef.current);
     window.addEventListener("resize", normalize);
-    return () => window.removeEventListener("resize", normalize);
+    return () => {
+      window.removeEventListener("resize", normalize);
+      ro.disconnect();
+    };
+  }, []);
+
+  // Responsive safety: floating mode only on desktop.
+  React.useEffect(() => {
+    const onResize = () => {
+      if (!isDesktopViewport()) {
+        setLayout((prev) =>
+          prev.mode === "floating" ? { ...prev, mode: "split" } : prev
+        );
+      }
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const dragStateRef = React.useRef<{
@@ -301,7 +349,9 @@ export default function DashboardShell({
     }));
   };
 
-  const onDividerPointerUpOrCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+  const onDividerPointerUpOrCancel = (
+    e: React.PointerEvent<HTMLDivElement>
+  ) => {
     const dragState = dragStateRef.current;
     if (!dragState) return;
     if (dragState.pointerId !== e.pointerId) return;
@@ -324,7 +374,7 @@ export default function DashboardShell({
     }));
   };
 
-  const bringPanelToFront = (panel: "sidebar" | "main") => {
+  const bringPanelToFront = (panel: PanelKey) => {
     const nextZ = nextZRef.current++;
     setLayout((prev) => ({
       ...prev,
@@ -337,7 +387,7 @@ export default function DashboardShell({
 
   const startFloatingDrag = (
     e: React.PointerEvent<HTMLDivElement>,
-    panel: "sidebar" | "main",
+    panel: PanelKey,
     action: "move" | "resize"
   ) => {
     if (e.button !== 0) return;
@@ -376,6 +426,8 @@ export default function DashboardShell({
       }
 
       if (dragState.action === "move") {
+        const minWidth =
+          dragState.panel === "sidebar" ? SIDEBAR_MIN_WIDTH : MAIN_MIN_WIDTH;
         const moved: Panel = clampPanelToContainer(
           {
             ...start,
@@ -384,7 +436,8 @@ export default function DashboardShell({
             z: prev.floating[dragState.panel].z,
           },
           containerWidth,
-          containerHeight
+          containerHeight,
+          minWidth
         );
         return {
           ...prev,
@@ -396,10 +449,15 @@ export default function DashboardShell({
       }
 
       // resize
-      const minWidth = dragState.panel === "sidebar" ? SIDEBAR_MIN_WIDTH : MAIN_MIN_WIDTH;
+      const minWidth =
+        dragState.panel === "sidebar" ? SIDEBAR_MIN_WIDTH : MAIN_MIN_WIDTH;
       const maxWidth = containerWidth;
       const width = clampNumber(start.width + dx, minWidth, maxWidth);
-      const height = clampNumber(start.height + dy, PANEL_MIN_HEIGHT, Math.min(PANEL_MAX_HEIGHT, containerHeight));
+      const height = clampNumber(
+        start.height + dy,
+        PANEL_MIN_HEIGHT,
+        Math.min(PANEL_MAX_HEIGHT, containerHeight)
+      );
       const resized: Panel = clampPanelToContainer(
         {
           ...start,
@@ -408,7 +466,8 @@ export default function DashboardShell({
           z: prev.floating[dragState.panel].z,
         },
         containerWidth,
-        containerHeight
+        containerHeight,
+        minWidth
       );
 
       return {
@@ -463,13 +522,107 @@ export default function DashboardShell({
     }));
   };
 
+  const restoreRef = React.useRef<{
+    sidebar?: Panel;
+    main?: Panel;
+  }>({});
+
+  const maximizePanel = (panel: PanelKey) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+    const nextZ = nextZRef.current++;
+
+    setLayout((prev) => {
+      restoreRef.current[panel] = prev.floating[panel];
+      return {
+        ...prev,
+        floating: {
+          ...prev.floating,
+          [panel]: {
+            x: 0,
+            y: 0,
+            width: containerWidth,
+            height: containerHeight,
+            z: nextZ,
+          },
+        },
+      };
+    });
+  };
+
+  const restorePanel = (panel: PanelKey) => {
+    const restore = restoreRef.current[panel];
+    if (!restore) return;
+    setLayout((prev) => ({
+      ...prev,
+      floating: {
+        ...prev.floating,
+        [panel]: { ...restore, z: prev.floating[panel].z },
+      },
+    }));
+    restoreRef.current[panel] = undefined;
+  };
+
+  const isMaximized = (panel: PanelKey) => {
+    const p = floating[panel];
+    if (containerSize.width <= 0 || containerSize.height <= 0) return false;
+    return (
+      p.x === 0 &&
+      p.y === 0 &&
+      Math.abs(p.width - containerSize.width) < 1 &&
+      Math.abs(p.height - containerSize.height) < 1
+    );
+  };
+
+  const tilePanels = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+    const gap = 16;
+    const sidebarWidth = clampNumber(
+      300,
+      SIDEBAR_MIN_WIDTH,
+      Math.min(SIDEBAR_MAX_WIDTH, containerWidth - MAIN_MIN_WIDTH - gap)
+    );
+    const nextZ = nextZRef.current++;
+    setLayout((prev) => ({
+      ...prev,
+      floating: {
+        sidebar: {
+          x: 0,
+          y: 0,
+          width: sidebarWidth,
+          height: containerHeight,
+          z: nextZ + 1,
+        },
+        main: {
+          x: sidebarWidth + gap,
+          y: 0,
+          width: Math.max(MAIN_MIN_WIDTH, containerWidth - sidebarWidth - gap),
+          height: containerHeight,
+          z: nextZ,
+        },
+      },
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-b from-[#C7C800] to-[#2F5E3D] p-6">
-      <div className="mx-auto w-full max-w-6xl">
+      <div
+        className={
+          "mx-auto w-full " + (mode === "floating" ? "max-w-none" : "max-w-6xl")
+        }
+      >
         <div
           ref={containerRef}
-          className="relative"
-          style={{ height: "calc(100vh - 96px)" }}
+          className={
+            mode === "floating"
+              ? "fixed inset-6"
+              : "relative md:h-[calc(100vh-96px)] md:overflow-hidden"
+          }
         >
           {/* Shared controls (always accessible) */}
           <div className="absolute right-0 top-0 z-50 flex items-center gap-2">
@@ -477,10 +630,25 @@ export default function DashboardShell({
               type="button"
               className="rounded-lg bg-white/90 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-black/10 hover:bg-white"
               onClick={toggleMode}
-              title={mode === "floating" ? "Switch to split layout" : "Switch to floating layout"}
+              title={
+                mode === "floating"
+                  ? "Switch to split layout"
+                  : "Switch to floating layout"
+              }
             >
               {mode === "floating" ? "Split" : "Float"}
             </button>
+            {mode === "floating" && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-black/10 hover:bg-white"
+                onClick={tilePanels}
+                title="Tile panels to fit screen"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Tile
+              </button>
+            )}
             <button
               type="button"
               className="inline-flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-black/10 hover:bg-white"
@@ -529,30 +697,27 @@ export default function DashboardShell({
                       </div>
                     </div>
                   </div>
-                  {mode === "split" && (
+                  <div className="ml-auto flex items-center gap-1">
                     <button
                       type="button"
                       className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
-                      aria-label={
-                        sidebarSide === "left"
-                          ? "Dock sidebar to the right"
-                          : "Dock sidebar to the left"
-                      }
-                      title={
-                        sidebarSide === "left"
-                          ? "Dock sidebar to the right"
-                          : "Dock sidebar to the left"
-                      }
                       onClick={() =>
-                        setLayout((prev) => ({
-                          ...prev,
-                          sidebarSide: prev.sidebarSide === "left" ? "right" : "left",
-                        }))
+                        isMaximized("sidebar")
+                          ? restorePanel("sidebar")
+                          : maximizePanel("sidebar")
+                      }
+                      title={isMaximized("sidebar") ? "Restore" : "Maximize"}
+                      aria-label={
+                        isMaximized("sidebar") ? "Restore" : "Maximize"
                       }
                     >
-                      <ArrowLeftRight className="h-4 w-4" />
+                      {isMaximized("sidebar") ? (
+                        <Minimize2 className="h-4 w-4" />
+                      ) : (
+                        <Maximize2 className="h-4 w-4" />
+                      )}
                     </button>
-                  )}
+                  </div>
                 </div>
 
                 <div className="h-full overflow-auto">
@@ -564,7 +729,9 @@ export default function DashboardShell({
                             {section.title}
                           </div>
                         )}
-                        <div className="space-y-1">{section.items.map(navItem)}</div>
+                        <div className="space-y-1">
+                          {section.items.map(navItem)}
+                        </div>
                       </div>
                     ))}
                   </nav>
@@ -586,13 +753,17 @@ export default function DashboardShell({
 
                 {/* Resize handle */}
                 <div
-                  className="absolute bottom-1 right-1 h-5 w-5 cursor-nwse-resize rounded-sm bg-black/0"
-                  onPointerDown={(e) => startFloatingDrag(e, "sidebar", "resize")}
+                  className="absolute bottom-1 right-1 h-6 w-6 cursor-nwse-resize rounded-md hover:bg-black/5"
+                  onPointerDown={(e) =>
+                    startFloatingDrag(e, "sidebar", "resize")
+                  }
                   onPointerMove={onFloatingPointerMove}
                   onPointerUp={endFloatingDrag}
                   onPointerCancel={endFloatingDrag}
                   title="Drag to resize"
-                />
+                >
+                  <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-black/20" />
+                </div>
               </aside>
 
               {/* Main window */}
@@ -624,16 +795,37 @@ export default function DashboardShell({
                         : roleLabel(role)}
                     </div>
                     {showDashboardHeader && (
-                      <div className="text-xs text-gray-500">{roleLabel(role)} Dashboard</div>
+                      <div className="text-xs text-gray-500">
+                        {roleLabel(role)} Dashboard
+                      </div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    aria-label="Notifications"
-                    className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-                  >
-                    <Bell className="h-5 w-5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
+                      onClick={() =>
+                        isMaximized("main")
+                          ? restorePanel("main")
+                          : maximizePanel("main")
+                      }
+                      title={isMaximized("main") ? "Restore" : "Maximize"}
+                      aria-label={isMaximized("main") ? "Restore" : "Maximize"}
+                    >
+                      {isMaximized("main") ? (
+                        <Minimize2 className="h-4 w-4" />
+                      ) : (
+                        <Maximize2 className="h-4 w-4" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Notifications"
+                      className="rounded-lg p-2 text-gray-700 hover:bg-black/5"
+                    >
+                      <Bell className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="h-[calc(100%-49px)] overflow-auto p-8">
@@ -642,19 +834,21 @@ export default function DashboardShell({
 
                 {/* Resize handle */}
                 <div
-                  className="absolute bottom-1 right-1 h-5 w-5 cursor-nwse-resize rounded-sm bg-black/0"
+                  className="absolute bottom-1 right-1 h-6 w-6 cursor-nwse-resize rounded-md hover:bg-black/5"
                   onPointerDown={(e) => startFloatingDrag(e, "main", "resize")}
                   onPointerMove={onFloatingPointerMove}
                   onPointerUp={endFloatingDrag}
                   onPointerCancel={endFloatingDrag}
                   title="Drag to resize"
-                />
+                >
+                  <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-black/20" />
+                </div>
               </section>
             </>
           ) : (
             <div
               className={
-                "flex flex-col gap-6 md:flex-row md:gap-0" +
+                "flex flex-col gap-6 md:flex-row md:gap-0 md:h-full md:min-h-0" +
                 (sidebarSide === "right" ? " md:flex-row-reverse" : "")
               }
               style={
@@ -664,71 +858,76 @@ export default function DashboardShell({
               }
             >
               {/* Sidebar */}
-              <aside className="w-full md:w-(--sidebar-width) md:shrink-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
-                      {profile.initials}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {profile.fullName}
+              <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden">
+                <div className="h-full overflow-auto">
+                  <div className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
+                        {profile.initials}
                       </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {profile.departmentLine}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="ml-auto inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
-                      aria-label={
-                        sidebarSide === "left"
-                          ? "Dock sidebar to the right"
-                          : "Dock sidebar to the left"
-                      }
-                      title={
-                        sidebarSide === "left"
-                          ? "Dock sidebar to the right"
-                          : "Dock sidebar to the left"
-                      }
-                      onClick={() =>
-                        setLayout((prev) => ({
-                          ...prev,
-                          sidebarSide: prev.sidebarSide === "left" ? "right" : "left",
-                        }))
-                      }
-                    >
-                      <ArrowLeftRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <nav className="px-4 pb-4 space-y-4">
-                  {sections.map((section, idx) => (
-                    <div key={idx}>
-                      {section.title && (
-                        <div className="px-4 pb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                          {section.title}
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">
+                          {profile.fullName}
                         </div>
-                      )}
-                      <div className="space-y-1">{section.items.map(navItem)}</div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {profile.departmentLine}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="ml-auto inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
+                        aria-label={
+                          sidebarSide === "left"
+                            ? "Dock sidebar to the right"
+                            : "Dock sidebar to the left"
+                        }
+                        title={
+                          sidebarSide === "left"
+                            ? "Dock sidebar to the right"
+                            : "Dock sidebar to the left"
+                        }
+                        onClick={() =>
+                          setLayout((prev) => ({
+                            ...prev,
+                            sidebarSide:
+                              prev.sidebarSide === "left" ? "right" : "left",
+                          }))
+                        }
+                      >
+                        <ArrowLeftRight className="h-4 w-4" />
+                      </button>
                     </div>
-                  ))}
-                </nav>
+                  </div>
 
-                <div className="mt-2 border-t border-black/10" />
+                  <nav className="px-4 pb-4 space-y-4">
+                    {sections.map((section, idx) => (
+                      <div key={idx}>
+                        {section.title && (
+                          <div className="px-4 pb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                            {section.title}
+                          </div>
+                        )}
+                        <div className="space-y-1">
+                          {section.items.map(navItem)}
+                        </div>
+                      </div>
+                    ))}
+                  </nav>
 
-                <div className="p-4">
-                  <form action={signOut}>
-                    <button
-                      type="submit"
-                      className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Logout
-                    </button>
-                  </form>
+                  <div className="mt-2 border-t border-black/10" />
+
+                  <div className="p-4">
+                    <form action={signOut}>
+                      <button
+                        type="submit"
+                        className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </aside>
 
@@ -743,7 +942,10 @@ export default function DashboardShell({
                 onPointerUp={onDividerPointerUpOrCancel}
                 onPointerCancel={onDividerPointerUpOrCancel}
                 onDoubleClick={() =>
-                  setLayout((prev) => ({ ...prev, sidebarWidth: DEFAULT_LAYOUT.sidebarWidth }))
+                  setLayout((prev) => ({
+                    ...prev,
+                    sidebarWidth: DEFAULT_LAYOUT.sidebarWidth,
+                  }))
                 }
                 onKeyDown={onDividerKeyDown}
               >
@@ -751,28 +953,30 @@ export default function DashboardShell({
               </div>
 
               {/* Main */}
-              <section className="flex-1 rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 p-8">
-                {showDashboardHeader && (
-                  <div className="flex items-start justify-between gap-6 mb-8">
-                    <div className="min-w-0">
-                      <div className="text-3xl font-semibold text-gray-900 truncate">
-                        Welcome back, {profile.fullName.split(" ")[0]}
+              <section className="flex-1 min-w-0 md:h-full md:min-h-0 rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden">
+                <div className="h-full overflow-auto p-8">
+                  {showDashboardHeader && (
+                    <div className="flex items-start justify-between gap-6 mb-8">
+                      <div className="min-w-0">
+                        <div className="text-3xl font-semibold text-gray-900 truncate">
+                          Welcome back, {profile.fullName.split(" ")[0]}
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {roleLabel(role)} Dashboard
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        {roleLabel(role)} Dashboard
-                      </div>
+                      <button
+                        type="button"
+                        aria-label="Notifications"
+                        className="rounded-full p-2 text-gray-700 hover:bg-black/5"
+                      >
+                        <Bell className="h-5 w-5" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      aria-label="Notifications"
-                      className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-                    >
-                      <Bell className="h-5 w-5" />
-                    </button>
-                  </div>
-                )}
+                  )}
 
-                {children}
+                  {children}
+                </div>
               </section>
             </div>
           )}
