@@ -11,4 +11,4 @@ After finishing any coding task, you MUST end your response with a final section
 1.  **Analyze Changes:** Review all modified files.
 2.  **Group Logically:** Separate distinct tasks (e.g., don't mix a CSS fix with a Database migration).
 3.  **Generate Commands:** Provide exact `git add` and `git commit` commands for me to copy-paste.
-4.  **Format:** Use Conventional Commits.
+4.  **Format:** Use Conventional Commits. only the message no need for the specific bullet points

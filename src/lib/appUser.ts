@@ -24,7 +24,7 @@ function getDepartmentFromMetadata(
 function getRoleFromMetadata(
   metadata: Record<string, unknown> | null | undefined
 ): "requester" | "reviewer" | "approver" | "superadmin" {
-  const role = asNonEmptyString(metadata?.role);
+  const role = asNonEmptyString(metadata?.requestedRole);
   if (
     role === "requester" ||
     role === "reviewer" ||

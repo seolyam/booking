@@ -105,11 +105,7 @@ export default function LoginPage() {
 
       const base64Data = await base64Promise;
 
-      const uploadResult = await uploadIdDocument(
-        result.userId,
-        base64Data,
-        "id-document.webp"
-      );
+      const uploadResult = await uploadIdDocument(result.userId, base64Data);
 
       if (uploadResult?.error) {
         setError(uploadResult.error);
