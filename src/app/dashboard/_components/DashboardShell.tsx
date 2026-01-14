@@ -80,6 +80,7 @@ function readLayoutFromStorage(): ShellLayout {
   try {
     const raw = window.localStorage.getItem(LAYOUT_STORAGE_KEY);
     if (!raw) return DEFAULT_LAYOUT;
+
     const parsed = JSON.parse(raw) as Partial<ShellLayout>;
     const sidebarWidth = Number(parsed.sidebarWidth);
     const sidebarSide = parsed.sidebarSide;
@@ -112,10 +113,7 @@ function readLayoutFromStorage(): ShellLayout {
         : DEFAULT_LAYOUT.sidebarWidth,
       sidebarSide: sidebarSide === "right" ? "right" : "left",
       floating: {
-        sidebar: coercePanel(
-          floating?.sidebar,
-          DEFAULT_LAYOUT.floating.sidebar
-        ),
+        sidebar: coercePanel(floating?.sidebar, DEFAULT_LAYOUT.floating.sidebar),
         main: coercePanel(floating?.main, DEFAULT_LAYOUT.floating.main),
       },
     };
@@ -610,18 +608,18 @@ export default function DashboardShell({
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-[#C7C800] to-[#2F5E3D] p-6">
+    <div className="h-dvh overflow-hidden bg-linear-to-b from-[#C7C800] to-[#2F5E3D] p-6">
       <div
         className={
-          "mx-auto w-full " + (mode === "floating" ? "max-w-none" : "max-w-6xl")
+          "mx-auto h-full w-full " +
+          (mode === "floating" ? "max-w-none" : "max-w-6xl")
         }
       >
         <div
           ref={containerRef}
           className={
-            mode === "floating"
-              ? "fixed inset-6"
-              : "relative md:h-[calc(100vh-96px)] md:overflow-hidden"
+            (mode === "floating" ? "fixed inset-6" : "relative h-full") +
+            " overflow-hidden"
           }
         >
           {/* Shared controls (always accessible) */}
