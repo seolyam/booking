@@ -5,9 +5,9 @@ import { users } from "@/db/schema";
 import { eq, or } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { approveUser, rejectUser, getSignedIdUrl } from "@/actions/admin";
+import { approveUser, rejectUser } from "@/actions/admin";
 import { Check, X, Eye } from "lucide-react";
-import Image from "next/image";
+import IdCardImage from "@/components/ui/id-card-image";
 import Link from "next/link";
 
 export default async function AdminApprovalsPage() {
@@ -36,6 +36,11 @@ export default async function AdminApprovalsPage() {
     orderBy: (users, { desc }) => [desc(users.created_at)],
   });
 
+  const SUPABASE_PROJECT_ID = "onuekzzpmuiylethhkuk";
+  const STORAGE_BUCKET = "id-documents";
+  const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
+  const PUBLIC_STORAGE_URL = `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}`;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -56,9 +61,10 @@ export default async function AdminApprovalsPage() {
         </Card>
       ) : (
         <div className="grid gap-6">
-          {pendingUsers.map(async (u) => {
-            const idUrl = u.id_document_path
-              ? await getSignedIdUrl(u.id_document_path)
+          {pendingUsers.map((u) => {
+            // Construct public URL directly (Supabase best practice for public buckets)
+            const idDocumentUrl = u.id_document_path
+              ? `${PUBLIC_STORAGE_URL}/${u.id_document_path}`
               : null;
 
             return (
@@ -120,29 +126,38 @@ export default async function AdminApprovalsPage() {
                     </div>
                   </div>
 
-                  {idUrl && (
-                    <div>
-                      <p className="text-gray-600 text-sm mb-2">ID Document</p>
-                      <a
-                        href={idUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block border rounded p-2 hover:bg-gray-50"
-                      >
-                        <Image
-                          src={idUrl}
-                          alt="ID document"
-                          width={200}
-                          height={150}
-                          className="object-contain"
-                        />
-                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                          <Eye className="h-3 w-3" />
-                          View full size
+                  <div className="pt-2 border-t">
+                    <p className="text-gray-600 text-sm font-medium mb-3">
+                      ID Document
+                    </p>
+                    {u.id_document_path ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-400 mb-3">
+                          📁 {u.id_document_path}
                         </p>
-                      </a>
-                    </div>
-                  )}
+                        <a
+                          href={idDocumentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block border-2 border-green-300 rounded-lg p-3 hover:border-green-500 hover:bg-green-50 transition shadow-sm"
+                        >
+                          <IdCardImage
+                            src={idDocumentUrl || ""}
+                            alt="ID document for approval"
+                          />
+                          <p className="text-xs text-green-700 mt-2 flex items-center gap-1 justify-center font-medium">
+                            <Eye className="h-4 w-4" />
+                            Click to view full size
+                          </p>
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-400 italic border border-dashed border-gray-300 rounded p-6 text-center">
+                        <p className="text-base">📄</p>
+                        <p>No ID document uploaded</p>
+                      </div>
+                    )}
+                  </div>
 
                   {u.rejection_reason && (
                     <div>
