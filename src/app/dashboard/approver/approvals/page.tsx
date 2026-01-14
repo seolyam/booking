@@ -13,7 +13,10 @@ export default async function ApproverApprovalsPage() {
   const appUser = await getOrCreateAppUserFromAuthUser({
     id: user.id,
     email: user.email ?? null,
-    user_metadata: (user.user_metadata ?? null) as Record<string, unknown> | null,
+    user_metadata: (user.user_metadata ?? null) as Record<
+      string,
+      unknown
+    > | null,
   });
 
   if (appUser.role !== "approver" && appUser.role !== "superadmin") {
