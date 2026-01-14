@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { budgets, budgetItems, auditLogs, users } from "@/db/schema";
+import { budgets, budgetItems, auditLogs, users, reviewChecklists } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -157,7 +157,7 @@ export async function submitBudget(
 
 export async function reviewBudget(
   budgetId: string,
-  action: "verify" | "request_revision",
+  action: "verify" | "request_revision" | "reject",
   comment: string
 ) {
   const user = await getUser();
@@ -177,7 +177,7 @@ export async function reviewBudget(
   });
   if (!existingBudget) return { message: "Budget not found" };
 
-  const newStatus = action === "verify" ? "verified" : "revision_requested";
+  const newStatus = action === "verify" ? "verified" : action === "request_revision" ? "revision_requested" : "rejected";
 
   await db
     .update(budgets)
@@ -194,11 +194,48 @@ export async function reviewBudget(
   });
 
   revalidatePath("/dashboard/budget");
-  return {
-    message: `Budget ${
-      action === "verify" ? "verified" : "returned for revision"
-    }`,
-  };
+  revalidatePath("/dashboard/reviewer");
+}
+
+export async function verifyBudget(formData: FormData): Promise<void> {
+  const budgetId = formData.get("budgetId") as string;
+  const user = await getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser || appUser.role !== "reviewer") {
+    throw new Error("Only reviewers can verify budgets");
+  }
+
+  await reviewBudget(budgetId, "verify", "");
+}
+
+export async function requestRevision(formData: FormData): Promise<void> {
+  const budgetId = formData.get("budgetId") as string;
+  const user = await getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser || appUser.role !== "reviewer") {
+    throw new Error("Only reviewers can request revisions");
+  }
+
+  const comment = formData.get("comment") as string;
+  await reviewBudget(budgetId, "request_revision", comment);
+}
+
+export async function rejectBudget(formData: FormData): Promise<void> {
+  const budgetId = formData.get("budgetId") as string;
+  const user = await getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser || appUser.role !== "reviewer") {
+    throw new Error("Only reviewers can reject budgets");
+  }
+
+  const comment = formData.get("comment") as string;
+  await reviewBudget(budgetId, "reject", comment);
 }
 
 export async function finalizeBudget(
@@ -319,4 +356,83 @@ export async function addBudgetItem(prevState: unknown, formData: FormData) {
   revalidatePath(`/dashboard`);
   revalidatePath(`/dashboard/requests`);
   return { message: "Item added" };
+}
+
+// Update review checklist item
+export async function updateReviewChecklist(formData: FormData) {
+  const user = await getUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser || (appUser.role !== "reviewer" && appUser.role !== "superadmin")) {
+    throw new Error("Forbidden");
+  }
+
+  const budgetId = formData.get("budgetId") as string;
+  const itemKey = formData.get("itemKey") as string;
+  const itemLabel = formData.get("itemLabel") as string;
+  const isChecked = formData.get("isChecked") === "true";
+
+  if (!budgetId || !itemKey || !itemLabel) {
+    throw new Error("Missing required fields");
+  }
+
+  // Check if checklist item exists
+  const existing = await db
+    .select()
+    .from(reviewChecklists)
+    .where(
+      sql`${reviewChecklists.budget_id} = ${budgetId} 
+          AND ${reviewChecklists.reviewer_id} = ${user.id} 
+          AND ${reviewChecklists.item_key} = ${itemKey}`
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    // Update existing
+    await db
+      .update(reviewChecklists)
+      .set({ is_checked: isChecked, updated_at: new Date() })
+      .where(
+        sql`${reviewChecklists.budget_id} = ${budgetId} 
+            AND ${reviewChecklists.reviewer_id} = ${user.id} 
+            AND ${reviewChecklists.item_key} = ${itemKey}`
+      );
+  } else {
+    // Insert new
+    await db.insert(reviewChecklists).values({
+      budget_id: budgetId,
+      reviewer_id: user.id,
+      item_key: itemKey,
+      item_label: itemLabel,
+      is_checked: isChecked,
+    });
+  }
+
+  revalidatePath(`/dashboard/reviewer/${budgetId}`);
+}
+
+// Get review checklist for a budget
+export async function getReviewChecklist(budgetId: string) {
+  const user = await getUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser || (appUser.role !== "reviewer" && appUser.role !== "superadmin")) {
+    throw new Error("Forbidden");
+  }
+
+  const items = await db
+    .select()
+    .from(reviewChecklists)
+    .where(
+      sql`${reviewChecklists.budget_id} = ${budgetId} 
+          AND ${reviewChecklists.reviewer_id} = ${user.id}`
+    );
+
+  return items;
 }
