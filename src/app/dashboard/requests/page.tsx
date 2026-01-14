@@ -15,6 +15,25 @@ function formatPhp(amount: string) {
   }).format(n);
 }
 
+function typePill(type: "capex" | "opex") {
+  const base =
+    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
+  return type === "capex"
+    ? `${base} bg-blue-100 text-blue-700`
+    : `${base} bg-purple-100 text-purple-700`;
+}
+
+function statusLabel(status: string) {
+  return status
+    .split("_")
+    .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
+function displayBudgetId(index: number) {
+  return `BUD-${String(index + 1).padStart(3, "0")}`;
+}
+
 export default async function RequestsPage() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -79,7 +98,7 @@ export default async function RequestsPage() {
                   </td>
                 </tr>
               ) : (
-                myBudgets.map((b) => (
+                myBudgets.map((b, idx) => (
                   <tr
                     key={b.id}
                     className="border-b border-black/5 last:border-b-0"
@@ -88,15 +107,21 @@ export default async function RequestsPage() {
                       <div className="font-medium text-gray-900">
                         {firstItem.get(b.id) ?? "Budget Request"}
                       </div>
-                      <div className="text-xs text-gray-500">{b.id}</div>
+                      <div className="text-xs text-gray-500">
+                        {displayBudgetId(idx)}
+                      </div>
                     </td>
-                    <td className="py-4 px-6 text-gray-800">
-                      {b.budget_type === "capex" ? "CapEx" : "OpEx"}
+                    <td className="py-4 px-6">
+                      <span className={typePill(b.budget_type)}>
+                        {b.budget_type === "capex" ? "CapEx" : "OpEx"}
+                      </span>
                     </td>
                     <td className="py-4 px-6 text-gray-800">
                       {formatPhp(b.total_amount)}
                     </td>
-                    <td className="py-4 px-6 text-gray-700">{b.status}</td>
+                    <td className="py-4 px-6 text-gray-700">
+                      {statusLabel(b.status)}
+                    </td>
                     <td className="py-4 px-6 text-right">
                       <Link
                         href={`/dashboard/budget/${b.id}`}

@@ -416,7 +416,7 @@ export default function LoginPage() {
                       required
                     />
                     {idFile && (
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <Check className="h-5 w-5 text-green-600 shrink-0" />
                     )}
                   </div>
                   {idFile && (

@@ -1,20 +1,39 @@
-./src/app/dashboard/admin/approvals/page.tsx:160:31
-Type error: Type '() => Promise<{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }>' is not assignable to type 'string | ((formData: FormData) => void | Promise<void>) | undefined'.
-Type '() => Promise<{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }>' is not assignable to type '(formData: FormData) => void | Promise<void>'.  
- Type 'Promise<{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }>' is not assignable to type 'void | Promise<void>'.
-Type 'Promise<{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }>' is not assignable to type 'Promise<void>'.
-Type '{ error: string; success?: undefined; } | { success: boolean; error?: undefined; }' is not assignable to type 'void'.
-Type '{ error: string; success?: undefined; }' is not assignable to type 'void'.
-
-158 | {u.approval_status === "pending" && (
-159 | <div className="flex gap-3 pt-2">
-
-> 160 | <form action={approveUser.bind(null, u.id)}>
-
-      |                               ^
-
-161 | <Button
-162 | type="submit"
-163 | className="bg-green-600 hover:bg-green-700"
-Next.js build worker exited with code: 1 and signal: null
- ELIFECYCLE  Command failed with exit code 1.
+[{
+"resource": "/c:/project/budget/src/app/dashboard/budget/create/page.tsx",
+"owner": "eslint5",
+"code": "react-hooks/purity",
+"severity": 8,
+"message": "Error: Cannot call impure function during render\n\n`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).\n\nC:\\project\\budget\\src\\app\\dashboard\\budget\\create\\page.tsx:35:20\n 33 | const year = now.getFullYear();\n 34 | const month = String(now.getMonth() + 1).padStart(2, \"0\");\n> 35 | const random = Math.random().toString(36).substring(2, 7).toUpperCase();\n | ^^^^^^^^^^^^^ Cannot call impure function\n 36 | return `PROJ-${year}${month}-${random}`;\n 37 | };\n 38 |",
+"source": "eslint",
+"startLineNumber": 35,
+"startColumn": 20,
+"endLineNumber": 35,
+"endColumn": 33,
+"modelVersionId": 416,
+"origin": "extHost1"
+},{
+"resource": "/c:/project/budget/src/app/dashboard/budget/create/page.tsx",
+"owner": "tailwindcss-intellisense",
+"code": "suggestCanonicalClasses",
+"severity": 4,
+"message": "The class `min-h-[120px]` can be written as `min-h-30`",
+"startLineNumber": 447,
+"startColumn": 40,
+"endLineNumber": 447,
+"endColumn": 53,
+"modelVersionId": 416,
+"origin": "extHost1"
+}]
+[{
+"resource": "/c:/project/budget/src/app/login/page.tsx",
+"owner": "tailwindcss-intellisense",
+"code": "suggestCanonicalClasses",
+"severity": 4,
+"message": "The class `flex-shrink-0` can be written as `shrink-0`",
+"startLineNumber": 419,
+"startColumn": 64,
+"endLineNumber": 419,
+"endColumn": 77,
+"modelVersionId": 1,
+"origin": "extHost1"
+}]

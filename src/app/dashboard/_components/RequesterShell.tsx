@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Bell, LogOut } from "lucide-react";
 import { signOut } from "@/actions/auth";
+import { usePathname } from "next/navigation";
 
 export default function RequesterShell({
   children,
@@ -9,10 +12,27 @@ export default function RequesterShell({
 }: {
   children: React.ReactNode;
   profile: { fullName: string; departmentLine: string; initials: string };
-  active: "dashboard" | "create" | "mine" | "list";
+  active?: "dashboard" | "create" | "mine" | "list";
 }) {
-  const navItem = (key: typeof active, label: string, href: string) => {
-    const isActive = active === key;
+  const pathname = usePathname();
+  const showDashboardHeader = pathname === "/dashboard";
+
+  const inferredActive: "dashboard" | "create" | "mine" | "list" = (() => {
+    if (!pathname) return "dashboard";
+    if (pathname.startsWith("/dashboard/budget/create")) return "create";
+    if (pathname.startsWith("/dashboard/requests")) return "mine";
+    if (pathname.startsWith("/dashboard/budget")) return "list";
+    return "dashboard";
+  })();
+
+  const resolvedActive = active ?? inferredActive;
+
+  const navItem = (
+    key: NonNullable<typeof active>,
+    label: string,
+    href: string
+  ) => {
+    const isActive = resolvedActive === key;
     return (
       <Link
         href={href}
@@ -54,7 +74,7 @@ export default function RequesterShell({
               {navItem("dashboard", "Dashboard", "/dashboard")}
               {navItem("create", "Create Request", "/dashboard/budget/create")}
               {navItem("mine", "Your Requests", "/dashboard/requests")}
-              {navItem("list", "List of Requests", "/dashboard/requests")}
+              {navItem("list", "List of Requests", "/dashboard/budget")}
             </nav>
 
             <div className="mt-6 border-t border-black/10" />
@@ -74,23 +94,25 @@ export default function RequesterShell({
 
           {/* Main */}
           <section className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 p-8">
-            <div className="flex items-start justify-between gap-6 mb-8">
-              <div className="min-w-0">
-                <div className="text-3xl font-semibold text-gray-900 truncate">
-                  Welcome back, {profile.fullName.split(" ")[0]}
+            {showDashboardHeader && (
+              <div className="flex items-start justify-between gap-6 mb-8">
+                <div className="min-w-0">
+                  <div className="text-3xl font-semibold text-gray-900 truncate">
+                    Welcome back, {profile.fullName.split(" ")[0]}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Requester Dashboard
+                  </div>
                 </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  Requester Dashboard
-                </div>
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  className="rounded-full p-2 text-gray-700 hover:bg-black/5"
+                >
+                  <Bell className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                aria-label="Notifications"
-                className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-              >
-                <Bell className="h-5 w-5" />
-              </button>
-            </div>
+            )}
 
             {children}
           </section>

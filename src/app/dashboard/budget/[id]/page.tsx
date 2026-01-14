@@ -46,10 +46,8 @@ export default async function BudgetDetailPage({
     );
   }
 
-  // Basic authorization: requesters can only view their own budget.
-  if (budget.user_id !== user.id) {
-    redirect("/dashboard");
-  }
+  // Note: Requester UI includes a "List of Requests" view that shows all budgets.
+  // This detail page is therefore viewable even when the budget isn't owned by the current user.
 
   const items = await db.query.budgetItems.findMany({
     where: eq(budgetItems.budget_id, budget.id),
