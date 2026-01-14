@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Settings } from "lucide-react";
 import Link from "next/link";
-import { signOut } from "@/actions/auth";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -55,61 +54,48 @@ export default async function DashboardPage() {
     });
 
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Superadmin Dashboard
-            </h1>
-            <form action={signOut}>
-              <Button variant="outline" type="submit">
-                Sign out
-              </Button>
-            </form>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  User Approvals
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">
-                  Review and approve pending user applications
+      <div className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-gray-900 flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Approvals
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-600">
+                Review and approve pending user applications
+              </p>
+              {pendingCount.length > 0 && (
+                <p className="text-2xl font-bold text-green-600">
+                  {pendingCount.length} pending
                 </p>
-                {pendingCount.length > 0 && (
-                  <p className="text-2xl font-bold text-green-600">
-                    {pendingCount.length} pending
-                  </p>
-                )}
-                <Link href="/dashboard/admin/approvals">
-                  <Button className="bg-[#358334] hover:bg-[#2F5E3D]">
-                    View Applications
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  System Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">
-                  Configure system-wide settings and policies
-                </p>
-                <Button variant="outline" disabled>
-                  Coming soon
+              )}
+              <Link href="/dashboard/admin/approvals">
+                <Button className="bg-[#358334] hover:bg-[#2F5E3D]">
+                  View Applications
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-gray-900 flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                System Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-600">
+                Configure system-wide settings and policies
+              </p>
+              <Button variant="outline" disabled>
+                Coming soon
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

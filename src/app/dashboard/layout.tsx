@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
-import RequesterShell from "./_components/RequesterShell";
+import DashboardShell from "./_components/DashboardShell";
 import {
   getDisplayProfileFromAuthUser,
   getOrCreateAppUserFromAuthUser,
@@ -36,17 +36,19 @@ export default async function DashboardLayout({
     redirect("/dashboard/pending");
   }
 
-  if (appUser.role === "requester") {
-    const profile = getDisplayProfileFromAuthUser({
-      email: user.email ?? null,
-      user_metadata: (user.user_metadata ?? null) as Record<
-        string,
-        unknown
-      > | null,
-    });
+  const profile = getDisplayProfileFromAuthUser({
+    email: user.email ?? null,
+    user_metadata: (user.user_metadata ?? null) as Record<
+      string,
+      unknown
+    > | null,
+  });
 
-    return <RequesterShell profile={profile}>{children}</RequesterShell>;
-  }
-
-  return <>{children}</>;
+  // Use the unified shell for all roles so the dashboard UI is consistent.
+  // Superadmins get an expanded nav (requester + admin features).
+  return (
+    <DashboardShell profile={profile} role={appUser.role}>
+      {children}
+    </DashboardShell>
+  );
 }
