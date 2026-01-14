@@ -30,8 +30,8 @@ function statusLabel(status: string) {
     .join(" ");
 }
 
-function shortBudgetId(id: string) {
-  return id.split("-")[0]!.toUpperCase();
+function displayBudgetId(index: number) {
+  return `BUD-${String(index + 1).padStart(3, "0")}`;
 }
 
 export default async function RequestsPage() {
@@ -98,7 +98,7 @@ export default async function RequestsPage() {
                   </td>
                 </tr>
               ) : (
-                myBudgets.map((b) => (
+                myBudgets.map((b, idx) => (
                   <tr
                     key={b.id}
                     className="border-b border-black/5 last:border-b-0"
@@ -108,7 +108,7 @@ export default async function RequestsPage() {
                         {firstItem.get(b.id) ?? "Budget Request"}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {shortBudgetId(b.id)}
+                        {displayBudgetId(idx)}
                       </div>
                     </td>
                     <td className="py-4 px-6">

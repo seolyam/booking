@@ -31,17 +31,19 @@ function statusLabel(status: string) {
 }
 
 function statusPill(status: string) {
-  const base = "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
+  const base =
+    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
   if (status === "approved") return `${base} bg-green-100 text-green-700`;
-  if (status === "revision_requested") return `${base} bg-orange-100 text-orange-700`;
+  if (status === "revision_requested")
+    return `${base} bg-orange-100 text-orange-700`;
   if (status === "rejected") return `${base} bg-red-100 text-red-700`;
   if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
   // submitted / verified / verified_by_reviewer -> pending-ish
   return `${base} bg-amber-100 text-amber-700`;
 }
 
-function shortBudgetId(id: string) {
-  return id.split("-")[0]!.toUpperCase();
+function displayBudgetId(index: number) {
+  return `BUD-${String(index + 1).padStart(3, "0")}`;
 }
 
 function typePill(type: "capex" | "opex") {
@@ -150,16 +152,27 @@ export default async function BudgetIndexPage() {
           </div>
 
           <div className="mt-7 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-175 table-fixed text-sm">
+              <colgroup>
+                <col style={{ width: 130 }} />
+                <col style={{ width: 250 }} />
+                <col style={{ width: 65 }} />
+                <col style={{ width: 80 }} />
+                <col style={{ width: 85 }} />
+                <col style={{ width: 55 }} />
+                <col style={{ width: 35 }} />
+              </colgroup>
               <thead>
                 <tr className="text-left text-xs text-gray-500">
-                  <th className="py-4 px-6 font-medium">BUDGET ID</th>
-                  <th className="py-4 px-6 font-medium">PROJECT NAME</th>
-                  <th className="py-4 px-6 font-medium">TYPE</th>
-                  <th className="py-4 px-6 font-medium">AMOUNT</th>
-                  <th className="py-4 px-6 font-medium">STATUS</th>
-                  <th className="py-4 px-6 font-medium">DATE</th>
-                  <th className="py-4 px-6 font-medium text-right">ACTION</th>
+                  <th className="py-4 pl-6 pr-4 font-medium">BUDGET ID</th>
+                  <th className="py-4 px-4 font-medium">PROJECT NAME</th>
+                  <th className="py-4 px-3 font-medium">TYPE</th>
+                  <th className="py-4 px-3 font-medium">AMOUNT</th>
+                  <th className="py-4 px-3 font-medium">STATUS</th>
+                  <th className="py-4 px-3 font-medium">DATE</th>
+                  <th className="py-4 pl-3 pr-6 font-medium text-right">
+                    ACTION
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -170,7 +183,7 @@ export default async function BudgetIndexPage() {
                     </td>
                   </tr>
                 ) : (
-                  allBudgets.map((b) => {
+                  allBudgets.map((b, idx) => {
                     const projectName =
                       firstItemByBudgetId.get(b.id) ?? "Budget Request";
                     const sub = departmentById.get(b.user_id) ?? "";
@@ -180,34 +193,34 @@ export default async function BudgetIndexPage() {
 
                     return (
                       <tr key={b.id} className="border-t border-black/10">
-                        <td className="py-5 px-6 text-gray-900 font-medium whitespace-nowrap">
-                          {shortBudgetId(b.id)}
+                        <td className="py-5 pl-6 pr-4 text-gray-900 font-medium whitespace-nowrap">
+                          {displayBudgetId(idx)}
                         </td>
-                        <td className="py-5 px-6">
-                          <div className="font-medium text-gray-900">
+                        <td className="py-5 px-4 align-top whitespace-normal">
+                          <div className="font-medium text-gray-900 whitespace-normal wrap-break-word leading-snug">
                             {projectName}
                           </div>
                           <div className="text-xs text-gray-500">
                             {sub || requesterName || b.user_id}
                           </div>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-3 whitespace-nowrap">
                           <span className={typePill(b.budget_type)}>
                             {b.budget_type === "capex" ? "CapEx" : "OpEx"}
                           </span>
                         </td>
-                        <td className="py-5 px-6 text-gray-900 whitespace-nowrap">
+                        <td className="py-5 px-3 text-gray-900 whitespace-nowrap">
                           {formatPhp(b.total_amount)}
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-3 whitespace-nowrap">
                           <span className={statusPill(b.status)}>
                             {statusText}
                           </span>
                         </td>
-                        <td className="py-5 px-6 text-gray-700 whitespace-nowrap">
+                        <td className="py-5 px-3 text-gray-700 whitespace-nowrap">
                           {formatDateShort(b.created_at)}
                         </td>
-                        <td className="py-5 px-6 text-right whitespace-nowrap">
+                        <td className="py-5 pl-3 pr-6 text-right whitespace-nowrap">
                           <Link
                             href={`/dashboard/budget/${b.id}`}
                             className="inline-flex items-center gap-2 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300"
