@@ -174,7 +174,9 @@ export default function ReviewerDashboard({
                       <div className="font-medium text-gray-900">
                         {r.projectName}
                       </div>
-                      <div className="text-xs text-gray-500">{r.projectSub}</div>
+                      <div className="text-xs text-gray-500">
+                        {r.projectSub}
+                      </div>
                     </td>
                     <td className="py-4 pr-4">{typePill(r.type)}</td>
                     <td className="py-4 pr-4 text-gray-800">{r.amount}</td>

@@ -37,7 +37,10 @@ export default async function ReviewerReviewQueuePage() {
   const appUser = await getOrCreateAppUserFromAuthUser({
     id: user.id,
     email: user.email ?? null,
-    user_metadata: (user.user_metadata ?? null) as Record<string, unknown> | null,
+    user_metadata: (user.user_metadata ?? null) as Record<
+      string,
+      unknown
+    > | null,
   });
 
   if (appUser.role !== "reviewer" && appUser.role !== "superadmin") {
@@ -86,7 +89,8 @@ export default async function ReviewerReviewQueuePage() {
   }
 
   const rows: ReviewerDashboardRow[] = reviewQueue.map((b, idx) => {
-    const type = b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
+    const type =
+      b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
     const statusLabel =
       b.status === "revision_requested"
@@ -115,10 +119,17 @@ export default async function ReviewerReviewQueuePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xl font-semibold text-gray-900">Budget Review</div>
-          <div className="text-sm text-gray-500">All budgets in the review pipeline</div>
+          <div className="text-xl font-semibold text-gray-900">
+            Budget Review
+          </div>
+          <div className="text-sm text-gray-500">
+            All budgets in the review pipeline
+          </div>
         </div>
-        <Link href="/dashboard" className="text-sm text-gray-600 hover:underline">
+        <Link
+          href="/dashboard"
+          className="text-sm text-gray-600 hover:underline"
+        >
           Back to dashboard
         </Link>
       </div>
