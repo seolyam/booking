@@ -1,6 +1,8 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -46,8 +48,36 @@ export async function signUp(
     return { error: error.message };
   }
 
+  const userId = authData.user?.id;
+  if (!userId) {
+    return { error: "Failed to create user account" };
+  }
+
+  // Create app user record immediately so we can update it with the ID document path
+  try {
+    console.log(`[signUp] Creating app user record for userId: ${userId}`);
+    await db
+      .insert(users)
+      .values({
+        id: userId,
+        email: validated.data.email,
+        department: (data?.department as "Finance") || "Finance",
+        role: "requester",
+        requested_role: (data?.requestedRole as "requester") || "requester",
+        full_name: data?.fullName || null,
+        position: data?.position || null,
+        id_number: data?.idNumber || null,
+      })
+      .onConflictDoNothing({ target: users.id });
+
+    console.log(`[signUp] App user record created successfully`);
+  } catch (err) {
+    console.error(`[signUp] Failed to create app user record:`, err);
+    // Don't return error - the record might already exist or be created by auth callback
+  }
+
   // Return the user ID so the client can upload the ID document to the correct path
-  return { success: true, userId: authData.user?.id };
+  return { success: true, userId };
 }
 
 export async function signIn(email: string, password: string) {

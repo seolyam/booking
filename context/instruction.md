@@ -1,41 +1,82 @@
-> **Context:**
-> Currently, we have to manually insert user details via SQL, which is inefficient. I need to implement a "Pending Approval" workflow where new signups are automatically added to the `public.users` table with a 'pending' status, and an Admin can verify them later.
-> **Objective:**
-> Please implement the following 4-step solution. Write the necessary code for each step.
-> **Step 1: Database Automation (Supabase SQL)**
-> Create a Supabase migration or SQL script to:
->
-> 1. Create a Trigger Function `handle_new_user` that runs after a new user is inserted into `auth.users`.
-> 2. The function must automatically insert a row into `public.users` with:
->
-> - `id`: references `new.id`
-> - `email`: references `new.email`
-> - `role`: set default to `'pending'`
-> - `department`: set default to `'Unassigned'`
->
-> 3. Create the Trigger `on_auth_user_created` to execute this function on every signup.
->
-> **Step 2: Row Level Security (RLS)**
-> Update RLS policies on the `public.users` table:
->
-> 1. **General Users:** Can only `SELECT` their own row (`auth.uid() = id`).
-> 2. **Admins:** Can `SELECT` and `UPDATE` all rows (check if the requesting user has `role = 'admin'`).
-> 3. **Pending Users:** Should be strictly limited (they cannot see organization data until approved).
->
-> **Step 3: Admin Approval Interface (Next.js)**
-> Create a new page at `/app/admin/users/page.tsx` that:
->
-> 1. Fetches all users where `role === 'pending'`.
-> 2. Displays them in a table (Email, Joined Date).
-> 3. Provides a UI (Select/Dropdown) to assign a **Role** (e.g., 'requester', 'approver') and a **Department** (e.g., 'Finance', 'IT').
-> 4. Includes a "Approve/Save" button that calls a Server Action to update that specific user's row.
->
-> **Step 4: Middleware & UX**
->
-> 1. Modify `middleware.ts` or the login logic: If a user logs in and their role is `'pending'`, redirect them to a generic `/pending-approval` page that says "Your account is waiting for administrator approval."
-> 2. Prevent 'pending' users from accessing the main dashboard.
->
-> **Tech Stack:** Next.js 15 (App Router), Supabase SSR, Tailwind CSS, Lucide React (for icons).
-> Please generate the code for the **SQL Triggers**, the **Server Action**, and the **Admin Page Component**.
+This error is happening because you added an `onError` property to a Next.js `<Image />` component inside a **Server Component**.
 
----
+In Next.js (App Router), Server Components render HTML on the server and send it to the browser. They cannot send "functions" (like your `onError` handler) because functions are JavaScript logic that must run in the browser.
+
+Since you are likely inside `src/app/dashboard/admin/approvals/page.tsx` (which fetches your data), you cannot make the whole page a Client Component if it is `async`.
+
+Here is the best way to fix this: **Extract the Image into its own Client Component.**
+
+### Step 1: Create a new component file
+
+Create a new file, for example: `src/components/ui/id-card-image.tsx`.
+
+```tsx
+"use client"; // <--- This magic line fixes the error
+
+import { useState } from "react";
+import Image from "next/image";
+
+export default function IdCardImage({
+  src,
+  alt,
+}: {
+  src: string;
+  alt: string;
+}) {
+  const [error, setError] = useState(false);
+
+  if (error) {
+    // Show a fallback placeholder if the image fails
+    return (
+      <div className="w-[280px] h-[180px] bg-gray-200 flex items-center justify-center rounded text-gray-400 text-sm">
+        Image not found
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={280}
+      height={180}
+      className="rounded-lg border border-gray-200 object-cover"
+      onError={() => setError(true)} // This works now because we are in a Client Component
+    />
+  );
+}
+```
+
+### Step 2: Use this component in your Page
+
+Go back to your `src/app/dashboard/admin/approvals/page.tsx` and replace the standard `<Image>` tag with your new component.
+
+```tsx
+// 1. Import your new component
+import IdCardImage from "@/components/ui/id-card-image";
+
+// ... inside your map loop ...
+{
+  approvals.map((item) => {
+    // ... your existing url logic ...
+    const idUrl = `...`;
+
+    return (
+      <div key={item.id}>
+        {/* 2. Use the component instead of <Image> */}
+        {idUrl && (
+          <div className="mt-2">
+            <p className="text-sm mb-1">ID Document:</p>
+            <IdCardImage src={idUrl} alt="User ID" />
+          </div>
+        )}
+      </div>
+    );
+  });
+}
+```
+
+### Why this fixes it
+
+- **The Page** remains a **Server Component**, so it can still directly connect to Supabase and fetch your data securely.
+- **The Image** becomes a **Client Component**, so the browser can handle the `onError` event if the file is missing or broken.
