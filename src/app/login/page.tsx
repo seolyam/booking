@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { signIn, signUp } from "@/actions/auth";
-import { updateUserIdDocumentPath } from "@/actions/user";
+import { uploadIdDocument } from "@/actions/uploadId";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Eye, EyeOff, Check } from "lucide-react";
 import { compressImage } from "@/lib/imageCompression";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -86,7 +85,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Compress and upload ID document
+      // Compress and upload ID document via server action (bypasses RLS)
       setUploadProgress("Compressing ID document...");
       const compressed = await compressImage(idFile, {
         maxDimension: 1600,
@@ -95,30 +94,34 @@ export default function LoginPage() {
       });
 
       setUploadProgress("Uploading ID document...");
-      const supabase = createSupabaseBrowserClient();
-      const filePath = `${result.userId}/id-document.webp`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("id-documents")
-        .upload(filePath, compressed, {
-          upsert: true,
-          contentType: "image/webp",
-        });
+      // Convert blob to base64 for server action
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(compressed);
+      });
 
-      if (uploadError) {
-        setError(`Upload failed: ${uploadError.message}`);
+      const base64Data = await base64Promise;
+
+      const uploadResult = await uploadIdDocument(
+        result.userId,
+        base64Data,
+        "id-document.webp"
+      );
+
+      if (uploadResult?.error) {
+        setError(uploadResult.error);
         setLoading(false);
         setUploadProgress("");
         return;
       }
 
-      // Update user record with storage path
-      await updateUserIdDocumentPath(result.userId, filePath);
-
       setUploadProgress("");
       setLoading(false);
       alert(
-        "Registration successful! Please check your email to verify account. Your application is pending admin approval."
+        "Registration successful! Please check your email to verify your account. Your application is pending admin approval."
       );
       setIsLogin(true);
     } catch (err) {
