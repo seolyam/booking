@@ -11,24 +11,13 @@ import {
   Minimize2,
   MoreVertical,
   RotateCcw,
-  ShieldCheck,
-  LayoutDashboard,
-  ListChecks,
 } from "lucide-react";
 import { signOut } from "@/actions/auth";
 import { usePathname } from "next/navigation";
 
-type Role = "requester" | "reviewer" | "approver" | "superadmin";
+import { buildNav, type NavItem, type Role } from "./nav";
 
 type Profile = { fullName: string; departmentLine: string; initials: string };
-
-type NavItem = {
-  key: string;
-  label: string;
-  href: string;
-  isActive?: (pathname: string) => boolean;
-  icon?: React.ComponentType<{ className?: string }>;
-};
 
 type ShellLayout = {
   mode: "split" | "floating";
@@ -114,7 +103,10 @@ function readLayoutFromStorage(): ShellLayout {
         : DEFAULT_LAYOUT.sidebarWidth,
       sidebarSide: sidebarSide === "right" ? "right" : "left",
       floating: {
-        sidebar: coercePanel(floating?.sidebar, DEFAULT_LAYOUT.floating.sidebar),
+        sidebar: coercePanel(
+          floating?.sidebar,
+          DEFAULT_LAYOUT.floating.sidebar
+        ),
         main: coercePanel(floating?.main, DEFAULT_LAYOUT.floating.main),
       },
     };
@@ -143,57 +135,6 @@ function roleLabel(role: Role) {
   return "Requester";
 }
 
-function buildNav(role: Role): { title?: string; items: NavItem[] }[] {
-  const requesterSection: NavItem[] = [
-    {
-      key: "dashboard",
-      label: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      isActive: (p) => p === "/dashboard",
-    },
-    {
-      key: "create",
-      label: "Create Request",
-      href: "/dashboard/budget/create",
-      icon: ListChecks,
-      isActive: (p) => p.startsWith("/dashboard/budget/create"),
-    },
-    {
-      key: "mine",
-      label: "Your Requests",
-      href: "/dashboard/requests",
-      isActive: (p) => p.startsWith("/dashboard/requests"),
-    },
-    {
-      key: "list",
-      label: "List of Requests",
-      href: "/dashboard/budget",
-      isActive: (p) => p.startsWith("/dashboard/budget"),
-    },
-  ];
-
-  if (role === "superadmin") {
-    return [
-      { title: "Requester", items: requesterSection },
-      {
-        title: "Admin",
-        items: [
-          {
-            key: "approvals",
-            label: "User Approvals",
-            href: "/dashboard/admin/approvals",
-            icon: ShieldCheck,
-            isActive: (p) => p.startsWith("/dashboard/admin/approvals"),
-          },
-        ],
-      },
-    ];
-  }
-
-  // For now other roles use the requester section (until their pages exist)
-  return [{ items: requesterSection }];
-}
 
 export default function DashboardShell({
   children,
@@ -659,10 +600,7 @@ export default function DashboardShell({
           (mode === "floating" ? "max-w-none" : "max-w-6xl")
         }
       >
-        <div
-          ref={containerRef}
-          className="relative h-full overflow-hidden"
-        >
+        <div ref={containerRef} className="relative h-full overflow-hidden">
           {mode === "floating" ? (
             <>
               {/* Sidebar window */}
@@ -679,12 +617,12 @@ export default function DashboardShell({
                 }
                 onPointerDown={() => bringPanelToFront("sidebar")}
               >
-                <div
-                  className="relative flex items-center justify-between gap-3 border-b border-black/10 bg-white/70 px-4 py-3"
-                >
+                <div className="relative flex items-center justify-between gap-3 border-b border-black/10 bg-white/70 px-4 py-3">
                   <div
                     className="flex items-center gap-3 min-w-0 cursor-move"
-                    onPointerDown={(e) => startFloatingDrag(e, "sidebar", "move")}
+                    onPointerDown={(e) =>
+                      startFloatingDrag(e, "sidebar", "move")
+                    }
                     onPointerMove={onFloatingPointerMove}
                     onPointerUp={endFloatingDrag}
                     onPointerCancel={endFloatingDrag}
@@ -776,7 +714,9 @@ export default function DashboardShell({
                         ) : (
                           <Maximize2 className="h-4 w-4 text-gray-600" />
                         )}
-                        {isMaximized("sidebar") ? "Restore sidebar" : "Maximize sidebar"}
+                        {isMaximized("sidebar")
+                          ? "Restore sidebar"
+                          : "Maximize sidebar"}
                       </button>
                     </div>
                   )}
@@ -1063,8 +1003,13 @@ export default function DashboardShell({
                   {showDashboardHeader && (
                     <div className="flex items-start justify-between gap-6 mb-8">
                       <div className="min-w-0">
-                        <div className="text-3xl font-semibold text-gray-900 truncate">
-                          Welcome back, {profile.fullName.split(" ")[0]}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="text-3xl font-semibold text-gray-900 truncate">
+                            Welcome back, {profile.fullName.split(" ")[0]}
+                          </div>
+                          <span className="shrink-0 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">
+                            {roleLabel(role)}
+                          </span>
                         </div>
                         <div className="text-sm text-gray-500 mt-1">
                           {roleLabel(role)} Dashboard
