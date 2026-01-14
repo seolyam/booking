@@ -9,6 +9,7 @@ import {
   LogOut,
   Maximize2,
   Minimize2,
+  MoreVertical,
   RotateCcw,
   ShieldCheck,
   LayoutDashboard,
@@ -207,12 +208,21 @@ export default function DashboardShell({
   const showDashboardHeader = pathname === "/dashboard";
   const sections = buildNav(role);
 
+  // IMPORTANT: keep the very first render deterministic to avoid hydration mismatches.
+  // We load localStorage state only after mount.
   const [{ sidebarWidth, sidebarSide, mode, floating }, setLayout] =
-    React.useState<ShellLayout>(() => readLayoutFromStorage());
+    React.useState<ShellLayout>(() => DEFAULT_LAYOUT);
+  const [hasHydratedLayout, setHasHydratedLayout] = React.useState(false);
+
+  React.useEffect(() => {
+    setLayout(readLayoutFromStorage());
+    setHasHydratedLayout(true);
+  }, []);
 
   const persistTimerRef = React.useRef<number | null>(null);
   React.useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!hasHydratedLayout) return;
     if (persistTimerRef.current) window.clearTimeout(persistTimerRef.current);
     persistTimerRef.current = window.setTimeout(() => {
       try {
@@ -232,7 +242,7 @@ export default function DashboardShell({
     return () => {
       if (persistTimerRef.current) window.clearTimeout(persistTimerRef.current);
     };
-  }, [sidebarWidth, sidebarSide, mode, floating]);
+  }, [hasHydratedLayout, sidebarWidth, sidebarSide, mode, floating]);
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const nextZRef = React.useRef(3);
@@ -607,6 +617,40 @@ export default function DashboardShell({
     }));
   };
 
+  const [sidebarMenuOpen, setSidebarMenuOpen] = React.useState(false);
+  const sidebarMenuButtonRef = React.useRef<HTMLButtonElement | null>(null);
+  const sidebarMenuRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    if (!sidebarMenuOpen) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (sidebarMenuRef.current?.contains(target)) return;
+      if (sidebarMenuButtonRef.current?.contains(target)) return;
+      setSidebarMenuOpen(false);
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSidebarMenuOpen(false);
+    };
+
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [sidebarMenuOpen]);
+
+  const closeSidebarMenu = () => setSidebarMenuOpen(false);
+
+  const onSidebarMenuAction = (action: () => void) => {
+    action();
+    closeSidebarMenu();
+  };
+
   return (
     <div className="h-dvh overflow-hidden bg-linear-to-b from-[#C7C800] to-[#2F5E3D] p-6">
       <div
@@ -617,52 +661,13 @@ export default function DashboardShell({
       >
         <div
           ref={containerRef}
-          className={
-            (mode === "floating" ? "fixed inset-6" : "relative h-full") +
-            " overflow-hidden"
-          }
+          className="relative h-full overflow-hidden"
         >
-          {/* Shared controls (always accessible) */}
-          <div className="absolute right-0 top-0 z-50 flex items-center gap-2">
-            <button
-              type="button"
-              className="rounded-lg bg-white/90 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-black/10 hover:bg-white"
-              onClick={toggleMode}
-              title={
-                mode === "floating"
-                  ? "Switch to split layout"
-                  : "Switch to floating layout"
-              }
-            >
-              {mode === "floating" ? "Split" : "Float"}
-            </button>
-            {mode === "floating" && (
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-black/10 hover:bg-white"
-                onClick={tilePanels}
-                title="Tile panels to fit screen"
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                Tile
-              </button>
-            )}
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-black/10 hover:bg-white"
-              onClick={resetLayout}
-              title="Reset layout"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Reset
-            </button>
-          </div>
-
           {mode === "floating" ? (
             <>
               {/* Sidebar window */}
               <aside
-                className="rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden md:absolute"
+                className="rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden md:absolute flex flex-col"
                 style={
                   {
                     left: floating.sidebar.x,
@@ -675,14 +680,16 @@ export default function DashboardShell({
                 onPointerDown={() => bringPanelToFront("sidebar")}
               >
                 <div
-                  className="flex items-center justify-between gap-3 border-b border-black/10 bg-white/70 px-4 py-3 cursor-move"
-                  onPointerDown={(e) => startFloatingDrag(e, "sidebar", "move")}
-                  onPointerMove={onFloatingPointerMove}
-                  onPointerUp={endFloatingDrag}
-                  onPointerCancel={endFloatingDrag}
-                  title="Drag to move"
+                  className="relative flex items-center justify-between gap-3 border-b border-black/10 bg-white/70 px-4 py-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="flex items-center gap-3 min-w-0 cursor-move"
+                    onPointerDown={(e) => startFloatingDrag(e, "sidebar", "move")}
+                    onPointerMove={onFloatingPointerMove}
+                    onPointerUp={endFloatingDrag}
+                    onPointerCancel={endFloatingDrag}
+                    title="Drag to move"
+                  >
                     <div className="h-9 w-9 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
                       {profile.initials}
                     </div>
@@ -695,30 +702,87 @@ export default function DashboardShell({
                       </div>
                     </div>
                   </div>
-                  <div className="ml-auto flex items-center gap-1">
+
+                  <div className="ml-auto shrink-0">
                     <button
+                      ref={sidebarMenuButtonRef}
                       type="button"
-                      className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
-                      onClick={() =>
-                        isMaximized("sidebar")
-                          ? restorePanel("sidebar")
-                          : maximizePanel("sidebar")
-                      }
-                      title={isMaximized("sidebar") ? "Restore" : "Maximize"}
-                      aria-label={
-                        isMaximized("sidebar") ? "Restore" : "Maximize"
-                      }
+                      className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 hover:bg-black/5"
+                      aria-label="Layout options"
+                      aria-haspopup="menu"
+                      aria-expanded={sidebarMenuOpen}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onClick={() => setSidebarMenuOpen((v) => !v)}
                     >
-                      {isMaximized("sidebar") ? (
-                        <Minimize2 className="h-4 w-4" />
-                      ) : (
-                        <Maximize2 className="h-4 w-4" />
-                      )}
+                      <MoreVertical className="h-4 w-4" />
                     </button>
                   </div>
+
+                  {sidebarMenuOpen && (
+                    <div
+                      ref={sidebarMenuRef}
+                      role="menu"
+                      className="absolute right-3 top-11.5 z-50 w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/10 p-1"
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                        onClick={() => onSidebarMenuAction(toggleMode)}
+                      >
+                        <ArrowLeftRight className="h-4 w-4 text-gray-600" />
+                        Switch to Split
+                      </button>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                        onClick={() => onSidebarMenuAction(tilePanels)}
+                      >
+                        <LayoutGrid className="h-4 w-4 text-gray-600" />
+                        Tile panels
+                      </button>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                        onClick={() => onSidebarMenuAction(resetLayout)}
+                      >
+                        <RotateCcw className="h-4 w-4 text-gray-600" />
+                        Reset layout
+                      </button>
+
+                      <div className="my-1 h-px bg-black/10" />
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                        onClick={() =>
+                          onSidebarMenuAction(() =>
+                            isMaximized("sidebar")
+                              ? restorePanel("sidebar")
+                              : maximizePanel("sidebar")
+                          )
+                        }
+                      >
+                        {isMaximized("sidebar") ? (
+                          <Minimize2 className="h-4 w-4 text-gray-600" />
+                        ) : (
+                          <Maximize2 className="h-4 w-4 text-gray-600" />
+                        )}
+                        {isMaximized("sidebar") ? "Restore sidebar" : "Maximize sidebar"}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <div className="h-full overflow-auto">
+                <div className="flex-1 min-h-0 overflow-auto">
                   <nav className="px-4 py-4 space-y-4">
                     {sections.map((section, idx) => (
                       <div key={idx}>
@@ -766,7 +830,7 @@ export default function DashboardShell({
 
               {/* Main window */}
               <section
-                className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 md:absolute"
+                className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 md:absolute flex flex-col overflow-hidden"
                 style={
                   {
                     left: floating.main.x,
@@ -826,7 +890,7 @@ export default function DashboardShell({
                   </div>
                 </div>
 
-                <div className="h-[calc(100%-49px)] overflow-auto p-8">
+                <div className="flex-1 min-h-0 overflow-auto p-8">
                   {children}
                 </div>
 
@@ -859,7 +923,7 @@ export default function DashboardShell({
               <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden">
                 <div className="h-full overflow-auto">
                   <div className="p-6">
-                    <div className="flex items-center gap-3">
+                    <div className="relative flex items-center gap-3">
                       <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
                         {profile.initials}
                       </div>
@@ -872,29 +936,72 @@ export default function DashboardShell({
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        className="ml-auto inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
-                        aria-label={
-                          sidebarSide === "left"
-                            ? "Dock sidebar to the right"
-                            : "Dock sidebar to the left"
-                        }
-                        title={
-                          sidebarSide === "left"
-                            ? "Dock sidebar to the right"
-                            : "Dock sidebar to the left"
-                        }
-                        onClick={() =>
-                          setLayout((prev) => ({
-                            ...prev,
-                            sidebarSide:
-                              prev.sidebarSide === "left" ? "right" : "left",
-                          }))
-                        }
-                      >
-                        <ArrowLeftRight className="h-4 w-4" />
-                      </button>
+                      <div className="ml-auto flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
+                          aria-label={
+                            sidebarSide === "left"
+                              ? "Dock sidebar to the right"
+                              : "Dock sidebar to the left"
+                          }
+                          title={
+                            sidebarSide === "left"
+                              ? "Dock sidebar to the right"
+                              : "Dock sidebar to the left"
+                          }
+                          onClick={() =>
+                            setLayout((prev) => ({
+                              ...prev,
+                              sidebarSide:
+                                prev.sidebarSide === "left" ? "right" : "left",
+                            }))
+                          }
+                        >
+                          <ArrowLeftRight className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          ref={sidebarMenuButtonRef}
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 hover:bg-black/5"
+                          aria-label="Layout options"
+                          aria-haspopup="menu"
+                          aria-expanded={sidebarMenuOpen}
+                          onClick={() => setSidebarMenuOpen((v) => !v)}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {sidebarMenuOpen && (
+                        <div
+                          ref={sidebarMenuRef}
+                          role="menu"
+                          className="absolute right-0 top-13 z-50 w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/10 p-1"
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                            onClick={() => onSidebarMenuAction(toggleMode)}
+                          >
+                            <ArrowLeftRight className="h-4 w-4 text-gray-600" />
+                            Switch to Float
+                          </button>
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                            onClick={() => onSidebarMenuAction(resetLayout)}
+                          >
+                            <RotateCcw className="h-4 w-4 text-gray-600" />
+                            Reset layout
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
