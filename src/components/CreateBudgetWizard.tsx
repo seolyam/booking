@@ -74,7 +74,11 @@ export default function CreateBudgetWizard() {
     formData.append("unitCost", newItem.unitCost.toString());
     formData.append("quarter", newItem.quarter);
 
-    await addBudgetItem(null, formData);
+    const result = await addBudgetItem(null, formData);
+    if (result?.message !== "Item added") {
+      alert(result?.message || "Failed to add item");
+      return;
+    }
 
     setItems([...items, { ...newItem }]);
     setNewItem({ description: "", quantity: 1, unitCost: 0, quarter: "Q1" });
@@ -99,7 +103,7 @@ export default function CreateBudgetWizard() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 text-gray-900">
       <div className="mb-8 flex justify-between items-center">
         {steps.map((step, index) => (
           <div
@@ -107,7 +111,7 @@ export default function CreateBudgetWizard() {
             className={`flex items-center ${
               index <= currentStep
                 ? "text-[#2F5E3D] font-bold"
-                : "text-gray-400"
+                : "text-gray-700"
             }`}
           >
             <div
@@ -236,7 +240,7 @@ export default function CreateBudgetWizard() {
                   </tbody>
                 </table>
                 {items.length === 0 && (
-                  <p className="p-4 text-center text-gray-500">
+                  <p className="p-4 text-center text-gray-800">
                     No items added.
                   </p>
                 )}
@@ -294,7 +298,7 @@ export default function CreateBudgetWizard() {
                   <strong>Variance Note:</strong> {varianceExplanation}
                 </div>
               )}
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-900 text-sm">
                 Ready to submit to Reviewer?
               </p>
             </div>

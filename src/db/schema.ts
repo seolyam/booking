@@ -29,6 +29,12 @@ export const userRoleEnum = pgEnum("user_role", [
   "superadmin",
 ]);
 
+export const applicationStatusEnum = pgEnum("application_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);
+
 export const budgetTypeEnum = pgEnum("budget_type", ["capex", "opex"]);
 
 export const budgetStatusEnum = pgEnum("budget_status", [
@@ -48,6 +54,19 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   role: userRoleEnum("role").notNull().default("requester"),
   department: departmentEnum("department").notNull(),
+  approval_status: applicationStatusEnum("approval_status")
+    .notNull()
+    .default("pending"),
+  requested_role: userRoleEnum("requested_role").notNull().default("requester"),
+  full_name: text("full_name"),
+  position: text("position"),
+  id_number: text("id_number"),
+  id_document_path: text("id_document_path"),
+  approved_at: timestamp("approved_at", { withTimezone: true }),
+  approved_by: uuid("approved_by"),
+  rejected_at: timestamp("rejected_at", { withTimezone: true }),
+  rejected_by: uuid("rejected_by"),
+  rejection_reason: text("rejection_reason"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { budgets, budgetItems, auditLogs, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -282,6 +282,18 @@ export async function addBudgetItem(prevState: unknown, formData: FormData) {
 
   const totalCost = quantity * unitCost;
 
+  const existingBudget = await db.query.budgets.findFirst({
+    where: eq(budgets.id, budgetId),
+  });
+
+  if (!existingBudget) {
+    return { message: "Budget not found" };
+  }
+
+  if (existingBudget.user_id !== user.id) {
+    return { message: "Unauthorized" };
+  }
+
   await db.insert(budgetItems).values({
     budget_id: budgetId,
     description,
@@ -291,21 +303,20 @@ export async function addBudgetItem(prevState: unknown, formData: FormData) {
     quarter,
   });
 
-  // Recalculate budget total
-  // In a real app, might want to do this in a transaction or aggregate query
-  // For now simple update:
-  // We need to fetch all items to recalc total or just add to current?
-  // Let's do a sum query.
+  const [{ value: newTotal }] = await db
+    .select({
+      value: sql<string>`COALESCE(SUM(${budgetItems.total_cost}), 0)`,
+    })
+    .from(budgetItems)
+    .where(eq(budgetItems.budget_id, budgetId));
 
-  // This part is skipped for brevity but critical ensuring consistency.
-  // Using SQL generic for sum:
+  await db
+    .update(budgets)
+    .set({ total_amount: newTotal, updated_at: new Date() })
+    .where(eq(budgets.id, budgetId));
 
-  /*
-  const result = await db.select({ value: sum(budgetItems.total_cost) })
-                         .from(budgetItems)
-                         .where(eq(budgetItems.budget_id, budgetId));
-  */
-
-  revalidatePath(`/dashboard/budget/create`); // or wherever
+  revalidatePath(`/dashboard/budget/create`);
+  revalidatePath(`/dashboard`);
+  revalidatePath(`/dashboard/requests`);
   return { message: "Item added" };
 }
