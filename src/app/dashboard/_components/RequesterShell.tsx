@@ -53,8 +53,8 @@ export default function RequesterShell({
       <div className="mx-auto w-full max-w-6xl">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-[260px_1fr]">
           {/* Sidebar */}
-          <aside className="rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden">
-            <div className="p-6">
+          <aside className="rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col">
+            <div className="p-6 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
                   {profile.initials}
@@ -70,25 +70,31 @@ export default function RequesterShell({
               </div>
             </div>
 
-            <nav className="px-4 pb-4 space-y-1">
-              {navItem("dashboard", "Dashboard", "/dashboard")}
-              {navItem("create", "Create Request", "/dashboard/budget/create")}
-              {navItem("mine", "Your Requests", "/dashboard/requests")}
-              {navItem("list", "List of Requests", "/dashboard/budget")}
-            </nav>
+            <div className="flex-1 min-h-0 overflow-auto">
+              <nav className="px-4 pb-4 space-y-1">
+                {navItem("dashboard", "Dashboard", "/dashboard")}
+                {navItem(
+                  "create",
+                  "Create Request",
+                  "/dashboard/budget/create"
+                )}
+                {navItem("mine", "Your Requests", "/dashboard/requests")}
+                {navItem("list", "List of Requests", "/dashboard/budget")}
+              </nav>
+            </div>
 
-            <div className="mt-6 border-t border-black/10" />
-
-            <div className="p-4">
-              <form action={signOut}>
-                <button
-                  type="submit"
-                  className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </button>
-              </form>
+            <div className="border-t border-black/10 shrink-0">
+              <div className="p-4">
+                <form action={signOut}>
+                  <button
+                    type="submit"
+                    className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </form>
+              </div>
             </div>
           </aside>
 

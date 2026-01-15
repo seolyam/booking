@@ -736,9 +736,9 @@ export default function DashboardShell({
                       </div>
                     ))}
                   </nav>
+                </div>
 
-                  <div className="mt-2 border-t border-black/10" />
-
+                <div className="border-t border-black/10">
                   <div className="p-4">
                     <form action={signOut}>
                       <button
@@ -859,10 +859,9 @@ export default function DashboardShell({
               }
             >
               {/* Sidebar */}
-              <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden">
-                <div className="h-full overflow-auto">
-                  <div className="p-6">
-                    <div className="relative flex items-center gap-3">
+              <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col">
+                <div className="p-6 shrink-0">
+                  <div className="relative flex items-center gap-3">
                       <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
                         {profile.initials}
                       </div>
@@ -944,6 +943,7 @@ export default function DashboardShell({
                     </div>
                   </div>
 
+                <div className="flex-1 min-h-0 overflow-auto">
                   <nav className="px-4 pb-4 space-y-4">
                     {sections.map((section, idx) => (
                       <div key={idx}>
@@ -958,9 +958,9 @@ export default function DashboardShell({
                       </div>
                     ))}
                   </nav>
+                </div>
 
-                  <div className="mt-2 border-t border-black/10" />
-
+                <div className="border-t border-black/10 shrink-0">
                   <div className="p-4">
                     <form action={signOut}>
                       <button
