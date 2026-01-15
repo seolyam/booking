@@ -1,1 +1,0 @@
-Failed query: insert into "budget_items" ("id", "budget_id", "description", "quantity", "unit_cost", "total_cost", "quarter") values (default, $1, $2, $3, $4, $5, $6) params: 89ca3096-eadb-4248-b54f-df495dc64f80,Maintenance - asdasdasd,1,23123123123,23123123123,Q1
