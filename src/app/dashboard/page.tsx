@@ -141,6 +141,7 @@ export default async function DashboardPage() {
     const reviewQueue = await db
       .select({
         id: budgets.id,
+        budget_number: budgets.budget_number,
         budget_type: budgets.budget_type,
         total_amount: budgets.total_amount,
         status: budgets.status,
@@ -179,7 +180,7 @@ export default async function DashboardPage() {
       }
     }
 
-    const rows: ReviewerDashboardRow[] = reviewQueue.map((b, idx) => {
+    const rows: ReviewerDashboardRow[] = reviewQueue.map((b) => {
       const type =
         b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
@@ -197,7 +198,7 @@ export default async function DashboardPage() {
 
       return {
         budgetId: b.id,
-        displayId: `BUD-${String(idx + 1).padStart(3, "0")}`,
+        displayId: `BUD-${b.budget_number}`,
         projectName,
         projectSub,
         type,
@@ -270,7 +271,7 @@ export default async function DashboardPage() {
   ).length;
 
   const recent = myBudgets.slice(0, 4);
-  const rows = recent.map((b, idx) => {
+  const rows = recent.map((b) => {
     const type =
       b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
@@ -288,7 +289,7 @@ export default async function DashboardPage() {
 
     return {
       budgetId: b.id,
-      displayId: `BUD-${String(idx + 1).padStart(3, "0")}`,
+      displayId: `BUD-${b.budget_number}`,
       projectName,
       projectSub,
       type,

@@ -133,8 +133,8 @@ export default function LoginPage() {
       <div className="hidden md:flex md:w-[45%] bg-linear-to-br from-[#A8C738] via-[#4DA44E] to-[#2F5E3D] items-center justify-center relative overflow-hidden">
         <div className="flex items-center justify-center">
           <Image
-            src="/images/nepc-logo.png"
-            alt="NEPC Logo  "
+            src="/images/"
+            alt="Placeholder Logo"
             width={400}
             height={400}
             priority
@@ -395,8 +395,8 @@ export default function LoginPage() {
                   <Label htmlFor="id-upload" className="text-gray-900">
                     Upload ID picture
                   </Label>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Input
+                  <div className="mt-2 flex items-center gap-3">
+                    <input
                       id="id-upload"
                       type="file"
                       accept="image/*"
@@ -411,16 +411,29 @@ export default function LoginPage() {
                           setError("");
                         }
                       }}
-                      className="flex-1"
+                      className="sr-only"
                       required
                     />
+
+                    <label
+                      htmlFor="id-upload"
+                      className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-white px-4 text-sm text-gray-900 hover:bg-black/5 cursor-pointer"
+                    >
+                      Choose file
+                    </label>
+
+                    <div className="min-w-0 flex-1 text-sm text-gray-600 truncate">
+                      {idFile ? idFile.name : "No file selected"}
+                    </div>
+
                     {idFile && (
                       <Check className="h-5 w-5 text-green-600 shrink-0" />
                     )}
                   </div>
+
                   {idFile && (
                     <p className="text-sm text-gray-500 mt-1">
-                      {idFile.name} ({(idFile.size / 1024).toFixed(1)} KB)
+                      {(idFile.size / 1024).toFixed(1)} KB
                     </p>
                   )}
                 </div>

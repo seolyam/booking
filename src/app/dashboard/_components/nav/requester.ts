@@ -27,7 +27,10 @@ export function requesterNav(): NavSection[] {
       key: "list",
       label: "List of Requests",
       href: "/dashboard/budget",
-      isActive: (p) => p.startsWith("/dashboard/budget"),
+      isActive: (p) =>
+        p === "/dashboard/budget" ||
+        (p.startsWith("/dashboard/budget/") &&
+          !p.startsWith("/dashboard/budget/create")),
     },
   ];
 
