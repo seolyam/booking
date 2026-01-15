@@ -50,6 +50,7 @@ export default async function ReviewerReviewQueuePage() {
   const reviewQueue = await db
     .select({
       id: budgets.id,
+      budget_number: budgets.budget_number,
       budget_type: budgets.budget_type,
       total_amount: budgets.total_amount,
       status: budgets.status,
@@ -88,7 +89,7 @@ export default async function ReviewerReviewQueuePage() {
     }
   }
 
-  const rows: ReviewerDashboardRow[] = reviewQueue.map((b, idx) => {
+  const rows: ReviewerDashboardRow[] = reviewQueue.map((b) => {
     const type =
       b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
@@ -103,7 +104,7 @@ export default async function ReviewerReviewQueuePage() {
 
     return {
       budgetId: b.id,
-      displayId: `BUD-${String(idx + 1).padStart(3, "0")}`,
+      displayId: `BUD-${b.budget_number}`,
       projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
       projectSub: b.department ?? "",
       type,
