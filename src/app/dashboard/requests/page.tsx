@@ -30,10 +30,6 @@ function statusLabel(status: string) {
     .join(" ");
 }
 
-function displayBudgetId(index: number) {
-  return `BUD-${String(index + 1).padStart(3, "0")}`;
-}
-
 export default async function RequestsPage() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -98,7 +94,7 @@ export default async function RequestsPage() {
                   </td>
                 </tr>
               ) : (
-                myBudgets.map((b, idx) => (
+                myBudgets.map((b) => (
                   <tr
                     key={b.id}
                     className="border-b border-black/5 last:border-b-0"
@@ -108,7 +104,7 @@ export default async function RequestsPage() {
                         {firstItem.get(b.id) ?? "Budget Request"}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {displayBudgetId(idx)}
+                        {`BUD-${b.budget_number}`}
                       </div>
                     </td>
                     <td className="py-4 px-6">
