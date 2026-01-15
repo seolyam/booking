@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
-import { budgets, budgetItems, users, auditLogs, reviewChecklists } from "@/db/schema";
-import { eq, inArray, and } from "drizzle-orm";
+import { budgets, budgetItems, users, reviewChecklists } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import ReviewDecisionModal from "@/components/ReviewDecisionModal";
 import ReviewChecklist from "@/components/ReviewChecklist";
+import BudgetComparison from "@/components/BudgetComparison";
 
 function formatPhp(amount: string | number) {
   const n = typeof amount === "string" ? Number(amount) : amount;
@@ -100,33 +101,6 @@ export default async function ReviewBudgetDetailPage({
     })
     .from(budgetItems)
     .where(eq(budgetItems.budget_id, budget.id));
-
-  // Get audit logs for this budget
-  const logs = await db
-    .select({
-      id: auditLogs.id,
-      action: auditLogs.action,
-      timestamp: auditLogs.timestamp,
-      comment: auditLogs.comment,
-      actor_id: auditLogs.actor_id,
-    })
-    .from(auditLogs)
-    .where(eq(auditLogs.budget_id, budget.id));
-
-  // Get actor names for audit logs
-  const actorIds = [...new Set(logs.map((l) => l.actor_id))];
-  const actorsData =
-    actorIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: users.id,
-            full_name: users.full_name,
-          })
-          .from(users)
-          .where(inArray(users.id, actorIds));
-
-  const actorMap = new Map(actorsData.map((a) => [a.id, a.full_name]));
 
   // Get review checklist for this reviewer
   let checklist: typeof reviewChecklists.$inferSelect[] = [];
@@ -378,52 +352,11 @@ export default async function ReviewBudgetDetailPage({
             </div>
           )}
 
-          {/* Review History */}
-          {logs.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Review History
-              </h2>
-              <div className="space-y-3">
-                {logs
-                  .sort(
-                    (a, b) =>
-                      new Date(b.timestamp).getTime() -
-                      new Date(a.timestamp).getTime()
-                  )
-                  .map((log) => (
-                    <div
-                      key={log.id}
-                      className="flex items-start gap-4 pb-3 border-b border-gray-100 last:border-0 last:pb-0"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-900">
-                            {log.action
-                              .split("_")
-                              .map(
-                                (w) => w.charAt(0).toUpperCase() + w.slice(1)
-                              )
-                              .join(" ")}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            by {actorMap.get(log.actor_id) || "Unknown"}
-                          </span>
-                        </div>
-                        {log.comment && (
-                          <p className="text-sm text-gray-600 mt-1">
-                            {log.comment}
-                          </p>
-                        )}
-                        <div className="text-xs text-gray-400 mt-1">
-                          {new Date(log.timestamp).toLocaleString("en-PH")}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
+          {/* Budget Comparison Analysis */}
+          <BudgetComparison
+            currentAmount={Number(budget.total_amount)}
+            comparableBudgets={[]}
+          />
         </div>
 
         {/* Right Sidebar - Review Decision Panel */}
