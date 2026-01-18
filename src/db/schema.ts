@@ -84,6 +84,8 @@ export const budgets = pgTable("budgets", {
     .default("0"),
   variance_explanation: text("variance_explanation"), // Nullable
   roi_analysis: text("roi_analysis"), // Nullable, only for approver. Text or JSON. Instructions say text/json. Let's use text for simplicity or jsonb if structured. "text/json, nullable" -> logic says text is easier for "Hidden Details".
+  start_date: timestamp("start_date"),
+  end_date: timestamp("end_date"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -98,6 +100,16 @@ export const budgetItems = pgTable("budget_items", {
   unit_cost: decimal("unit_cost", { precision: 12, scale: 2 }).notNull(),
   total_cost: decimal("total_cost", { precision: 12, scale: 2 }).notNull(),
   quarter: text("quarter").notNull(), // Q1, Q2, Q3, Q4. Could be enum but text is flexible enough for now.
+});
+
+export const budgetMilestones = pgTable("budget_milestones", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  budget_id: uuid("budget_id")
+    .references(() => budgets.id, { onDelete: "cascade" })
+    .notNull(),
+  description: text("description").notNull(),
+  target_quarter: text("target_quarter"), // e.g. 'Q1'
+  created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const auditLogs = pgTable("audit_logs", {

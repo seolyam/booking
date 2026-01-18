@@ -70,8 +70,8 @@ export default function ReviewerDashboard({
       s === "Reviewed"
         ? "bg-green-100 text-green-700"
         : s === "Pending"
-        ? "bg-yellow-100 text-yellow-700"
-        : "bg-orange-100 text-orange-700";
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-orange-100 text-orange-700";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${cls}`}>
@@ -97,7 +97,7 @@ export default function ReviewerDashboard({
 
     return (
       <Link
-        href={`/dashboard/reviewer/${r.budgetId}`}
+        href={`/dashboard/reviewer/${r.budgetId}/tracking`}
         className={`${base} bg-gray-200 text-gray-700 hover:bg-gray-300`}
       >
         View <Eye className="h-3.5 w-3.5" />
