@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { Bell, Eye, Search } from "lucide-react";
+import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -98,6 +99,18 @@ export default async function BudgetIndexPage({
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const appUser = await getOrCreateAppUserFromAuthUser({
+    id: user.id,
+    email: user.email ?? null,
+    user_metadata: (user.user_metadata ?? null) as Record<
+      string,
+      unknown
+    > | null,
+  });
+
+  const canCreateRequest =
+    appUser.role === "requester" || appUser.role === "superadmin";
 
   const statusWhere =
     activeStatus === "approved"
@@ -268,14 +281,16 @@ export default async function BudgetIndexPage({
               )}
             </div>
 
-            <div className="md:ml-auto">
-              <Link
-                href="/dashboard/budget/create"
-                className="inline-flex items-center gap-2 rounded-md bg-[#358334] px-4 py-2 text-sm font-medium text-white hover:bg-[#2F5E3D]"
-              >
-                Create Request
-              </Link>
-            </div>
+            {canCreateRequest && (
+              <div className="md:ml-auto">
+                <Link
+                  href="/dashboard/budget/create"
+                  className="inline-flex items-center gap-2 rounded-md bg-[#358334] px-4 py-2 text-sm font-medium text-white hover:bg-[#2F5E3D]"
+                >
+                  Create Request
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
