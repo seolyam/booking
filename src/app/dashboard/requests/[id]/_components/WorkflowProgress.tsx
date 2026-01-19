@@ -12,8 +12,10 @@ export type WorkflowStep = {
 export type WorkflowEvent = {
   id: string;
   at: string;
-  label: string;
-  detail?: string | null;
+  title: string;
+  description: string;
+  actorName?: string | null;
+  note?: string | null;
 };
 
 function classNames(...parts: Array<string | false | null | undefined>) {
@@ -49,7 +51,26 @@ export default function WorkflowProgress({
   steps: WorkflowStep[];
   events: WorkflowEvent[];
 }) {
-  const [expanded, setExpanded] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
 
   return (
     <div className="space-y-4">
@@ -59,10 +80,10 @@ export default function WorkflowProgress({
         </div>
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => setIsOpen(true)}
           className="text-sm text-gray-700 hover:underline"
         >
-          {expanded ? "Collapse" : "Expand"}
+          Expand
         </button>
       </div>
 
@@ -91,34 +112,86 @@ export default function WorkflowProgress({
           ))}
         </div>
 
-        {expanded ? (
-          <div className="mt-6 border-t border-black/10 pt-4">
-            <div className="text-sm font-semibold text-gray-900">Activity</div>
-            {events.length === 0 ? (
-              <div className="mt-2 text-sm text-gray-600">No activity yet.</div>
-            ) : (
-              <ul className="mt-3 space-y-2">
-                {events.map((e) => (
-                  <li
-                    key={e.id}
-                    className="rounded-lg bg-black/5 px-3 py-2 text-sm"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-medium text-gray-900">{e.label}</div>
-                      <div className="text-xs text-gray-600">{e.at}</div>
-                    </div>
-                    {e.detail ? (
-                      <div className="mt-1 text-xs text-gray-700">
-                        {e.detail}
-                      </div>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ) : null}
       </div>
+
+      {isOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Complete Audit Tracking"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsOpen(false);
+          }}
+        >
+          <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
+
+          <div className="relative w-full max-w-3xl rounded-2xl bg-white shadow-xl ring-1 ring-black/10">
+            <div className="flex items-center gap-3 border-b border-black/10 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="rounded-full p-2 text-gray-700 hover:bg-black/5"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+              <div className="text-base font-semibold text-gray-900">
+                Complete Audit Tracking
+              </div>
+            </div>
+
+            <div className="max-h-[75vh] overflow-auto px-6 py-5">
+              {events.length === 0 ? (
+                <div className="text-sm text-gray-600">No activity yet.</div>
+              ) : (
+                <div className="relative">
+                  <div
+                    className="absolute left-4 top-2 bottom-2 w-0.5 bg-[#358334]"
+                    aria-hidden="true"
+                  />
+                  <div className="space-y-4">
+                    {events.map((e) => (
+                      <div key={e.id} className="relative pl-10">
+                        <div
+                          className="absolute left-2.75 top-6 h-4 w-4 rounded-full bg-[#358334] ring-4 ring-white"
+                          aria-hidden="true"
+                        />
+
+                        <div className="rounded-xl bg-black/5 px-4 py-3">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                {e.title}
+                              </div>
+                              <div className="mt-0.5 text-sm text-gray-700">
+                                {e.description}
+                              </div>
+                              <div className="mt-1 text-xs text-gray-600">
+                                {e.actorName
+                                  ? `by ${e.actorName}`
+                                  : ""}
+                              </div>
+                              {e.note ? (
+                                <div className="mt-1 text-xs text-gray-700">
+                                  {e.note}
+                                </div>
+                              ) : null}
+                            </div>
+                            <div className="shrink-0 text-sm font-semibold text-gray-900">
+                              {e.at}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
