@@ -210,7 +210,9 @@ export default async function BudgetIndexPage() {
                         {formatPhp(b.total_amount)}
                       </td>
                       <td className="py-5 px-3 whitespace-nowrap">
-                        <span className={statusPill(b.status)}>{statusText}</span>
+                        <span className={statusPill(b.status)}>
+                          {statusText}
+                        </span>
                       </td>
                       <td className="py-5 px-3 text-gray-700 whitespace-nowrap">
                         {formatDateShort(b.created_at)}
