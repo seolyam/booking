@@ -58,10 +58,10 @@ export default function RequesterDashboard({
       s === "Approved"
         ? "bg-green-100 text-green-700"
         : s === "Pending"
-        ? "bg-yellow-100 text-yellow-700"
-        : s === "Revision"
-        ? "bg-orange-100 text-orange-700"
-        : "bg-red-100 text-red-700";
+          ? "bg-yellow-100 text-yellow-700"
+          : s === "Revision"
+            ? "bg-orange-100 text-orange-700"
+            : "bg-red-100 text-red-700";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${cls}`}>
@@ -155,7 +155,7 @@ export default function RequesterDashboard({
                     <td className="py-4 pr-4 text-gray-700">{r.dateLabel}</td>
                     <td className="py-4 pr-0 text-right">
                       <Link
-                        href={`/dashboard/budget/${r.budgetId}`}
+                        href={`/dashboard/requests/${r.budgetId}`}
                         className="inline-flex items-center gap-2 rounded-md bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300"
                       >
                         View <Eye className="h-3.5 w-3.5" />
