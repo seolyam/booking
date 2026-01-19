@@ -111,7 +111,6 @@ export default function WorkflowProgress({
             </div>
           ))}
         </div>
-
       </div>
 
       {isOpen ? (
@@ -168,9 +167,7 @@ export default function WorkflowProgress({
                                 {e.description}
                               </div>
                               <div className="mt-1 text-xs text-gray-600">
-                                {e.actorName
-                                  ? `by ${e.actorName}`
-                                  : ""}
+                                {e.actorName ? `by ${e.actorName}` : ""}
                               </div>
                               {e.note ? (
                                 <div className="mt-1 text-xs text-gray-700">
