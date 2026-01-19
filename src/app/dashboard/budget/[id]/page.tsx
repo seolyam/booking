@@ -105,8 +105,7 @@ function actionLabel(action: string) {
 function auditDescription(action: string) {
   if (action === "create_draft") return "Budget Created";
   if (action === "submit") return "Budget Submitted for Review";
-  if (action === "request_revision")
-    return "Proposal Returned for Revisions";
+  if (action === "request_revision") return "Proposal Returned for Revisions";
   if (action === "verify") return "Budget verified and forwarded to approver";
   if (action === "approve")
     return "Budget approved - Added to approved budget list";
@@ -227,7 +226,8 @@ export default async function BudgetDetailPage({
   const budgetDisplayId = `BUD-${budget.budget_number}`;
 
   const projectName = items[0]?.description ?? "Budget Request";
-  const projectSub = `${budgetDisplayId} • ${requester?.department ?? ""}`.trim();
+  const projectSub =
+    `${budgetDisplayId} • ${requester?.department ?? ""}`.trim();
 
   const milestoneLines = (() => {
     const labels = new Set<MilestoneLabel | null>(
