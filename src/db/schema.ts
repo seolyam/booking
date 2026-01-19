@@ -7,6 +7,7 @@ import {
   decimal,
   timestamp,
   pgEnum,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -88,6 +89,8 @@ export const budgets = pgTable("budgets", {
     .default("0"),
   variance_explanation: text("variance_explanation"), // Nullable
   roi_analysis: text("roi_analysis"), // Nullable, only for approver. Text or JSON. Instructions say text/json. Let's use text for simplicity or jsonb if structured. "text/json, nullable" -> logic says text is easier for "Hidden Details".
+  start_date: timestamp("start_date"),
+  end_date: timestamp("end_date"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -104,6 +107,16 @@ export const budgetItems = pgTable("budget_items", {
   quarter: text("quarter").notNull(), // Q1, Q2, Q3, Q4. Could be enum but text is flexible enough for now.
 });
 
+export const budgetMilestones = pgTable("budget_milestones", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  budget_id: uuid("budget_id")
+    .references(() => budgets.id, { onDelete: "cascade" })
+    .notNull(),
+  description: text("description").notNull(),
+  target_quarter: text("target_quarter"), // e.g. 'Q1'
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").defaultRandom().primaryKey(),
   budget_id: uuid("budget_id")
@@ -117,4 +130,19 @@ export const auditLogs = pgTable("audit_logs", {
   new_status: text("new_status"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   comment: text("comment"), // For revision comments or rejection reasons
+});
+
+export const reviewChecklists = pgTable("review_checklists", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  budget_id: uuid("budget_id")
+    .references(() => budgets.id, { onDelete: "cascade" })
+    .notNull(),
+  reviewer_id: uuid("reviewer_id")
+    .references(() => users.id)
+    .notNull(),
+  item_key: text("item_key").notNull(), // 'documented_costs', 'reasonable_costs', etc.
+  item_label: text("item_label").notNull(), // Display label
+  is_checked: boolean("is_checked").default(false).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
