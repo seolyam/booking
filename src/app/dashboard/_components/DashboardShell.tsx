@@ -438,20 +438,18 @@ export default function DashboardShell({
     const isActive = item.isActive
       ? item.isActive(pathname)
       : pathname === item.href;
-    const Icon = item.icon;
 
     return (
       <Link
         key={item.key}
         href={item.href}
         className={
-          "flex items-center gap-2 rounded-lg px-4 py-2 text-base " +
+          "flex items-center rounded-lg px-4 py-2 text-base " +
           (isActive
             ? "bg-[#D7F7D6] text-[#2F5E3D]"
             : "text-gray-700 hover:bg-black/5")
         }
       >
-        {Icon && <Icon className="h-4 w-4" />}
         {item.label}
       </Link>
     );

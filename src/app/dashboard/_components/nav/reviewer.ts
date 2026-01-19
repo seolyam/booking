@@ -6,16 +6,16 @@ export function reviewerNav(): NavSection[] {
     {
       key: "dashboard",
       label: "Dashboard",
-      href: "/dashboard",
+      href: "/dashboard/reviewer",
       icon: LayoutDashboard,
-      isActive: (p) => p === "/dashboard",
+      isActive: (p) => p === "/dashboard/reviewer",
     },
     {
       key: "review",
       label: "Budget Review",
       href: "/dashboard/reviewer/review",
       icon: ListChecks,
-      isActive: (p) => p.startsWith("/dashboard/reviewer"),
+      isActive: (p) => p.startsWith("/dashboard/reviewer/review"),
     },
     {
       key: "list",
