@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   AlertCircle,
@@ -68,8 +70,8 @@ export default function ReviewerDashboard({
       s === "Reviewed"
         ? "bg-green-100 text-green-700"
         : s === "Pending"
-        ? "bg-yellow-100 text-yellow-700"
-        : "bg-orange-100 text-orange-700";
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-orange-100 text-orange-700";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${cls}`}>
@@ -85,7 +87,7 @@ export default function ReviewerDashboard({
     if (r.actionLabel === "Review") {
       return (
         <Link
-          href={r.actionHref}
+          href={`/dashboard/reviewer/${r.budgetId}`}
           className={`${base} bg-orange-500 text-white hover:bg-orange-600`}
         >
           Review <Eye className="h-3.5 w-3.5" />
@@ -95,7 +97,7 @@ export default function ReviewerDashboard({
 
     return (
       <Link
-        href={r.actionHref}
+        href={`/dashboard/reviewer/${r.budgetId}/tracking`}
         className={`${base} bg-gray-200 text-gray-700 hover:bg-gray-300`}
       >
         View <Eye className="h-3.5 w-3.5" />
