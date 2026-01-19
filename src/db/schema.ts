@@ -7,6 +7,7 @@ import {
   decimal,
   timestamp,
   pgEnum,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -117,4 +118,19 @@ export const auditLogs = pgTable("audit_logs", {
   new_status: text("new_status"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   comment: text("comment"), // For revision comments or rejection reasons
+});
+
+export const reviewChecklists = pgTable("review_checklists", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  budget_id: uuid("budget_id")
+    .references(() => budgets.id, { onDelete: "cascade" })
+    .notNull(),
+  reviewer_id: uuid("reviewer_id")
+    .references(() => users.id)
+    .notNull(),
+  item_key: text("item_key").notNull(), // 'documented_costs', 'reasonable_costs', etc.
+  item_label: text("item_label").notNull(), // Display label
+  is_checked: boolean("is_checked").default(false).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

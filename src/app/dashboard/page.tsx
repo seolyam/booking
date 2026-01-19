@@ -1,11 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { auditLogs, budgets, budgetItems, users } from "@/db/schema";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { budgets, budgetItems, users } from "@/db/schema";
+import { desc, eq, inArray } from "drizzle-orm";
 import RequesterDashboard from "./_components/RequesterDashboard";
-import ReviewerDashboard, {
-  type ReviewerDashboardRow,
-} from "./_components/ReviewerDashboard";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +47,11 @@ export default async function DashboardPage() {
       unknown
     > | null,
   });
+
+  // Redirect reviewers to their dedicated dashboard
+  if (appUser.role === "reviewer") {
+    redirect("/dashboard/reviewer");
+  }
 
   // If not requester, keep the old generic page minimal for now.
   if (appUser.role === "superadmin") {
