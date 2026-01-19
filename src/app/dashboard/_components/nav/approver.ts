@@ -12,7 +12,7 @@ export function approverNav(): NavSection[] {
     },
     {
       key: "approvals",
-      label: "Approvals",
+      label: "List of Proposals",
       href: "/dashboard/approver/approvals",
       icon: ListChecks,
       isActive: (p) => p.startsWith("/dashboard/approver"),
