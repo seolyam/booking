@@ -3,11 +3,13 @@ import {
   uuid,
   text,
   integer,
+  bigint,
   decimal,
   timestamp,
   pgEnum,
   boolean,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // Enums
 export const departmentEnum = pgEnum("department", [
@@ -76,6 +78,9 @@ export const budgets = pgTable("budgets", {
   user_id: uuid("user_id")
     .references(() => users.id)
     .notNull(), // requester
+  budget_number: bigint("budget_number", { mode: "number" })
+    .default(sql`nextval('public.budget_number_seq')`)
+    .notNull(),
   budget_type: budgetTypeEnum("budget_type").notNull(),
   fiscal_year: integer("fiscal_year").notNull(),
   status: budgetStatusEnum("status").default("draft").notNull(),
@@ -95,8 +100,8 @@ export const budgetItems = pgTable("budget_items", {
     .notNull(),
   description: text("description").notNull(),
   quantity: integer("quantity").notNull(),
-  unit_cost: decimal("unit_cost", { precision: 12, scale: 2 }).notNull(),
-  total_cost: decimal("total_cost", { precision: 12, scale: 2 }).notNull(),
+  unit_cost: decimal("unit_cost", { precision: 15, scale: 2 }).notNull(),
+  total_cost: decimal("total_cost", { precision: 15, scale: 2 }).notNull(),
   quarter: text("quarter").notNull(), // Q1, Q2, Q3, Q4. Could be enum but text is flexible enough for now.
 });
 

@@ -145,7 +145,6 @@ export default function DashboardShell({
   role: Role;
 }) {
   const pathname = usePathname() ?? "/dashboard";
-  const showDashboardHeader = pathname === "/dashboard";
   const sections = buildNav(role);
 
   // IMPORTANT: keep the very first render deterministic to avoid hydration mismatches.
@@ -635,7 +634,9 @@ export default function DashboardShell({
                         {profile.fullName}
                       </div>
                       <div className="text-xs text-gray-500 truncate">
-                        {profile.departmentLine}
+                        {profile.departmentLine
+                          ? `${roleLabel(role)} • ${profile.departmentLine}`
+                          : roleLabel(role)}
                       </div>
                     </div>
                   </div>
@@ -736,9 +737,9 @@ export default function DashboardShell({
                       </div>
                     ))}
                   </nav>
+                </div>
 
-                  <div className="mt-2 border-t border-black/10" />
-
+                <div className="border-t border-black/10">
                   <div className="p-4">
                     <form action={signOut}>
                       <button
@@ -789,18 +790,7 @@ export default function DashboardShell({
                   onPointerCancel={endFloatingDrag}
                   title="Drag to move"
                 >
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900 truncate">
-                      {showDashboardHeader
-                        ? `Welcome back, ${profile.fullName.split(" ")[0]}`
-                        : roleLabel(role)}
-                    </div>
-                    {showDashboardHeader && (
-                      <div className="text-xs text-gray-500">
-                        {roleLabel(role)} Dashboard
-                      </div>
-                    )}
-                  </div>
+                  <div className="flex-1" />
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
@@ -859,10 +849,9 @@ export default function DashboardShell({
               }
             >
               {/* Sidebar */}
-              <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden">
-                <div className="h-full overflow-auto">
-                  <div className="p-6">
-                    <div className="relative flex items-center gap-3">
+              <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col">
+                <div className="p-6 shrink-0">
+                  <div className="relative flex items-center gap-3">
                       <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
                         {profile.initials}
                       </div>
@@ -871,7 +860,9 @@ export default function DashboardShell({
                           {profile.fullName}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
-                          {profile.departmentLine}
+                          {profile.departmentLine
+                            ? `${roleLabel(role)} • ${profile.departmentLine}`
+                            : roleLabel(role)}
                         </div>
                       </div>
 
@@ -944,6 +935,7 @@ export default function DashboardShell({
                     </div>
                   </div>
 
+                <div className="flex-1 min-h-0 overflow-auto">
                   <nav className="px-4 pb-4 space-y-4">
                     {sections.map((section, idx) => (
                       <div key={idx}>
@@ -958,9 +950,9 @@ export default function DashboardShell({
                       </div>
                     ))}
                   </nav>
+                </div>
 
-                  <div className="mt-2 border-t border-black/10" />
-
+                <div className="border-t border-black/10 shrink-0">
                   <div className="p-4">
                     <form action={signOut}>
                       <button
@@ -999,30 +991,15 @@ export default function DashboardShell({
               {/* Main */}
               <section className="flex-1 min-w-0 md:h-full md:min-h-0 rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden">
                 <div className="h-full overflow-auto p-8">
-                  {showDashboardHeader && (
-                    <div className="flex items-start justify-between gap-6 mb-8">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="text-3xl font-semibold text-gray-900 truncate">
-                            Welcome back, {profile.fullName.split(" ")[0]}
-                          </div>
-                          <span className="shrink-0 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">
-                            {roleLabel(role)}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          {roleLabel(role)} Dashboard
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        aria-label="Notifications"
-                        className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-                      >
-                        <Bell className="h-5 w-5" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex justify-end mb-4">
+                    <button
+                      type="button"
+                      aria-label="Notifications"
+                      className="rounded-full p-2 text-gray-700 hover:bg-black/5"
+                    >
+                      <Bell className="h-5 w-5" />
+                    </button>
+                  </div>
 
                   {children}
                 </div>

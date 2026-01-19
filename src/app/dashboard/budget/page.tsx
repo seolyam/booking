@@ -42,10 +42,6 @@ function statusPill(status: string) {
   return `${base} bg-amber-100 text-amber-700`;
 }
 
-function displayBudgetId(index: number) {
-  return `BUD-${String(index + 1).padStart(3, "0")}`;
-}
-
 function typePill(type: "capex" | "opex") {
   const base =
     "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
@@ -183,7 +179,7 @@ export default async function BudgetIndexPage() {
                     </td>
                   </tr>
                 ) : (
-                  allBudgets.map((b, idx) => {
+                  allBudgets.map((b) => {
                     const projectName =
                       firstItemByBudgetId.get(b.id) ?? "Budget Request";
                     const sub = departmentById.get(b.user_id) ?? "";
@@ -194,7 +190,7 @@ export default async function BudgetIndexPage() {
                     return (
                       <tr key={b.id} className="border-t border-black/10">
                         <td className="py-5 pl-6 pr-4 text-gray-900 font-medium whitespace-nowrap">
-                          {displayBudgetId(idx)}
+                          {`BUD-${b.budget_number}`}
                         </td>
                         <td className="py-5 px-4 align-top whitespace-normal">
                           <div className="font-medium text-gray-900 whitespace-normal wrap-break-word leading-snug">
