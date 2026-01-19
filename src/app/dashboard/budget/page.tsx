@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
-import { asc, desc, inArray } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { Bell, Eye, Search } from "lucide-react";
 
 function formatPhp(amount: string) {
@@ -50,7 +50,49 @@ function typePill(type: "capex" | "opex") {
     : `${base} bg-purple-100 text-purple-700`;
 }
 
-export default async function BudgetIndexPage() {
+type StatusFilter = "all" | "approved" | "pending" | "revision";
+
+function getStatusFilterFromSearchParam(value: string | undefined): StatusFilter {
+  if (value === "approved" || value === "pending" || value === "revision") {
+    return value;
+  }
+  return "all";
+}
+
+function buildBudgetListHref(params: {
+  q?: string;
+  status?: StatusFilter;
+}) {
+  const sp = new URLSearchParams();
+  const q = (params.q ?? "").trim();
+  const status = params.status ?? "all";
+  if (q) sp.set("q", q);
+  if (status !== "all") sp.set("status", status);
+  const qs = sp.toString();
+  return qs ? `/dashboard/budget?${qs}` : "/dashboard/budget";
+}
+
+function includesQuery(haystack: string | null | undefined, q: string) {
+  if (!haystack) return false;
+  return haystack.toLowerCase().includes(q);
+}
+
+function normalizeDigits(value: string) {
+  return value.replace(/[^0-9]/g, "");
+}
+
+export default async function BudgetIndexPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const qRaw = Array.isArray(sp.q) ? sp.q[0] : sp.q;
+  const statusRaw = Array.isArray(sp.status) ? sp.status[0] : sp.status;
+
+  const q = (qRaw ?? "").trim().toLowerCase();
+  const activeStatus = getStatusFilterFromSearchParam(statusRaw);
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -58,7 +100,21 @@ export default async function BudgetIndexPage() {
 
   if (!user) redirect("/login");
 
+  const statusWhere =
+    activeStatus === "approved"
+      ? eq(budgets.status, "approved")
+      : activeStatus === "revision"
+      ? eq(budgets.status, "revision_requested")
+      : activeStatus === "pending"
+      ? inArray(budgets.status, [
+          "submitted",
+          "verified",
+          "verified_by_reviewer",
+        ])
+      : undefined;
+
   const allBudgets = await db.query.budgets.findMany({
+    where: statusWhere,
     orderBy: [desc(budgets.created_at)],
     limit: 200,
   });
@@ -104,6 +160,37 @@ export default async function BudgetIndexPage() {
     requesterRows.map((u) => [u.id, u.department])
   );
 
+  const filteredBudgets = q
+    ? allBudgets.filter((b) => {
+        const projectName = firstItemByBudgetId.get(b.id) ?? "";
+        const requesterName = requesterById.get(b.user_id) ?? "";
+        const dept = departmentById.get(b.user_id) ?? "";
+
+        const budLabel = `BUD-${b.budget_number}`;
+        const statusText = statusLabel(b.status);
+        const amountDigits = normalizeDigits(formatPhp(b.total_amount));
+        const qDigits = normalizeDigits(q);
+
+        return (
+          includesQuery(b.id, q) ||
+          includesQuery(budLabel, q) ||
+          includesQuery(String(b.budget_number), q) ||
+          includesQuery(projectName, q) ||
+          includesQuery(requesterName, q) ||
+          includesQuery(dept, q) ||
+          includesQuery(b.budget_type, q) ||
+          includesQuery(b.status, q) ||
+          includesQuery(statusText, q) ||
+          (qDigits.length >= 3 && amountDigits.includes(qDigits))
+        );
+      })
+    : allBudgets;
+
+  const chipClass = (isActive: boolean) =>
+    isActive
+      ? "ring-2 ring-[#358334]/40"
+      : "hover:opacity-90 transition-opacity";
+
   return (
     <div className="-m-8 p-6 md:p-8">
       <div className="flex items-start justify-between gap-4">
@@ -123,18 +210,57 @@ export default async function BudgetIndexPage() {
       <div className="mt-6 rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
         <div className="p-5 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="relative w-full md:w-80">
+            <form
+              action="/dashboard/budget"
+              method="GET"
+              className="relative w-full md:w-96"
+            >
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
-                placeholder="Filter (budget type)"
+                name="q"
+                defaultValue={qRaw ?? ""}
+                placeholder="Search (BUD-#, project, requester, dept, status…)"
                 className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400"
               />
-            </div>
+              {activeStatus !== "all" ? (
+                <input type="hidden" name="status" value={activeStatus} />
+              ) : null}
+            </form>
 
             <div className="flex flex-wrap items-center gap-3">
-              <span className={statusPill("approved")}>Approved</span>
-              <span className={statusPill("submitted")}>Pending</span>
-              <span className={statusPill("revision_requested")}>Revision</span>
+              <Link
+                href={buildBudgetListHref({ q: qRaw ?? "", status: "approved" })}
+                className={`${statusPill("approved")} ${chipClass(
+                  activeStatus === "approved"
+                )}`}
+              >
+                Approved
+              </Link>
+              <Link
+                href={buildBudgetListHref({ q: qRaw ?? "", status: "pending" })}
+                className={`${statusPill("submitted")} ${chipClass(
+                  activeStatus === "pending"
+                )}`}
+              >
+                Pending
+              </Link>
+              <Link
+                href={buildBudgetListHref({ q: qRaw ?? "", status: "revision" })}
+                className={`${statusPill("revision_requested")} ${chipClass(
+                  activeStatus === "revision"
+                )}`}
+              >
+                Revision
+              </Link>
+
+              {(q || activeStatus !== "all") && (
+                <Link
+                  href="/dashboard/budget"
+                  className="text-sm text-gray-600 hover:underline"
+                >
+                  Clear
+                </Link>
+              )}
             </div>
 
             <div className="md:ml-auto">
@@ -173,14 +299,14 @@ export default async function BudgetIndexPage() {
               </tr>
             </thead>
             <tbody>
-              {allBudgets.length === 0 ? (
+              {filteredBudgets.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-gray-500">
-                    No requests yet.
+                    No requests found.
                   </td>
                 </tr>
               ) : (
-                allBudgets.map((b) => {
+                filteredBudgets.map((b) => {
                   const projectName =
                     firstItemByBudgetId.get(b.id) ?? "Budget Request";
                   const sub = departmentById.get(b.user_id) ?? "";
