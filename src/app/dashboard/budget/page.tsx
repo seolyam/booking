@@ -52,17 +52,16 @@ function typePill(type: "capex" | "opex") {
 
 type StatusFilter = "all" | "approved" | "pending" | "revision";
 
-function getStatusFilterFromSearchParam(value: string | undefined): StatusFilter {
+function getStatusFilterFromSearchParam(
+  value: string | undefined
+): StatusFilter {
   if (value === "approved" || value === "pending" || value === "revision") {
     return value;
   }
   return "all";
 }
 
-function buildBudgetListHref(params: {
-  q?: string;
-  status?: StatusFilter;
-}) {
+function buildBudgetListHref(params: { q?: string; status?: StatusFilter }) {
   const sp = new URLSearchParams();
   const q = (params.q ?? "").trim();
   const status = params.status ?? "all";
@@ -104,14 +103,14 @@ export default async function BudgetIndexPage({
     activeStatus === "approved"
       ? eq(budgets.status, "approved")
       : activeStatus === "revision"
-      ? eq(budgets.status, "revision_requested")
-      : activeStatus === "pending"
-      ? inArray(budgets.status, [
-          "submitted",
-          "verified",
-          "verified_by_reviewer",
-        ])
-      : undefined;
+        ? eq(budgets.status, "revision_requested")
+        : activeStatus === "pending"
+          ? inArray(budgets.status, [
+              "submitted",
+              "verified",
+              "verified_by_reviewer",
+            ])
+          : undefined;
 
   const allBudgets = await db.query.budgets.findMany({
     where: statusWhere,
@@ -229,7 +228,10 @@ export default async function BudgetIndexPage({
 
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                href={buildBudgetListHref({ q: qRaw ?? "", status: "approved" })}
+                href={buildBudgetListHref({
+                  q: qRaw ?? "",
+                  status: "approved",
+                })}
                 className={`${statusPill("approved")} ${chipClass(
                   activeStatus === "approved"
                 )}`}
@@ -245,7 +247,10 @@ export default async function BudgetIndexPage({
                 Pending
               </Link>
               <Link
-                href={buildBudgetListHref({ q: qRaw ?? "", status: "revision" })}
+                href={buildBudgetListHref({
+                  q: qRaw ?? "",
+                  status: "revision",
+                })}
                 className={`${statusPill("revision_requested")} ${chipClass(
                   activeStatus === "revision"
                 )}`}
