@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { signIn, signUp } from "@/actions/auth";
-import { updateUserIdDocumentPath } from "@/actions/user";
+import { uploadIdDocument } from "@/actions/uploadId";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Eye, EyeOff, Check } from "lucide-react";
 import { compressImage } from "@/lib/imageCompression";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -86,7 +85,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Compress and upload ID document
+      // Compress and upload ID document via server action (bypasses RLS)
       setUploadProgress("Compressing ID document...");
       const compressed = await compressImage(idFile, {
         maxDimension: 1600,
@@ -95,30 +94,30 @@ export default function LoginPage() {
       });
 
       setUploadProgress("Uploading ID document...");
-      const supabase = createSupabaseBrowserClient();
-      const filePath = `${result.userId}/id-document.webp`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("id-documents")
-        .upload(filePath, compressed, {
-          upsert: true,
-          contentType: "image/webp",
-        });
+      // Convert blob to base64 for server action
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(compressed);
+      });
 
-      if (uploadError) {
-        setError(`Upload failed: ${uploadError.message}`);
+      const base64Data = await base64Promise;
+
+      const uploadResult = await uploadIdDocument(result.userId, base64Data);
+
+      if (uploadResult?.error) {
+        setError(uploadResult.error);
         setLoading(false);
         setUploadProgress("");
         return;
       }
 
-      // Update user record with storage path
-      await updateUserIdDocumentPath(result.userId, filePath);
-
       setUploadProgress("");
       setLoading(false);
       alert(
-        "Registration successful! Please check your email to verify account. Your application is pending admin approval."
+        "Registration successful! Please check your email to verify your account. Your application is pending admin approval."
       );
       setIsLogin(true);
     } catch (err) {
@@ -134,8 +133,8 @@ export default function LoginPage() {
       <div className="hidden md:flex md:w-[45%] bg-linear-to-br from-[#A8C738] via-[#4DA44E] to-[#2F5E3D] items-center justify-center relative overflow-hidden">
         <div className="flex items-center justify-center">
           <Image
-            src="/images/nepc-logo.png"
-            alt="NEPC Logo  "
+            src="/images/"
+            alt="Placeholder Logo"
             width={400}
             height={400}
             priority
@@ -396,8 +395,8 @@ export default function LoginPage() {
                   <Label htmlFor="id-upload" className="text-gray-900">
                     Upload ID picture
                   </Label>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Input
+                  <div className="mt-2 flex items-center gap-3">
+                    <input
                       id="id-upload"
                       type="file"
                       accept="image/*"
@@ -412,16 +411,29 @@ export default function LoginPage() {
                           setError("");
                         }
                       }}
-                      className="flex-1"
+                      className="sr-only"
                       required
                     />
+
+                    <label
+                      htmlFor="id-upload"
+                      className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-white px-4 text-sm text-gray-900 hover:bg-black/5 cursor-pointer"
+                    >
+                      Choose file
+                    </label>
+
+                    <div className="min-w-0 flex-1 text-sm text-gray-600 truncate">
+                      {idFile ? idFile.name : "No file selected"}
+                    </div>
+
                     {idFile && (
                       <Check className="h-5 w-5 text-green-600 shrink-0" />
                     )}
                   </div>
+
                   {idFile && (
                     <p className="text-sm text-gray-500 mt-1">
-                      {idFile.name} ({(idFile.size / 1024).toFixed(1)} KB)
+                      {(idFile.size / 1024).toFixed(1)} KB
                     </p>
                   )}
                 </div>

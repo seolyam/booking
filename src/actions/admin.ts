@@ -83,14 +83,28 @@ export async function rejectUser(
 export async function getSignedIdUrl(
   storagePath: string
 ): Promise<string | null> {
-  const adminClient = createSupabaseAdminClient();
-  const { data, error } = await adminClient.storage
-    .from("id-documents")
-    .createSignedUrl(storagePath, 60 * 5); // 5 min expiry
+  try {
+    const adminClient = createSupabaseAdminClient();
+    console.log(`Getting signed URL for: ${storagePath}`);
 
-  if (error || !data) {
+    const { data, error } = await adminClient.storage
+      .from("id-documents")
+      .createSignedUrl(storagePath, 60 * 60); // 1 hour expiry
+
+    if (error) {
+      console.error(`Supabase storage error:`, error);
+      return null;
+    }
+
+    if (!data?.signedUrl) {
+      console.error(`No signed URL returned for: ${storagePath}`);
+      return null;
+    }
+
+    console.log(`Signed URL created: ${data.signedUrl.substring(0, 100)}...`);
+    return data.signedUrl;
+  } catch (err) {
+    console.error(`Exception in getSignedIdUrl:`, err);
     return null;
   }
-
-  return data.signedUrl;
 }

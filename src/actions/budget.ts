@@ -283,7 +283,7 @@ const AddItemSchema = z.object({
   budgetId: z.string().uuid(),
   description: z.string().min(1),
   quantity: z.number().int().positive(),
-  unitCost: z.number().positive(),
+  unitCost: z.number().positive().max(9_999_999_999_999.99),
   quarter: z.string(), // e.g. Q1
 });
 
@@ -317,7 +317,25 @@ export async function addBudgetItem(prevState: unknown, formData: FormData) {
     return { message: "Invalid Item Data" };
   }
 
-  const totalCost = quantity * unitCost;
+  const roundToCents = (n: number) => Math.round(n * 100) / 100;
+
+  const unitCostRounded = roundToCents(unitCost);
+  const totalCostRounded = roundToCents(quantity * unitCostRounded);
+
+  if (!Number.isFinite(unitCostRounded) || unitCostRounded <= 0) {
+    return { message: "Unit cost must be a valid number greater than 0" };
+  }
+
+  if (!Number.isFinite(totalCostRounded) || totalCostRounded <= 0) {
+    return { message: "Total cost must be a valid number greater than 0" };
+  }
+
+  if (totalCostRounded > 9_999_999_999_999.99) {
+    return {
+      message:
+        "Total cost is too large. Please reduce quantity or unit cost (max 9,999,999,999,999.99).",
+    };
+  }
 
   const existingBudget = await db.query.budgets.findFirst({
     where: eq(budgets.id, budgetId),
@@ -331,14 +349,22 @@ export async function addBudgetItem(prevState: unknown, formData: FormData) {
     return { message: "Unauthorized" };
   }
 
-  await db.insert(budgetItems).values({
-    budget_id: budgetId,
-    description,
-    quantity,
-    unit_cost: unitCost.toString(),
-    total_cost: totalCost.toString(),
-    quarter,
-  });
+  try {
+    await db.insert(budgetItems).values({
+      budget_id: budgetId,
+      description,
+      quantity,
+      unit_cost: unitCostRounded.toFixed(2),
+      total_cost: totalCostRounded.toFixed(2),
+      quarter,
+    });
+  } catch (e) {
+    console.error(e);
+    return {
+      message:
+        "Failed to add item. If you entered a very large amount, please reduce it and try again.",
+    };
+  }
 
   const [{ value: newTotal }] = await db
     .select({
