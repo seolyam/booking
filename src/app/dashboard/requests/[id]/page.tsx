@@ -1,14 +1,14 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { notFound, redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
 import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
-} from "../../requests/[id]/_components/WorkflowProgress";
+} from "./_components/WorkflowProgress";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -151,7 +151,7 @@ type MilestoneLabel =
   | "Rejected"
   | "Revision requested";
 
-export default async function BudgetDetailPage({
+export default async function RequestViewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -165,8 +165,9 @@ export default async function BudgetDetailPage({
 
   if (!user) redirect("/login");
 
+  // Requester view: only allow viewing your own requests.
   const budget = await db.query.budgets.findFirst({
-    where: eq(budgets.id, id),
+    where: sql`${budgets.id} = ${id} and ${budgets.user_id} = ${user.id}`,
   });
 
   if (!budget) notFound();
@@ -208,6 +209,10 @@ export default async function BudgetDetailPage({
     actorRows.map((a) => [a.id, a.full_name || a.email])
   );
 
+  const projectName = items[0]?.description ?? "Budget Request";
+  const projectSub =
+    `BUD-${budget.budget_number} • ${requester?.department ?? ""}`.trim();
+
   const status = statusMeta(budget.status);
   const steps = computeSteps(budget.status);
 
@@ -222,12 +227,6 @@ export default async function BudgetDetailPage({
 
   const createdAt = formatDateShort(budget.created_at);
   const updatedAt = formatDateShort(budget.updated_at);
-
-  const budgetDisplayId = `BUD-${budget.budget_number}`;
-
-  const projectName = items[0]?.description ?? "Budget Request";
-  const projectSub =
-    `${budgetDisplayId} • ${requester?.department ?? ""}`.trim();
 
   const milestoneLines = (() => {
     const labels = new Set<MilestoneLabel | null>(
@@ -252,7 +251,7 @@ export default async function BudgetDetailPage({
         <div>
           <div className="flex items-center gap-3">
             <Link
-              href="/dashboard/budget"
+              href="/dashboard/requests"
               aria-label="Back"
               className="rounded-full p-2 text-gray-700 hover:bg-black/5"
             >

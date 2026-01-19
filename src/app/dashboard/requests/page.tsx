@@ -120,7 +120,7 @@ export default async function RequestsPage() {
                     </td>
                     <td className="py-4 px-6 text-right">
                       <Link
-                        href={`/dashboard/budget/${b.id}`}
+                        href={`/dashboard/requests/${b.id}`}
                         className="inline-flex items-center rounded-md bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300"
                       >
                         View
