@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
 import WorkflowProgress, {
   type WorkflowEvent,
@@ -25,6 +25,13 @@ function formatDateShort(input: Date) {
   const dd = String(input.getDate()).padStart(2, "0");
   const yyyy = String(input.getFullYear());
   return `${mm}-${dd}-${yyyy}`;
+}
+
+function formatDateShortYY(input: Date) {
+  const mm = String(input.getMonth() + 1).padStart(2, "0");
+  const dd = String(input.getDate()).padStart(2, "0");
+  const yy = String(input.getFullYear()).slice(-2);
+  return `${mm}-${dd}-${yy}`;
 }
 
 function typePill(type: "capex" | "opex") {
@@ -93,6 +100,18 @@ function actionLabel(action: string) {
     .split("_")
     .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
     .join(" ");
+}
+
+function auditDescription(action: string) {
+  if (action === "create_draft") return "Budget Created";
+  if (action === "submit") return "Budget Submitted for Review";
+  if (action === "request_revision")
+    return "Proposal Returned for Revisions";
+  if (action === "verify") return "Budget verified and forwarded to approver";
+  if (action === "approve")
+    return "Budget approved - Added to approved budget list";
+  if (action === "reject") return "Budget rejected";
+  return "";
 }
 
 function computeSteps(status: string): WorkflowStep[] {
@@ -173,14 +192,33 @@ export default async function BudgetDetailPage({
     orderBy: [asc(auditLogs.timestamp)],
   });
 
+  const actorIds = Array.from(new Set(logs.map((l) => l.actor_id)));
+  const actorRows =
+    actorIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: users.id,
+            email: users.email,
+            full_name: users.full_name,
+          })
+          .from(users)
+          .where(inArray(users.id, actorIds));
+
+  const actorNameById = new Map(
+    actorRows.map((a) => [a.id, a.full_name || a.email])
+  );
+
   const status = statusMeta(budget.status);
   const steps = computeSteps(budget.status);
 
   const events: WorkflowEvent[] = logs.map((l) => ({
     id: l.id,
-    at: formatDateShort(l.timestamp),
-    label: actionLabel(l.action),
-    detail: l.comment,
+    at: formatDateShortYY(l.timestamp),
+    title: actionLabel(l.action),
+    description: auditDescription(l.action),
+    actorName: actorNameById.get(l.actor_id) ?? null,
+    note: l.comment,
   }));
 
   const createdAt = formatDateShort(budget.created_at);
