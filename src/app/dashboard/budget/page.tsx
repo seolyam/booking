@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { Bell, Eye, Search } from "lucide-react";
+import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -24,6 +25,9 @@ function formatDateShort(d: Date) {
 }
 
 function statusLabel(status: string) {
+  if (status === "verified_by_reviewer") return "Reviewed";
+  if (status === "revision_requested") return "Revision";
+  if (status === "verified") return "Verified";
   return status
     .split("_")
     .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
@@ -53,7 +57,7 @@ function typePill(type: "capex" | "opex") {
 type StatusFilter = "all" | "approved" | "pending" | "revision";
 
 function getStatusFilterFromSearchParam(
-  value: string | undefined
+  value: string | undefined,
 ): StatusFilter {
   if (value === "approved" || value === "pending" || value === "revision") {
     return value;
@@ -98,6 +102,18 @@ export default async function BudgetIndexPage({
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const appUser = await getOrCreateAppUserFromAuthUser({
+    id: user.id,
+    email: user.email ?? null,
+    user_metadata: (user.user_metadata ?? null) as Record<
+      string,
+      unknown
+    > | null,
+  });
+
+  const canCreateRequest =
+    appUser.role === "requester" || appUser.role === "superadmin";
 
   const statusWhere =
     activeStatus === "approved"
@@ -153,10 +169,10 @@ export default async function BudgetIndexPage({
           .where(inArray(users.id, userIds));
 
   const requesterById = new Map(
-    requesterRows.map((u) => [u.id, u.full_name || u.email])
+    requesterRows.map((u) => [u.id, u.full_name || u.email]),
   );
   const departmentById = new Map(
-    requesterRows.map((u) => [u.id, u.department])
+    requesterRows.map((u) => [u.id, u.department]),
   );
 
   const filteredBudgets = q
@@ -185,17 +201,14 @@ export default async function BudgetIndexPage({
       })
     : allBudgets;
 
-  const chipClass = (isActive: boolean) =>
-    isActive
-      ? "ring-2 ring-[#358334]/40"
-      : "hover:opacity-90 transition-opacity";
-
   return (
     <div className="-m-8 p-6 md:p-8">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">List of Requests</h1>
-          <div className="text-sm text-gray-500 mt-1">Requester Dashboard</div>
+          <div className="text-sm text-gray-500 mt-1">
+            History of all requests
+          </div>
         </div>
         <button
           type="button"
@@ -232,17 +245,21 @@ export default async function BudgetIndexPage({
                   q: qRaw ?? "",
                   status: "approved",
                 })}
-                className={`${statusPill("approved")} ${chipClass(
+                className={
                   activeStatus === "approved"
-                )}`}
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-green-100 text-green-700 ring-2 ring-green-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Approved
               </Link>
               <Link
                 href={buildBudgetListHref({ q: qRaw ?? "", status: "pending" })}
-                className={`${statusPill("submitted")} ${chipClass(
+                className={
                   activeStatus === "pending"
-                )}`}
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 ring-2 ring-amber-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Pending
               </Link>
@@ -251,9 +268,11 @@ export default async function BudgetIndexPage({
                   q: qRaw ?? "",
                   status: "revision",
                 })}
-                className={`${statusPill("revision_requested")} ${chipClass(
+                className={
                   activeStatus === "revision"
-                )}`}
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-orange-100 text-orange-700 ring-2 ring-orange-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Revision
               </Link>
@@ -268,14 +287,16 @@ export default async function BudgetIndexPage({
               )}
             </div>
 
-            <div className="md:ml-auto">
-              <Link
-                href="/dashboard/budget/create"
-                className="inline-flex items-center gap-2 rounded-md bg-[#358334] px-4 py-2 text-sm font-medium text-white hover:bg-[#2F5E3D]"
-              >
-                Create Request
-              </Link>
-            </div>
+            {canCreateRequest && (
+              <div className="md:ml-auto">
+                <Link
+                  href="/dashboard/budget/create"
+                  className="inline-flex items-center gap-2 rounded-md bg-[#358334] px-4 py-2 text-sm font-medium text-white hover:bg-[#2F5E3D]"
+                >
+                  Create Request
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 

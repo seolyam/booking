@@ -275,6 +275,12 @@ export default async function DashboardPage() {
     const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
     const projectSub = appUser.department;
 
+    const isRevisionRequested = b.status === "revision_requested";
+    const actionLabel = isRevisionRequested ? ("Edit" as const) : ("View" as const);
+    const actionHref = isRevisionRequested
+      ? `/dashboard/budget/edit/${b.id}`
+      : `/dashboard/requests/${b.id}`;
+
     return {
       budgetId: b.id,
       displayId: `BUD-${b.budget_number}`,
@@ -284,6 +290,8 @@ export default async function DashboardPage() {
       amount: formatPhp(b.total_amount),
       statusLabel,
       dateLabel: formatDateShort(b.created_at),
+      actionLabel,
+      actionHref,
     };
   });
 

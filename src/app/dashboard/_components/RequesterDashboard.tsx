@@ -10,9 +10,9 @@ type DashboardRow = {
   projectSub: string;
   type: "CapEx" | "OpEx";
   amount: string;
-  statusLabel: "Approved" | "Pending" | "Revision" | "Rejected";
-  dateLabel: string;
-};
+  statusLabel: "Approved" | "Pending" | "Revision" | "Rejected" | "Verified";
+  dateLabel: string;  actionLabel: "View" | "Edit";
+  actionHref: string;};
 
 export default function RequesterDashboard({
   stats,
@@ -63,11 +63,13 @@ export default function RequesterDashboard({
     const cls =
       s === "Approved"
         ? "bg-green-50 text-green-600 ring-1 ring-green-100"
-        : s === "Pending"
-          ? "bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100"
-          : s === "Revision"
-            ? "bg-orange-50 text-orange-600 ring-1 ring-orange-100"
-            : "bg-red-50 text-red-600 ring-1 ring-red-100";
+        : s === "Verified"
+          ? "bg-green-50 text-green-600 ring-1 ring-green-100"
+          : s === "Pending"
+            ? "bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100"
+            : s === "Revision"
+              ? "bg-orange-50 text-orange-600 ring-1 ring-orange-100"
+              : "bg-red-50 text-red-600 ring-1 ring-red-100";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
@@ -166,10 +168,14 @@ export default function RequesterDashboard({
                       <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">{r.dateLabel}</td>
                       <td className="py-5 pr-0 text-right">
                         <Link
-                          href={`/dashboard/budget/${r.budgetId}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-700 px-4 py-2 text-xs font-bold text-white hover:bg-gray-800 transition-colors shadow-sm"
+                          href={r.actionHref}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition-colors shadow-sm ${
+                            r.actionLabel === "Edit"
+                              ? "bg-orange-600 hover:bg-orange-700"
+                              : "bg-gray-700 hover:bg-gray-800"
+                          }`}
                         >
-                          View <Eye className="h-3.5 w-3.5" />
+                          {r.actionLabel} {r.actionLabel === "Edit" ? <span>✏️</span> : <Eye className="h-3.5 w-3.5" />}
                         </Link>
                       </td>
                     </tr>

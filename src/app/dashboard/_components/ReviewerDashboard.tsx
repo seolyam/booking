@@ -16,7 +16,7 @@ export type ReviewerDashboardRow = {
   projectSub: string;
   type: "CapEx" | "OpEx";
   amount: string;
-  statusLabel: "Reviewed" | "Pending" | "Revision";
+  statusLabel: "Reviewed" | "Pending" | "Revision" | "Rejected" | "Verified";
   dateLabel: string;
   actionLabel: "View" | "Review";
   actionHref: string;
@@ -26,6 +26,8 @@ export default function ReviewerDashboard({
   stats,
   rows,
   showStats = true,
+  activeFilter,
+  searchQuery,
 }: {
   stats: {
     reviewedToday: number;
@@ -35,13 +37,15 @@ export default function ReviewerDashboard({
   };
   rows: ReviewerDashboardRow[];
   showStats?: boolean;
+  activeFilter?: "all" | "pending" | "reviewed";
+  searchQuery?: string;
 }) {
   const statCard = (
     icon: React.ReactNode,
     value: number,
     label: string,
     iconBg: string,
-    href: string
+    href: string,
   ) => (
     <Link
       href={href}
@@ -52,8 +56,12 @@ export default function ReviewerDashboard({
       >
         {icon}
       </div>
-      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">{value}</div>
-      <div className="mt-1 text-sm font-semibold text-gray-500 uppercase tracking-wide">{label}</div>
+      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">
+        {value}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-gray-500 uppercase tracking-wide">
+        {label}
+      </div>
     </Link>
   );
 
@@ -63,7 +71,9 @@ export default function ReviewerDashboard({
         ? "bg-blue-100 text-blue-600"
         : "bg-purple-100 text-purple-600";
     return (
-      <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${cls}`}>
+      <span
+        className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${cls}`}
+      >
         {type}
       </span>
     );
@@ -72,15 +82,36 @@ export default function ReviewerDashboard({
   const statusPill = (s: ReviewerDashboardRow["statusLabel"]) => {
     const cls =
       s === "Reviewed"
-        ? "bg-green-50 text-green-600 ring-1 ring-green-100"
-        : s === "Pending"
-          ? "bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100"
-          : "bg-orange-50 text-orange-600 ring-1 ring-orange-100";
+        ? "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200"
+        : "bg-gray-50 text-gray-700 ring-1 ring-gray-200";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
         {s}
       </span>
+    );
+  };
+
+  const filterChip = (
+    label: string,
+    filter: "all" | "pending" | "reviewed",
+    href: string,
+  ) => {
+    const isActive = activeFilter === filter;
+    const baseClass =
+      "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium transition-all";
+    const colorClass = isActive
+      ? filter === "pending"
+        ? "bg-gray-100 text-gray-700 ring-2 ring-gray-400"
+        : filter === "reviewed"
+          ? "bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400"
+          : "bg-blue-100 text-blue-700 ring-2 ring-blue-400"
+      : "bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400";
+
+    return (
+      <Link href={href} className={`${baseClass} ${colorClass}`}>
+        {label}
+      </Link>
     );
   };
 
@@ -91,7 +122,7 @@ export default function ReviewerDashboard({
     if (r.actionLabel === "Review") {
       return (
         <Link
-          href={`/dashboard/reviewer/${r.budgetId}`}
+          href={r.actionHref}
           className={`${base} bg-orange-500 text-white hover:bg-orange-600 hover:shadow-orange-200`}
         >
           Review <Eye className="h-3.5 w-3.5" />
@@ -101,7 +132,7 @@ export default function ReviewerDashboard({
 
     return (
       <Link
-        href={`/dashboard/reviewer/${r.budgetId}/tracking`}
+        href={r.actionHref}
         className={`${base} bg-gray-700 text-white hover:bg-gray-800`}
       >
         View <Eye className="h-3.5 w-3.5" />
@@ -118,37 +149,82 @@ export default function ReviewerDashboard({
             stats.reviewedToday,
             "Reviewed today",
             "bg-green-50",
-            "/dashboard/reviewer/review?status=reviewed"
+            "/dashboard/reviewer/review?status=reviewed",
           )}
           {statCard(
             <Clock className="h-6 w-6 text-yellow-500" />,
             stats.pendingReview,
             "Pending review",
             "bg-yellow-50",
-            "/dashboard/reviewer/review?status=pending"
+            "/dashboard/reviewer/review?status=pending",
           )}
           {statCard(
             <TrendingUp className="h-6 w-6 text-blue-500" />,
             stats.awaitingApproval,
             "Awaiting Approval",
             "bg-blue-50",
-            "/dashboard/reviewer/review?status=verified"
+            "/dashboard/reviewer/review?status=verified",
           )}
           {statCard(
             <AlertCircle className="h-6 w-6 text-orange-400" />,
             stats.needsRevision,
             "Needs revision",
             "bg-orange-50",
-            "/dashboard/reviewer/review?status=revision"
+            "/dashboard/reviewer/review?status=revision",
           )}
         </div>
       )}
 
       <div className="rounded-[2rem] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-8">
-          <div className="text-xl font-bold text-gray-900 mb-8">
-            Budgets to Review
+          <div className="flex items-center justify-between mb-6">
+            <div className="text-xl font-bold text-gray-900">
+              Budgets to Review
+            </div>
           </div>
+
+          {(activeFilter !== undefined || searchQuery !== undefined) && (
+            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center">
+              <form
+                action="/dashboard/reviewer/review"
+                method="GET"
+                className="relative w-full md:w-96"
+              >
+                <input
+                  name="q"
+                  defaultValue={searchQuery ?? ""}
+                  placeholder="Search (BUD-#, project, department…)"
+                  className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400"
+                />
+                {activeFilter && activeFilter !== "all" ? (
+                  <input type="hidden" name="status" value={activeFilter} />
+                ) : null}
+              </form>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {filterChip("All", "all", "/dashboard/reviewer/review")}
+                {filterChip(
+                  "Pending",
+                  "pending",
+                  "/dashboard/reviewer/review?status=pending",
+                )}
+                {filterChip(
+                  "Reviewed",
+                  "reviewed",
+                  "/dashboard/reviewer/review?status=reviewed",
+                )}
+
+                {(searchQuery || (activeFilter && activeFilter !== "all")) && (
+                  <Link
+                    href="/dashboard/reviewer/review"
+                    className="text-sm text-gray-600 hover:underline"
+                  >
+                    Clear
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -166,7 +242,10 @@ export default function ReviewerDashboard({
               <tbody className="divide-y divide-gray-50">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-gray-400 font-medium">
+                    <td
+                      colSpan={7}
+                      className="py-12 text-center text-gray-400 font-medium"
+                    >
                       No budgets to review right now.
                     </td>
                   </tr>
@@ -188,10 +267,16 @@ export default function ReviewerDashboard({
                         </div>
                       </td>
                       <td className="py-5 pr-4">{typePill(r.type)}</td>
-                      <td className="py-5 pr-4 text-gray-900 font-bold">{r.amount}</td>
+                      <td className="py-5 pr-4 text-gray-900 font-bold">
+                        {r.amount}
+                      </td>
                       <td className="py-5 pr-4">{statusPill(r.statusLabel)}</td>
-                      <td className="py-5 pr-4 text-gray-400 font-bold text-xs">{r.dateLabel}</td>
-                      <td className="py-5 pr-0 text-right">{actionButton(r)}</td>
+                      <td className="py-5 pr-4 text-gray-400 font-bold text-xs">
+                        {r.dateLabel}
+                      </td>
+                      <td className="py-5 pr-0 text-right">
+                        {actionButton(r)}
+                      </td>
                     </tr>
                   ))
                 )}
