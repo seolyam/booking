@@ -72,13 +72,15 @@ function StepDot({
       className={classNames(
         "flex h-10 w-10 items-center justify-center rounded-full border",
         borderColor,
-        bgColor
+        bgColor,
       )}
       aria-hidden="true"
     >
       {isDone ? <Check className={`h-5 w-5 ${iconColor}`} /> : null}
       {isCurrent && !isDone ? (
-        <div className={`h-2.5 w-2.5 rounded-full ${iconColor.replace("text-", "bg-")}`} />
+        <div
+          className={`h-2.5 w-2.5 rounded-full ${iconColor.replace("text-", "bg-")}`}
+        />
       ) : null}
     </div>
   );
@@ -137,13 +139,14 @@ export default function WorkflowProgress({
                     "absolute left-[-50%] top-5 hidden h-0.5 w-full sm:block",
                     steps[idx - 1]?.state === "done"
                       ? "bg-[#358334]"
-                      : s.state === "current" && s.statusType === "revision_requested"
+                      : s.state === "current" &&
+                          s.statusType === "revision_requested"
                         ? "bg-orange-500"
                         : s.state === "current" && s.statusType === "rejected"
                           ? "bg-red-500"
                           : s.state !== "todo"
                             ? "bg-[#358334]"
-                            : "bg-black/10"
+                            : "bg-black/10",
                   )}
                   aria-hidden="true"
                 />
@@ -199,43 +202,45 @@ export default function WorkflowProgress({
                     {events.map((e) => {
                       // Determine dot color based on action
                       const getDotColor = () => {
-                        if (e.action === "request_revision") return "bg-orange-500";
+                        if (e.action === "request_revision")
+                          return "bg-orange-500";
                         if (e.action === "reject") return "bg-red-500";
                         return "bg-[#358334]";
                       };
-                      
-                      return (
-                      <div key={e.id} className="relative pl-10">
-                        <div
-                          className={`absolute left-2.75 top-6 h-4 w-4 rounded-full ${getDotColor()} ring-4 ring-white`}
-                          aria-hidden="true"
-                        />
 
-                        <div className="rounded-xl bg-black/5 px-4 py-3">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {e.title}
-                              </div>
-                              <div className="mt-0.5 text-sm text-gray-700">
-                                {e.description}
-                              </div>
-                              <div className="mt-1 text-xs text-gray-600">
-                                {e.actorName ? `by ${e.actorName}` : ""}
-                              </div>
-                              {e.note ? (
-                                <div className="mt-1 text-xs text-gray-700">
-                                  {e.note}
+                      return (
+                        <div key={e.id} className="relative pl-10">
+                          <div
+                            className={`absolute left-2.75 top-6 h-4 w-4 rounded-full ${getDotColor()} ring-4 ring-white`}
+                            aria-hidden="true"
+                          />
+
+                          <div className="rounded-xl bg-black/5 px-4 py-3">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {e.title}
                                 </div>
-                              ) : null}
-                            </div>
-                            <div className="shrink-0 text-sm font-semibold text-gray-900">
-                              {e.at}
+                                <div className="mt-0.5 text-sm text-gray-700">
+                                  {e.description}
+                                </div>
+                                <div className="mt-1 text-xs text-gray-600">
+                                  {e.actorName ? `by ${e.actorName}` : ""}
+                                </div>
+                                {e.note ? (
+                                  <div className="mt-1 text-xs text-gray-700">
+                                    {e.note}
+                                  </div>
+                                ) : null}
+                              </div>
+                              <div className="shrink-0 text-sm font-semibold text-gray-900">
+                                {e.at}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )})}
+                      );
+                    })}
                   </div>
                 </div>
               )}
