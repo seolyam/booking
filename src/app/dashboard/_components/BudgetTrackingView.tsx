@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Bell,
   Check,
-  ChevronRight,
   Clock,
   BadgeCheck,
   AlertCircle,
@@ -53,6 +52,7 @@ interface AuditLog {
   description: string;
   actor: string;
   date: string;
+  comment?: string;
 }
 
 interface BudgetTrackingViewProps {
@@ -435,6 +435,88 @@ export default function BudgetTrackingView({
               </div>
             </div>
           </div>
+
+          {/* Audit Timeline */}
+          <div className="mt-16">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-[#1E293B]">
+                Complete Timeline
+              </h3>
+            </div>
+
+            <div className="relative pl-8 space-y-8">
+              {/* Vertical Line */}
+              <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-200" />
+
+              {auditHistory.length > 0 ? (
+                auditHistory.map((log) => {
+                  const isRevision = log.action === "revision_requested";
+                  const isRejected =
+                    log.action === "reject" || log.action === "rejected";
+                  let dotColor =
+                    "bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.1)]";
+                  if (isRevision)
+                    dotColor =
+                      "bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.1)]";
+                  if (isRejected)
+                    dotColor =
+                      "bg-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.1)]";
+
+                  const statusLabel =
+                    log.action.replace(/_/g, " ").charAt(0).toUpperCase() +
+                    log.action.replace(/_/g, " ").slice(1);
+
+                  return (
+                    <div key={log.id} className="relative group">
+                      {/* Step Dot */}
+                      <div
+                        className={`absolute -left-5.5 top-1.5 w-3 h-3 rounded-full ${dotColor} z-10`}
+                      />
+
+                      <div className="bg-gray-50/50 p-5 rounded-2xl group-hover:bg-gray-100/80 transition-colors border border-gray-200/50 group-hover:border-gray-300 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm font-bold text-[#1E293B]">
+                              {statusLabel}
+                            </p>
+                            <p className="text-xs text-[#475569] font-medium mt-1">
+                              {log.description}
+                            </p>
+                          </div>
+                          <span className="text-xs font-bold text-[#1E293B] bg-white px-3 py-1 rounded-lg border border-gray-100 whitespace-nowrap ml-4">
+                            {log.date}
+                          </span>
+                        </div>
+
+                        <div className="pt-3 border-t border-gray-200/50">
+                          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">
+                            Comment:
+                          </p>
+                          <p className="text-sm text-[#1E293B] font-medium bg-white p-3 rounded-lg border border-gray-100">
+                            {log.comment && log.comment.trim() ? (
+                              log.comment
+                            ) : (
+                              <span className="text-gray-400 italic">
+                                No comment provided
+                              </span>
+                            )}
+                          </p>
+                        </div>
+
+                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider pt-1">
+                          by {log.actor}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-gray-500 italic text-center py-8">
+                  No audit logs found
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       {/* Audit Tracking Modal */}
@@ -467,7 +549,7 @@ export default function BudgetTrackingView({
                 <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-100" />
 
                 {auditHistory.length > 0 ? (
-                  auditHistory.map((log, idx) => {
+                  auditHistory.map((log) => {
                     const isRevision = log.action === "revision_requested";
                     const isRejected =
                       log.action === "reject" || log.action === "rejected";

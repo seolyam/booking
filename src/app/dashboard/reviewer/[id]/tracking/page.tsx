@@ -135,6 +135,7 @@ export default async function BudgetTrackingPage({
             description: log.comment || `Budget ${log.action}`,
             actor: actorMap.get(log.actor_id) || "Unknown",
             date: formatDate(log.timestamp),
+            comment: log.comment,
         }));
 
     return (
