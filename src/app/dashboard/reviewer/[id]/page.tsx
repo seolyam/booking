@@ -1,6 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
@@ -81,33 +80,6 @@ export default async function ReviewBudgetDetailPage({
   }
 
   const budget = budgetData[0];
-
-  // Auto-mark as reviewed when a reviewer opens a submitted request
-  if (budget.status === "submitted" && appUser.role === "reviewer") {
-    const now = new Date();
-
-    await db.transaction(async (tx) => {
-      await tx
-        .update(budgets)
-        .set({ status: "verified_by_reviewer", updated_at: now })
-        .where(eq(budgets.id, budget.id));
-
-      await tx.insert(auditLogs).values({
-        budget_id: budget.id,
-        actor_id: appUser.id,
-        action: "reviewed",
-        previous_status: "submitted",
-        new_status: "verified_by_reviewer",
-      });
-    });
-
-    budget.status = "verified_by_reviewer" as typeof budget.status;
-    // @ts-expect-error mutation for updated_at
-    budget.updated_at = now;
-
-    revalidatePath("/dashboard/reviewer/review");
-    revalidatePath("/dashboard/budget");
-  }
 
   // Get requester info
   const requesterData = await db
