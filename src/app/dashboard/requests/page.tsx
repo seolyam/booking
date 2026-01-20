@@ -32,6 +32,9 @@ function typePill(type: "capex" | "opex") {
 }
 
 function statusLabel(status: string) {
+  if (status === "verified_by_reviewer") return "Reviewed";
+  if (status === "revision_requested") return "Revision";
+  if (status === "verified") return "Verified";
   return status
     .split("_")
     .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))

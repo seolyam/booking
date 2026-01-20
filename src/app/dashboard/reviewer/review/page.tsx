@@ -65,7 +65,8 @@ export default async function ReviewerReviewQueuePage() {
         "verified",
         "verified_by_reviewer",
         "revision_requested",
-      ])
+        "rejected",
+      ]),
     )
     .orderBy(desc(budgets.created_at))
     .limit(50);
@@ -93,12 +94,13 @@ export default async function ReviewerReviewQueuePage() {
     const type =
       b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
-    const statusLabel =
-      b.status === "revision_requested"
-        ? ("Revision" as const)
-        : b.status === "submitted"
-        ? ("Pending" as const)
-        : ("Reviewed" as const);
+    const statusLabel = (() => {
+      if (b.status === "revision_requested") return "Revision" as const;
+      if (b.status === "rejected") return "Rejected" as const;
+      if (b.status === "verified") return "Verified" as const;
+      if (b.status === "verified_by_reviewer") return "Reviewed" as const;
+      return "Pending" as const;
+    })();
 
     const actionLabel = b.status === "submitted" ? "Review" : "View";
 

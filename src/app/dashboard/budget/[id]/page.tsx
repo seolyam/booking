@@ -68,10 +68,17 @@ function statusMeta(status: string): {
       icon: <XCircle className="h-4 w-4" />,
     };
   }
-  if (status === "verified" || status === "verified_by_reviewer") {
+  if (status === "verified") {
     return {
       label: "Verified",
       cls: "bg-blue-100 text-blue-700",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+    };
+  }
+  if (status === "verified_by_reviewer") {
+    return {
+      label: "Reviewed",
+      cls: "bg-yellow-100 text-yellow-800",
       icon: <CheckCircle2 className="h-4 w-4" />,
     };
   }
@@ -92,6 +99,7 @@ function statusMeta(status: string): {
 function actionLabel(action: string) {
   if (action === "create_draft") return "Created";
   if (action === "submit") return "Submitted";
+  if (action === "reviewed") return "Reviewed";
   if (action === "verify") return "Verified";
   if (action === "request_revision") return "Revision requested";
   if (action === "approve") return "Approved";
@@ -105,6 +113,7 @@ function actionLabel(action: string) {
 function auditDescription(action: string) {
   if (action === "create_draft") return "Budget Created";
   if (action === "submit") return "Budget Submitted for Review";
+  if (action === "reviewed") return "Budget opened for review";
   if (action === "request_revision") return "Proposal Returned for Revisions";
   if (action === "verify") return "Budget verified and forwarded to approver";
   if (action === "approve")
@@ -117,16 +126,17 @@ function computeSteps(status: string): WorkflowStep[] {
   const steps: Array<{ key: string; label: string }> = [
     { key: "created", label: "Created" },
     { key: "submitted", label: "Submitted" },
-    { key: "review", label: "Review" },
+    { key: "reviewed", label: "Reviewed" },
     { key: "verified", label: "Verified" },
-    { key: "final", label: "Review" },
+    { key: "final", label: "Final" },
   ];
 
   const activeIndex = (() => {
     if (status === "draft") return 0;
     if (status === "submitted") return 1;
-    if (status === "revision_requested") return 2;
-    if (status === "verified" || status === "verified_by_reviewer") return 3;
+    if (status === "revision_requested" || status === "verified_by_reviewer")
+      return 2;
+    if (status === "verified") return 3;
     if (status === "approved" || status === "rejected") return 4;
     return 0;
   })();
@@ -146,6 +156,7 @@ function computeSteps(status: string): WorkflowStep[] {
 
 type MilestoneLabel =
   | "Submitted"
+  | "Reviewed"
   | "Verified"
   | "Approved"
   | "Rejected"
@@ -205,7 +216,7 @@ export default async function BudgetDetailPage({
           .where(inArray(users.id, actorIds));
 
   const actorNameById = new Map(
-    actorRows.map((a) => [a.id, a.full_name || a.email])
+    actorRows.map((a) => [a.id, a.full_name || a.email]),
   );
 
   const status = statusMeta(budget.status);
@@ -233,12 +244,13 @@ export default async function BudgetDetailPage({
     const labels = new Set<MilestoneLabel | null>(
       logs.map((l): MilestoneLabel | null => {
         if (l.action === "submit") return "Submitted";
+        if (l.action === "reviewed") return "Reviewed";
         if (l.action === "verify") return "Verified";
         if (l.action === "approve") return "Approved";
         if (l.action === "reject") return "Rejected";
         if (l.action === "request_revision") return "Revision requested";
         return null;
-      })
+      }),
     );
 
     return Array.from(labels)

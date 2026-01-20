@@ -25,6 +25,9 @@ function formatDateShort(d: Date) {
 }
 
 function statusLabel(status: string) {
+  if (status === "verified_by_reviewer") return "Reviewed";
+  if (status === "revision_requested") return "Revision";
+  if (status === "verified") return "Verified";
   return status
     .split("_")
     .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
@@ -54,7 +57,7 @@ function typePill(type: "capex" | "opex") {
 type StatusFilter = "all" | "approved" | "pending" | "revision";
 
 function getStatusFilterFromSearchParam(
-  value: string | undefined
+  value: string | undefined,
 ): StatusFilter {
   if (value === "approved" || value === "pending" || value === "revision") {
     return value;
@@ -166,10 +169,10 @@ export default async function BudgetIndexPage({
           .where(inArray(users.id, userIds));
 
   const requesterById = new Map(
-    requesterRows.map((u) => [u.id, u.full_name || u.email])
+    requesterRows.map((u) => [u.id, u.full_name || u.email]),
   );
   const departmentById = new Map(
-    requesterRows.map((u) => [u.id, u.department])
+    requesterRows.map((u) => [u.id, u.department]),
   );
 
   const filteredBudgets = q
@@ -246,7 +249,7 @@ export default async function BudgetIndexPage({
                   status: "approved",
                 })}
                 className={`${statusPill("approved")} ${chipClass(
-                  activeStatus === "approved"
+                  activeStatus === "approved",
                 )}`}
               >
                 Approved
@@ -254,7 +257,7 @@ export default async function BudgetIndexPage({
               <Link
                 href={buildBudgetListHref({ q: qRaw ?? "", status: "pending" })}
                 className={`${statusPill("submitted")} ${chipClass(
-                  activeStatus === "pending"
+                  activeStatus === "pending",
                 )}`}
               >
                 Pending
@@ -265,7 +268,7 @@ export default async function BudgetIndexPage({
                   status: "revision",
                 })}
                 className={`${statusPill("revision_requested")} ${chipClass(
-                  activeStatus === "revision"
+                  activeStatus === "revision",
                 )}`}
               >
                 Revision

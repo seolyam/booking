@@ -1,7 +1,13 @@
 "use server";
 
 import { db } from "@/db";
-import { budgets, budgetItems, auditLogs, users, reviewChecklists } from "@/db/schema";
+import {
+  budgets,
+  budgetItems,
+  auditLogs,
+  users,
+  reviewChecklists,
+} from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -41,7 +47,7 @@ const CreateBudgetSchema = z.object({
 
 export async function createBudgetDraft(
   prevState: unknown,
-  formData: FormData
+  formData: FormData,
 ) {
   const user = await getUser();
   if (!user) {
@@ -98,7 +104,7 @@ export async function createBudgetDraft(
 
 export async function submitBudget(
   budgetId: string,
-  varianceExplanation?: string
+  varianceExplanation?: string,
 ) {
   const user = await getUser();
   if (!user) return { message: "Unauthorized" };
@@ -158,18 +164,17 @@ export async function submitBudget(
 export async function reviewBudget(
   budgetId: string,
   action: "verify" | "request_revision" | "reject",
-  comment: string
+  comment: string,
 ) {
   const user = await getUser();
-  // Validations for role should go here (reviewer only)
   if (!user) return { message: "Unauthorized" };
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser) {
-    return {
-      message:
-        "Your account is not yet provisioned in the app. Ask an admin to create your profile (role/department).",
-    };
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
+    return { message: "Forbidden" };
   }
 
   const existingBudget = await db.query.budgets.findFirst({
@@ -177,24 +182,44 @@ export async function reviewBudget(
   });
   if (!existingBudget) return { message: "Budget not found" };
 
-  const newStatus = action === "verify" ? "verified" : action === "request_revision" ? "revision_requested" : "rejected";
+  const reviewableStatuses = [
+    "submitted",
+    "verified_by_reviewer",
+    "revision_requested",
+  ];
+
+  if (!reviewableStatuses.includes(existingBudget.status)) {
+    return { message: "Budget is not in a reviewable state" };
+  }
+
+  const now = new Date();
+  const newStatus =
+    action === "verify"
+      ? "verified"
+      : action === "request_revision"
+        ? "revision_requested"
+        : "rejected";
 
   await db
     .update(budgets)
-    .set({ status: newStatus, updated_at: new Date() })
+    .set({ status: newStatus, updated_at: now })
     .where(eq(budgets.id, budgetId));
 
   await db.insert(auditLogs).values({
     budget_id: budgetId,
-    actor_id: user.id, // Should be reviewer ID
-    action: action,
+    actor_id: user.id,
+    action,
     previous_status: existingBudget.status,
     new_status: newStatus,
-    comment: comment,
+    comment,
   });
 
-  revalidatePath("/dashboard/budget");
+  revalidatePath("/dashboard/reviewer/review");
   revalidatePath("/dashboard/reviewer");
+  revalidatePath("/dashboard/budget");
+  revalidatePath("/dashboard/requests");
+
+  return { message: "Review action recorded" };
 }
 
 export async function verifyBudget(formData: FormData): Promise<void> {
@@ -240,7 +265,7 @@ export async function rejectBudget(formData: FormData): Promise<void> {
 
 export async function finalizeBudget(
   budgetId: string,
-  decision: "approve" | "reject"
+  decision: "approve" | "reject",
 ) {
   const user = await getUser();
   // Validations for role should go here (approver only)
@@ -392,7 +417,10 @@ export async function updateReviewChecklist(formData: FormData) {
   }
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser || (appUser.role !== "reviewer" && appUser.role !== "superadmin")) {
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
     throw new Error("Forbidden");
   }
 
@@ -412,7 +440,7 @@ export async function updateReviewChecklist(formData: FormData) {
     .where(
       sql`${reviewChecklists.budget_id} = ${budgetId} 
           AND ${reviewChecklists.reviewer_id} = ${user.id} 
-          AND ${reviewChecklists.item_key} = ${itemKey}`
+          AND ${reviewChecklists.item_key} = ${itemKey}`,
     )
     .limit(1);
 
@@ -424,7 +452,7 @@ export async function updateReviewChecklist(formData: FormData) {
       .where(
         sql`${reviewChecklists.budget_id} = ${budgetId} 
             AND ${reviewChecklists.reviewer_id} = ${user.id} 
-            AND ${reviewChecklists.item_key} = ${itemKey}`
+            AND ${reviewChecklists.item_key} = ${itemKey}`,
       );
   } else {
     // Insert new
@@ -448,7 +476,10 @@ export async function getReviewChecklist(budgetId: string) {
   }
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser || (appUser.role !== "reviewer" && appUser.role !== "superadmin")) {
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
     throw new Error("Forbidden");
   }
 
@@ -457,7 +488,7 @@ export async function getReviewChecklist(budgetId: string) {
     .from(reviewChecklists)
     .where(
       sql`${reviewChecklists.budget_id} = ${budgetId} 
-          AND ${reviewChecklists.reviewer_id} = ${user.id}`
+          AND ${reviewChecklists.reviewer_id} = ${user.id}`,
     );
 
   return items;
