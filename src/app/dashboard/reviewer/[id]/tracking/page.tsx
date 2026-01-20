@@ -6,6 +6,18 @@ import { budgets, budgetItems, users, budgetMilestones, auditLogs } from "@/db/s
 import { eq, inArray } from "drizzle-orm";
 import BudgetTrackingView from "@/app/dashboard/_components/BudgetTrackingView";
 
+function deriveDisplayName(fullName?: string | null, email?: string | null) {
+    if (fullName && fullName.trim()) return fullName.trim();
+    if (!email) return "Unknown";
+    const local = email.split("@")[0] ?? email;
+    const cleaned = local.replace(/[._-]+/g, " ");
+    return cleaned
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0]!.toUpperCase() + part.slice(1))
+        .join(" ");
+}
+
 function formatPhp(amount: string | number) {
     const n = typeof amount === "string" ? Number(amount) : amount;
     if (!Number.isFinite(n)) return "₱0";
@@ -119,7 +131,7 @@ export default async function BudgetTrackingPage({
         projectSub: req?.department || "Infrastructure Department",
         type: budget.budget_type === "capex" ? "CapEx" : "OpEx",
         totalAmount: formatPhp(budget.total_amount),
-        requester: req?.full_name || req?.email || "Unknown",
+        requester: deriveDisplayName(req?.full_name, req?.email),
         createdDate: formatDate(budget.created_at),
         updatedDate: formatDate(budget.updated_at),
         status: budget.status,

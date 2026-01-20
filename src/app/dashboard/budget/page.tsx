@@ -304,7 +304,7 @@ export default async function BudgetIndexPage({
           <table className="w-full min-w-245 table-fixed text-sm">
             <colgroup>
               <col style={{ width: 140 }} />
-              <col style={{ width: 360 }} />
+              <col style={{ width: 240 }} />
               <col style={{ width: 90 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 140 }} />
@@ -351,7 +351,7 @@ export default async function BudgetIndexPage({
                         {`BUD-${b.budget_number}`}
                       </td>
                       <td className="py-5 px-4 align-top whitespace-normal">
-                        <div className="font-medium text-gray-900 whitespace-normal wrap-break-word leading-snug">
+                        <div className="font-medium text-gray-900 whitespace-normal wrap-break-word leading-snug line-clamp-2">
                           {projectName}
                         </div>
                         <div className="text-xs text-gray-500">

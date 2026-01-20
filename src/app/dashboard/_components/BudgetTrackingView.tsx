@@ -262,7 +262,7 @@ export default function BudgetTrackingView({
           </div>
 
           {/* Stats Bar */}
-          <div className="grid grid-cols-4 gap-4 p-6 bg-gray-50/50 rounded-2xl">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 bg-gray-50/50 rounded-2xl">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                 Total amount
@@ -271,15 +271,15 @@ export default function BudgetTrackingView({
                 {budget.totalAmount}
               </p>
             </div>
-            <div className="space-y-1 text-center">
+            <div className="space-y-1">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                 Requester
               </p>
-              <p className="text-lg font-bold text-[#1E293B]">
+              <p className="text-lg font-bold text-[#1E293B] leading-snug line-clamp-2">
                 {budget.requester}
               </p>
             </div>
-            <div className="space-y-1 text-center">
+            <div className="space-y-1">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                 Created
               </p>
@@ -287,7 +287,7 @@ export default function BudgetTrackingView({
                 {budget.createdDate}
               </p>
             </div>
-            <div className="space-y-1 text-right">
+            <div className="space-y-1 md:text-right">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                 Last Updated
               </p>

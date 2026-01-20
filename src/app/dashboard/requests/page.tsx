@@ -275,7 +275,7 @@ export default async function RequestsPage({
           <table className="w-full min-w-245 table-fixed text-sm">
             <colgroup>
               <col style={{ width: 140 }} />
-              <col style={{ width: 240 }} />
+              <col style={{ width: 220 }} />
               <col style={{ width: 90 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 140 }} />
