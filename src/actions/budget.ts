@@ -647,3 +647,232 @@ export async function getReviewChecklist(budgetId: string) {
 
   return items;
 }
+
+// Update an existing budget item
+export async function updateBudgetItem(formData: FormData) {
+  const user = await getUser();
+  if (!user) {
+    return { message: "Unauthorized" };
+  }
+
+  const itemId = formData.get("itemId") as string;
+  const description = formData.get("description") as string;
+  const quantity = parseInt(formData.get("quantity") as string);
+  const unitCost = formData.get("unitCost") as string;
+
+  if (!itemId || !description || !quantity || !unitCost) {
+    return { message: "Missing required fields" };
+  }
+
+  try {
+    // Verify item exists
+    const item = await db.query.budgetItems.findFirst({
+      where: eq(budgetItems.id, itemId),
+    });
+
+    if (!item) {
+      return { message: "Item not found" };
+    }
+
+    // Verify budget belongs to user
+    const budget = await db.query.budgets.findFirst({
+      where: eq(budgets.id, item.budget_id),
+    });
+
+    if (!budget || budget.user_id !== user.id) {
+      return { message: "Unauthorized" };
+    }
+
+    // Only allow updates on revision_requested budgets
+    if (budget.status !== "revision_requested") {
+      return { message: "Cannot update items for this budget status" };
+    }
+
+    const totalCost = quantity * parseFloat(unitCost);
+
+    await db
+      .update(budgetItems)
+      .set({
+        description,
+        quantity,
+        unit_cost: unitCost,
+        total_cost: totalCost.toString(),
+      })
+      .where(eq(budgetItems.id, itemId));
+
+    // Recalculate budget total
+    await recalculateBudgetTotal(item.budget_id);
+
+    revalidatePath(`/dashboard/budget/edit/${item.budget_id}`);
+    return { message: "Item updated successfully" };
+  } catch (error) {
+    console.error("updateBudgetItem error:", error);
+    return { message: "Failed to update item" };
+  }
+}
+
+// Delete a budget item
+export async function deleteBudgetItem(formData: FormData) {
+  const user = await getUser();
+  if (!user) {
+    return { message: "Unauthorized" };
+  }
+
+  const itemId = formData.get("itemId") as string;
+
+  if (!itemId) {
+    return { message: "Missing item ID" };
+  }
+
+  try {
+    // Verify item exists
+    const item = await db.query.budgetItems.findFirst({
+      where: eq(budgetItems.id, itemId),
+    });
+
+    if (!item) {
+      return { message: "Item not found" };
+    }
+
+    // Verify budget belongs to user
+    const budget = await db.query.budgets.findFirst({
+      where: eq(budgets.id, item.budget_id),
+    });
+
+    if (!budget || budget.user_id !== user.id) {
+      return { message: "Unauthorized" };
+    }
+
+    // Only allow deletion on revision_requested budgets
+    if (budget.status !== "revision_requested") {
+      return { message: "Cannot delete items for this budget status" };
+    }
+
+    await db.delete(budgetItems).where(eq(budgetItems.id, itemId));
+
+    // Recalculate budget total
+    await recalculateBudgetTotal(item.budget_id);
+
+    revalidatePath(`/dashboard/budget/edit/${item.budget_id}`);
+    return { message: "Item deleted successfully" };
+  } catch (error) {
+    console.error("deleteBudgetItem error:", error);
+    return { message: "Failed to delete item" };
+  }
+}
+
+// Delete a budget milestone
+export async function deleteBudgetMilestone(formData: FormData) {
+  const user = await getUser();
+  if (!user) {
+    return { message: "Unauthorized" };
+  }
+
+  const milestoneId = formData.get("milestoneId") as string;
+
+  if (!milestoneId) {
+    return { message: "Missing milestone ID" };
+  }
+
+  try {
+    // Verify milestone exists
+    const milestone = await db.query.budgetMilestones.findFirst({
+      where: eq(budgetMilestones.id, milestoneId),
+    });
+
+    if (!milestone) {
+      return { message: "Milestone not found" };
+    }
+
+    // Verify budget belongs to user
+    const budget = await db.query.budgets.findFirst({
+      where: eq(budgets.id, milestone.budget_id),
+    });
+
+    if (!budget || budget.user_id !== user.id) {
+      return { message: "Unauthorized" };
+    }
+
+    // Only allow deletion on revision_requested budgets
+    if (budget.status !== "revision_requested") {
+      return { message: "Cannot delete milestones for this budget status" };
+    }
+
+    await db
+      .delete(budgetMilestones)
+      .where(eq(budgetMilestones.id, milestoneId));
+
+    revalidatePath(`/dashboard/budget/edit/${milestone.budget_id}`);
+    return { message: "Milestone deleted successfully" };
+  } catch (error) {
+    console.error("deleteBudgetMilestone error:", error);
+    return { message: "Failed to delete milestone" };
+  }
+}
+
+// Resubmit a budget after revision
+export async function resubmitBudget(
+  budgetId: string,
+  varianceExplanation?: string,
+) {
+  const user = await getUser();
+  if (!user) {
+    return { message: "Unauthorized" };
+  }
+
+  try {
+    const budget = await db.query.budgets.findFirst({
+      where: eq(budgets.id, budgetId),
+    });
+
+    if (!budget) {
+      return { message: "Budget not found" };
+    }
+
+    if (budget.user_id !== user.id) {
+      return { message: "Unauthorized to resubmit this budget" };
+    }
+
+    if (budget.status !== "revision_requested") {
+      return { message: "Budget is not in revision status" };
+    }
+
+    // Update status to submitted
+    await db
+      .update(budgets)
+      .set({ status: "submitted" })
+      .where(eq(budgets.id, budgetId));
+
+    // Log the resubmission
+    await db.insert(auditLogs).values({
+      budget_id: budgetId,
+      actor_id: user.id,
+      action: "resubmit",
+      new_status: "submitted",
+      comment: varianceExplanation || "Budget resubmitted after revision",
+    });
+
+    revalidatePath("/dashboard/requests");
+    return { message: "Budget resubmitted successfully" };
+  } catch (error) {
+    console.error("resubmitBudget error:", error);
+    return { message: "Failed to resubmit budget" };
+  }
+}
+
+// Helper function to recalculate budget total
+async function recalculateBudgetTotal(budgetId: string) {
+  const items = await db.query.budgetItems.findMany({
+    where: eq(budgetItems.budget_id, budgetId),
+  });
+
+  const total = items.reduce(
+    (sum, item) => sum + parseFloat(item.total_cost),
+    0,
+  );
+
+  await db
+    .update(budgets)
+    .set({ total_amount: total.toString() })
+    .where(eq(budgets.id, budgetId));
+}
