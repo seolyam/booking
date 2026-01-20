@@ -336,13 +336,17 @@ export default async function ReviewBudgetDetailPage({
                     Timeline
                   </p>
                   <p className="text-xl font-bold text-gray-900">
-                    {formatDate(budget.start_date ?? budget.created_at)} to{" "}
-                    {formatDate(
-                      budget.end_date ??
-                        new Date(
-                          budget.created_at.getTime() +
-                            365 * 24 * 60 * 60 * 1000,
-                        ),
+                    {budget.start_date || budget.end_date ? (
+                      <>
+                        {budget.start_date
+                          ? formatDate(budget.start_date)
+                          : "Not set"} to{" "}
+                        {budget.end_date
+                          ? formatDate(budget.end_date)
+                          : "Not set"}
+                      </>
+                    ) : (
+                      "No timeline set."
                     )}
                   </p>
                 </div>
@@ -407,7 +411,7 @@ export default async function ReviewBudgetDetailPage({
                   Start Date
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {formatDate(budget.start_date ?? budget.created_at)}
+                  {budget.start_date ? formatDate(budget.start_date) : "Not set"}
                 </span>
               </div>
               <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
@@ -415,12 +419,7 @@ export default async function ReviewBudgetDetailPage({
                   End Date
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {formatDate(
-                    budget.end_date ??
-                      new Date(
-                        budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000,
-                      ),
-                  )}
+                  {budget.end_date ? formatDate(budget.end_date) : "Not set"}
                 </span>
               </div>
             </div>

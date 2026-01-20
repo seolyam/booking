@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
 import { budgets, budgetItems, users, budgetMilestones, auditLogs } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, asc } from "drizzle-orm";
 import BudgetTrackingView from "@/app/dashboard/_components/BudgetTrackingView";
 
 function formatPhp(amount: string | number) {
@@ -66,12 +66,21 @@ export default async function BudgetTrackingPage({
         .where(eq(budgetItems.budget_id, id));
 
     // Fetch milestones
-    let milestones: any[] = [];
+    let milestones: Array<{
+        id: string;
+        description: string;
+        target_quarter: string | null;
+    }> = [];
     try {
         milestones = await db
-            .select()
+            .select({
+                id: budgetMilestones.id,
+                description: budgetMilestones.description,
+                target_quarter: budgetMilestones.target_quarter,
+            })
             .from(budgetMilestones)
-            .where(eq(budgetMilestones.budget_id, id));
+            .where(eq(budgetMilestones.budget_id, id))
+            .orderBy(asc(budgetMilestones.created_at));
     } catch (e) {
         console.error("Milestones table fetch error:", e);
     }
@@ -149,11 +158,7 @@ export default async function BudgetTrackingPage({
                 total_cost: it.total_cost,
                 quarter: it.quarter
             }))}
-            milestones={milestones.map(m => ({
-                id: m.id,
-                description: m.description,
-                target_quarter: m.target_quarter
-            }))}
+            milestones={milestones}
             auditHistory={auditHistory}
             backHref="/dashboard/reviewer"
         />
