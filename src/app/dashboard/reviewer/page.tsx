@@ -60,8 +60,8 @@ export default async function ReviewerDashboardPage() {
       and(
         eq(auditLogs.actor_id, appUser.id),
         eq(auditLogs.action, "verify"),
-        gte(auditLogs.timestamp, startOfDay)
-      )
+        gte(auditLogs.timestamp, startOfDay),
+      ),
     );
   const reviewedToday = Number(reviewedTodayResult[0]?.count ?? 0);
 
@@ -74,7 +74,7 @@ export default async function ReviewerDashboardPage() {
   const awaitingApprovalResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(budgets)
-    .where(inArray(budgets.status, ["verified", "verified_by_reviewer"]));
+    .where(eq(budgets.status, "verified"));
   const awaitingApproval = Number(awaitingApprovalResult[0]?.count ?? 0);
 
   const needsRevisionResult = await db
@@ -87,6 +87,7 @@ export default async function ReviewerDashboardPage() {
   const reviewQueue = await db
     .select({
       id: budgets.id,
+      budget_number: budgets.budget_number,
       budget_type: budgets.budget_type,
       total_amount: budgets.total_amount,
       status: budgets.status,
@@ -101,7 +102,8 @@ export default async function ReviewerDashboardPage() {
         "verified",
         "verified_by_reviewer",
         "revision_requested",
-      ])
+        "rejected",
+      ]),
     )
     .orderBy(desc(budgets.created_at))
     .limit(20);
@@ -129,21 +131,29 @@ export default async function ReviewerDashboardPage() {
     const type =
       b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
-    const statusLabel =
-      b.status === "revision_requested"
-        ? ("Revision" as const)
-        : b.status === "submitted"
-        ? ("Pending" as const)
-        : ("Reviewed" as const);
+    const statusLabel = (() => {
+      if (b.status === "revision_requested") return "Revision" as const;
+      if (b.status === "rejected") return "Rejected" as const;
+      if (b.status === "verified") return "Verified" as const;
+      if (b.status === "verified_by_reviewer") return "Reviewed" as const;
+      return "Pending" as const;
+    })();
 
     const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
     const projectSub = b.department ?? "";
 
-    const actionLabel = b.status === "submitted" ? "Review" : "View";
+    const isPendingDecision =
+      b.status === "submitted" || b.status === "verified_by_reviewer";
+
+    const actionLabel = isPendingDecision ? "Review" : "View";
+
+    const actionHref = isPendingDecision
+      ? `/dashboard/reviewer/${b.id}`
+      : `/dashboard/reviewer/${b.id}/tracking`;
 
     return {
       budgetId: b.id,
-      displayId: `BUD-${String(idx + 1).padStart(3, "0")}`,
+      displayId: `BUD-${b.budget_number}`,
       projectName,
       projectSub,
       type,
@@ -151,7 +161,7 @@ export default async function ReviewerDashboardPage() {
       statusLabel,
       dateLabel: formatDateShort(b.created_at),
       actionLabel,
-      actionHref: `/dashboard/budget/${b.id}`,
+      actionHref,
     };
   });
 

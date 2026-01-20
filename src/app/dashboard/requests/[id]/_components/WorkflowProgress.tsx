@@ -7,6 +7,7 @@ export type WorkflowStep = {
   key: string;
   label: string;
   state: "done" | "current" | "todo";
+  statusType?: string; // Optional status for color differentiation
 };
 
 export type WorkflowEvent = {
@@ -16,29 +17,70 @@ export type WorkflowEvent = {
   description: string;
   actorName?: string | null;
   note?: string | null;
+  action?: string; // Action type for color determination
 };
 
 function classNames(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-function StepDot({ state }: { state: WorkflowStep["state"] }) {
+function StepDot({
+  state,
+  statusType,
+}: {
+  state: WorkflowStep["state"];
+  statusType?: string;
+}) {
   const isDone = state === "done";
   const isCurrent = state === "current";
+
+  // Determine colors based on state and statusType
+  let borderColor = "";
+  let bgColor = "";
+  let iconColor = "";
+
+  if (isDone) {
+    // Completed steps are green
+    borderColor = "border-[#358334]";
+    bgColor = "bg-[#D7F7D6]";
+    iconColor = "text-[#358334]";
+  } else if (isCurrent) {
+    // Current step: check status for special colors
+    if (statusType === "revision_requested") {
+      borderColor = "border-orange-500";
+      bgColor = "bg-orange-50";
+      iconColor = "text-orange-600";
+    } else if (statusType === "rejected") {
+      borderColor = "border-red-500";
+      bgColor = "bg-red-50";
+      iconColor = "text-red-600";
+    } else {
+      // Normal current step (in progress)
+      borderColor = "border-[#358334]";
+      bgColor = "bg-[#D7F7D6]";
+      iconColor = "text-[#358334]";
+    }
+  } else {
+    // Todo steps are gray
+    borderColor = "border-black/15";
+    bgColor = "bg-white";
+    iconColor = "text-gray-400";
+  }
 
   return (
     <div
       className={classNames(
         "flex h-10 w-10 items-center justify-center rounded-full border",
-        isDone || isCurrent
-          ? "border-[#358334] bg-[#D7F7D6]"
-          : "border-black/15 bg-white"
+        borderColor,
+        bgColor,
       )}
       aria-hidden="true"
     >
-      {isDone ? <Check className="h-5 w-5 text-[#358334]" /> : null}
+      {isDone ? <Check className={`h-5 w-5 ${iconColor}`} /> : null}
       {isCurrent && !isDone ? (
-        <div className="h-2.5 w-2.5 rounded-full bg-[#358334]" />
+        <div
+          className={`h-2.5 w-2.5 rounded-full ${iconColor.replace("text-", "bg-")}`}
+        />
       ) : null}
     </div>
   );
@@ -95,15 +137,22 @@ export default function WorkflowProgress({
                 <div
                   className={classNames(
                     "absolute left-[-50%] top-5 hidden h-0.5 w-full sm:block",
-                    steps[idx - 1]?.state === "done" || s.state !== "todo"
+                    steps[idx - 1]?.state === "done"
                       ? "bg-[#358334]"
-                      : "bg-black/10"
+                      : s.state === "current" &&
+                          s.statusType === "revision_requested"
+                        ? "bg-orange-500"
+                        : s.state === "current" && s.statusType === "rejected"
+                          ? "bg-red-500"
+                          : s.state !== "todo"
+                            ? "bg-[#358334]"
+                            : "bg-black/10",
                   )}
                   aria-hidden="true"
                 />
               ) : null}
               <div className="flex flex-col items-center gap-2">
-                <StepDot state={s.state} />
+                <StepDot state={s.state} statusType={s.statusType} />
                 <div className="text-xs font-medium text-gray-700">
                   {s.label}
                 </div>
@@ -146,42 +195,52 @@ export default function WorkflowProgress({
               ) : (
                 <div className="relative">
                   <div
-                    className="absolute left-4 top-2 bottom-2 w-0.5 bg-[#358334]"
+                    className="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-200"
                     aria-hidden="true"
                   />
                   <div className="space-y-4">
-                    {events.map((e) => (
-                      <div key={e.id} className="relative pl-10">
-                        <div
-                          className="absolute left-2.75 top-6 h-4 w-4 rounded-full bg-[#358334] ring-4 ring-white"
-                          aria-hidden="true"
-                        />
+                    {events.map((e) => {
+                      // Determine dot color based on action
+                      const getDotColor = () => {
+                        if (e.action === "request_revision")
+                          return "bg-orange-500";
+                        if (e.action === "reject") return "bg-red-500";
+                        return "bg-[#358334]";
+                      };
 
-                        <div className="rounded-xl bg-black/5 px-4 py-3">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {e.title}
-                              </div>
-                              <div className="mt-0.5 text-sm text-gray-700">
-                                {e.description}
-                              </div>
-                              <div className="mt-1 text-xs text-gray-600">
-                                {e.actorName ? `by ${e.actorName}` : ""}
-                              </div>
-                              {e.note ? (
-                                <div className="mt-1 text-xs text-gray-700">
-                                  {e.note}
+                      return (
+                        <div key={e.id} className="relative pl-10">
+                          <div
+                            className={`absolute left-2.75 top-6 h-4 w-4 rounded-full ${getDotColor()} ring-4 ring-white`}
+                            aria-hidden="true"
+                          />
+
+                          <div className="rounded-xl bg-black/5 px-4 py-3">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {e.title}
                                 </div>
-                              ) : null}
-                            </div>
-                            <div className="shrink-0 text-sm font-semibold text-gray-900">
-                              {e.at}
+                                <div className="mt-0.5 text-sm text-gray-700">
+                                  {e.description}
+                                </div>
+                                <div className="mt-1 text-xs text-gray-600">
+                                  {e.actorName ? `by ${e.actorName}` : ""}
+                                </div>
+                                {e.note ? (
+                                  <div className="mt-1 text-xs text-gray-700">
+                                    {e.note}
+                                  </div>
+                                ) : null}
+                              </div>
+                              <div className="shrink-0 text-sm font-semibold text-gray-900">
+                                {e.at}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

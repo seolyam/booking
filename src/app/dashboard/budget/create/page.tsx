@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import {
   addBudgetItem,
+  addBudgetMilestone,
   createBudgetDraft,
   submitBudget,
 } from "@/actions/budget";
@@ -28,7 +29,7 @@ export default function CreateBudgetPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState([
-    { category: "", description: "", quantity: 1, unitCost: 0 },
+    { category: "", description: "", quantity: 1, unitCost: "" },
   ]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -48,7 +49,7 @@ export default function CreateBudgetPage() {
   const addItem = () => {
     setItems([
       ...items,
-      { category: "", description: "", quantity: 1, unitCost: 0 },
+      { category: "", description: "", quantity: 1, unitCost: "" },
     ]);
   };
 
@@ -74,8 +75,9 @@ export default function CreateBudgetPage() {
   };
 
   const totalBudget = items.reduce(
-    (sum, item) => sum + item.quantity * item.unitCost,
-    0
+    (sum, item) =>
+      sum + item.quantity * (parseFloat(item.unitCost as string) || 0),
+    0,
   );
 
   const categories = [
@@ -100,11 +102,14 @@ export default function CreateBudgetPage() {
     }
 
     const hasAnyValidItem = items.some(
-      (it) => it.description.trim() && it.quantity > 0 && it.unitCost > 0
+      (it) =>
+        it.description.trim() &&
+        it.quantity > 0 &&
+        parseFloat(it.unitCost as string) > 0,
     );
     if (!hasAnyValidItem) {
       setError(
-        "Please add at least one cost item with quantity and unit cost."
+        "Please add at least one cost item with quantity and unit cost.",
       );
       return;
     }
@@ -114,6 +119,8 @@ export default function CreateBudgetPage() {
       const draftFd = new FormData();
       draftFd.set("budgetType", selectedType);
       draftFd.set("fiscalYear", String(new Date().getFullYear()));
+      if (startDate) draftFd.set("startDate", startDate);
+      if (endDate) draftFd.set("endDate", endDate);
 
       const draftRes = await createBudgetDraft(null, draftFd);
       if (!draftRes?.budgetId) {
@@ -125,13 +132,18 @@ export default function CreateBudgetPage() {
 
       for (const item of items) {
         const desc = item.description.trim();
-        if (!desc || item.quantity <= 0 || item.unitCost <= 0) continue;
+        if (
+          !desc ||
+          item.quantity <= 0 ||
+          parseFloat(item.unitCost as string) <= 0
+        )
+          continue;
 
         const itemFd = new FormData();
         itemFd.set("budgetId", budgetId);
         itemFd.set(
           "description",
-          item.category ? `${item.category} - ${desc}` : desc
+          item.category ? `${item.category} - ${desc}` : desc,
         );
         itemFd.set("quantity", String(item.quantity));
         itemFd.set("unitCost", String(item.unitCost));
@@ -144,10 +156,27 @@ export default function CreateBudgetPage() {
         }
       }
 
+      // Save milestones
+      for (const milestoneDesc of milestones) {
+        const milestoneFd = new FormData();
+        milestoneFd.set("budgetId", budgetId);
+        milestoneFd.set("description", milestoneDesc.trim());
+        milestoneFd.set("targetQuarter", "Q1"); // Default quarter
+
+        const milestoneRes = await addBudgetMilestone(null, milestoneFd);
+        if (
+          milestoneRes?.message &&
+          milestoneRes.message !== "Milestone added"
+        ) {
+          console.error("Failed to add milestone:", milestoneRes.message);
+          // Continue even if milestone fails
+        }
+      }
+
       if (mode === "submit") {
         const submitRes = await submitBudget(
           budgetId,
-          varianceExplanation.trim() ? varianceExplanation.trim() : undefined
+          varianceExplanation.trim() ? varianceExplanation.trim() : undefined,
         );
         if (submitRes?.message !== "Budget submitted successfully") {
           setError(submitRes?.message ?? "Failed to submit budget.");
@@ -362,7 +391,7 @@ export default function CreateBudgetPage() {
                           updateItem(
                             index,
                             "quantity",
-                            parseInt(e.target.value) || 1
+                            parseInt(e.target.value) || 1,
                           )
                         }
                         className="border-gray-300 w-20"
@@ -375,20 +404,17 @@ export default function CreateBudgetPage() {
                         step="0.01"
                         value={item.unitCost}
                         onChange={(e) =>
-                          updateItem(
-                            index,
-                            "unitCost",
-                            parseFloat(e.target.value) || 0
-                          )
+                          updateItem(index, "unitCost", e.target.value)
                         }
                         className="border-gray-300 w-24"
                       />
                     </td>
                     <td className="px-4 py-3">
                       <Input
-                        value={`₱ ${(item.quantity * item.unitCost).toFixed(
-                          2
-                        )}`}
+                        value={`₱ ${(
+                          item.quantity *
+                          (parseFloat(item.unitCost as string) || 0)
+                        ).toFixed(2)}`}
                         disabled
                         className="bg-gray-50 border-gray-300 text-gray-700 w-28"
                       />

@@ -3,12 +3,17 @@ import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
-import { budgets, budgetItems, users, reviewChecklists, auditLogs } from "@/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
-import ReviewDecisionModal from "@/components/ReviewDecisionModal";
-import ReviewChecklist from "@/components/ReviewChecklist";
+import {
+  budgets,
+  budgetItems,
+  budgetMilestones,
+  users,
+  reviewChecklists,
+} from "@/db/schema";
+import { eq, and, inArray, asc } from "drizzle-orm";
+import ReviewPageClient from "./ReviewPageClient";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
-import { Calendar, AlertCircle } from "lucide-react";
+import { Calendar, AlertCircle, ChevronLeft, Bell, Clock } from "lucide-react";
 
 function formatPhp(amount: string | number) {
   const n = typeof amount === "string" ? Number(amount) : amount;
@@ -65,6 +70,8 @@ export default async function ReviewBudgetDetailPage({
       variance_explanation: budgets.variance_explanation,
       created_at: budgets.created_at,
       user_id: budgets.user_id,
+      start_date: budgets.start_date,
+      end_date: budgets.end_date,
     })
     .from(budgets)
     .where(eq(budgets.id, id))
@@ -103,35 +110,13 @@ export default async function ReviewBudgetDetailPage({
     .from(budgetItems)
     .where(eq(budgetItems.budget_id, budget.id));
 
-  // Get audit logs for this budget
-  const logs = await db
-    .select({
-      id: auditLogs.id,
-      action: auditLogs.action,
-      timestamp: auditLogs.timestamp,
-      comment: auditLogs.comment,
-      actor_id: auditLogs.actor_id,
-    })
-    .from(auditLogs)
-    .where(eq(auditLogs.budget_id, budget.id));
-
-  // Get actor names for audit logs
-  const actorIds = [...new Set(logs.map((l) => l.actor_id))];
-  const actorsData =
-    actorIds.length === 0
-      ? []
-      : await db
-        .select({
-          id: users.id,
-          full_name: users.full_name,
-        })
-        .from(users)
-        .where(inArray(users.id, actorIds));
-
-  const actorMap = new Map(actorsData.map((a) => [a.id, a.full_name]));
+  const milestones = await db.query.budgetMilestones.findMany({
+    where: eq(budgetMilestones.budget_id, budget.id),
+    orderBy: [asc(budgetMilestones.created_at)],
+  });
 
   // Get review checklist for this reviewer
-  let checklist: typeof reviewChecklists.$inferSelect[] = [];
+  let checklist: (typeof reviewChecklists.$inferSelect)[] = [];
   try {
     checklist = await db
       .select({
@@ -148,8 +133,8 @@ export default async function ReviewBudgetDetailPage({
       .where(
         and(
           eq(reviewChecklists.budget_id, budget.id),
-          eq(reviewChecklists.reviewer_id, appUser.id)
-        )
+          eq(reviewChecklists.reviewer_id, appUser.id),
+        ),
       );
   } catch {
     // Table may not exist yet - gracefully handle
@@ -157,16 +142,9 @@ export default async function ReviewBudgetDetailPage({
   }
 
   // Create a map for quick lookup
-  const checklistMap = new Map(checklist.map((c) => [c.item_key, c.is_checked]));
-
-  // Group items by quarter
-  const itemsByQuarter = new Map<string, typeof items>();
-  for (const item of items) {
-    if (!itemsByQuarter.has(item.quarter)) {
-      itemsByQuarter.set(item.quarter, []);
-    }
-    itemsByQuarter.get(item.quarter)!.push(item);
-  }
+  const checklistMap = new Map(
+    checklist.map((c) => [c.item_key, c.is_checked]),
+  );
 
   // Fetch similar approved budgets for comparison
   const similarBudgets = await db
@@ -180,139 +158,194 @@ export default async function ReviewBudgetDetailPage({
     .where(
       and(
         eq(budgets.budget_type, budget.budget_type),
-        eq(budgets.status, "approved")
-      )
+        eq(budgets.status, "approved"),
+      ),
     )
     .limit(5);
 
   // Filter by department (need to join but we have user_id)
   const similarActorIds = [...new Set(similarBudgets.map((b) => b.user_id))];
-  const similarUsers = similarActorIds.length > 0 ? await db
-    .select({ id: users.id, full_name: users.full_name, department: users.department })
-    .from(users)
-    .where(and(
-      inArray(users.id, similarActorIds),
-      eq(users.department, requester?.department || "Finance")
-    )) : [];
+  const similarUsers =
+    similarActorIds.length > 0
+      ? await db
+          .select({
+            id: users.id,
+            full_name: users.full_name,
+            department: users.department,
+          })
+          .from(users)
+          .where(
+            and(
+              inArray(users.id, similarActorIds),
+              eq(users.department, requester?.department || "Finance"),
+            ),
+          )
+      : [];
 
-  const similarUserMap = new Map(similarUsers.map(u => [u.id, u]));
-  const filteredSimilar = similarBudgets.filter(b => similarUserMap.has(b.user_id));
+  const similarUserMap = new Map(similarUsers.map((u) => [u.id, u]));
+  const filteredSimilar = similarBudgets.filter((b) =>
+    similarUserMap.has(b.user_id),
+  );
 
   // Fetch descriptions for similar budgets (simplified: just first item)
-  const similarBudgetIds = filteredSimilar.map(b => b.id);
-  const similarItems = similarBudgetIds.length > 0 ? await db
-    .select({ budget_id: budgetItems.budget_id, description: budgetItems.description })
-    .from(budgetItems)
-    .where(inArray(budgetItems.budget_id, similarBudgetIds)) : [];
+  const similarBudgetIds = filteredSimilar.map((b) => b.id);
+  const similarItems =
+    similarBudgetIds.length > 0
+      ? await db
+          .select({
+            budget_id: budgetItems.budget_id,
+            description: budgetItems.description,
+          })
+          .from(budgetItems)
+          .where(inArray(budgetItems.budget_id, similarBudgetIds))
+      : [];
 
   const similarItemsMap = new Map();
-  similarItems.forEach(it => {
+  similarItems.forEach((it) => {
     if (!similarItemsMap.has(it.budget_id)) {
       similarItemsMap.set(it.budget_id, it.description);
     }
   });
 
-  const comparisonData = filteredSimilar.map(b => ({
+  const comparisonData = filteredSimilar.map((b) => ({
     id: b.id,
     name: similarItemsMap.get(b.id) || "Previous Project",
     amount: b.total_amount,
     date: formatDate(b.created_at),
     requester: similarUserMap.get(b.user_id)?.full_name || "Unknown",
-    profit: "5%" // Example placeholder as requested
+    profit: "5%", // Example placeholder as requested
   }));
 
-  const historicalAmounts = comparisonData.map(d => Number(d.amount));
-  const historicalAverage = historicalAmounts.length > 0
-    ? historicalAmounts.reduce((a, b) => a + b, 0) / historicalAmounts.length
-    : 275000; // Placeholder as in image if none found
+  const historicalAmounts = comparisonData.map((d) => Number(d.amount));
+  const historicalAverage =
+    historicalAmounts.length > 0
+      ? historicalAmounts.reduce((a, b) => a + b, 0) / historicalAmounts.length
+      : 275000; // Placeholder as in image if none found
 
-  const historicalMin = historicalAmounts.length > 0 ? Math.min(...historicalAmounts) : 170500;
-  const historicalMax = historicalAmounts.length > 0 ? Math.max(...historicalAmounts) : 340650;
-
-
-  const quarterOrder = ["Q1", "Q2", "Q3", "Q4"];
-  const sortedQuarters = Array.from(itemsByQuarter.keys()).sort(
-    (a, b) => quarterOrder.indexOf(a) - quarterOrder.indexOf(b)
-  );
+  const historicalMin =
+    historicalAmounts.length > 0 ? Math.min(...historicalAmounts) : 170500;
+  const historicalMax =
+    historicalAmounts.length > 0 ? Math.max(...historicalAmounts) : 340650;
 
   const statusLabelMap: Record<string, string> = {
     draft: "Draft",
     submitted: "Pending Review",
     verified: "Verified",
-    verified_by_reviewer: "Verified",
+    verified_by_reviewer: "Reviewed",
     revision_requested: "Revision Requested",
     rejected: "Rejected",
     approved: "Approved",
   };
 
-  const statusColorMap: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-800",
-    submitted: "bg-yellow-100 text-yellow-800",
-    verified: "bg-blue-100 text-blue-800",
-    verified_by_reviewer: "bg-blue-100 text-blue-800",
-    revision_requested: "bg-orange-100 text-orange-800",
-    rejected: "bg-red-100 text-red-800",
-    approved: "bg-green-100 text-green-800",
-  };
-
   const typeLabel = budget.budget_type === "capex" ? "CapEx" : "OpEx";
 
+  const statusCardClass = (() => {
+    const s = budget.status;
+    if (s === "submitted")
+      return "bg-yellow-50 text-yellow-600 border-yellow-100";
+    if (s === "verified" || s === "approved")
+      return "bg-green-50 text-green-600 border-green-100";
+    if (s === "revision_requested")
+      return "bg-orange-50 text-orange-600 border-orange-100";
+    if (s === "rejected") return "bg-red-50 text-red-600 border-red-100";
+    return "bg-gray-50 text-gray-600 border-gray-100";
+  })();
+
   return (
-    <div className="space-y-6 pb-8">
+    <div className="max-w-7xl mx-auto space-y-10 pb-20">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/reviewer"
-            className="text-gray-500 hover:text-gray-700"
-          >
-            ←
-          </Link>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {items[0]?.description || "Review Budget Request"}
-              </h1>
-              <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-xs font-semibold">
-                {typeLabel}
-              </span>
-            </div>
-            <p className="text-sm text-gray-500 mt-1">
-              PROJ-{budget.id.slice(0, 8).toUpperCase()} - {requester?.department || ""}
-            </p>
+        <div className="space-y-1">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard/reviewer"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-900" />
+            </Link>
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight">
+              Review Budget Request
+            </h1>
           </div>
+          <p className="text-gray-500 font-medium ml-12">
+            Review and verify budget details before forwarding to approver
+          </p>
         </div>
-        <div
-          className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${statusColorMap[budget.status] || "bg-gray-100 text-gray-800"
-            }`}
-        >
-          {statusLabelMap[budget.status] || budget.status}
-        </div>
+        <button className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
+          <Bell className="w-5 h-5 text-gray-900" />
+        </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         {/* Main Content */}
-        <div className="col-span-2 space-y-8">
-          {/* Budget Overview (Transparent/Light Background) */}
-          <div className="bg-gray-50/50 rounded-2xl p-8 border border-transparent">
-            <div className="grid grid-cols-2 gap-y-8 gap-x-12">
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-400">Requester</p>
-                <p className="text-lg font-bold text-gray-900">{requester?.full_name || requester?.email || "Unknown"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-400">Total amount</p>
-                <p className="text-2xl font-black text-gray-900">{formatPhp(budget.total_amount)}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-400">Submitted</p>
-                <p className="text-lg font-bold text-gray-900">{formatDate(budget.created_at)}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-400">Timeline</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {formatDate(budget.created_at)} to {new Date(budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString("en-PH")}
+        <div className="lg:col-span-8 space-y-10">
+          {/* Project Info Card */}
+          <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
+            <div
+              className={`absolute top-10 right-10 flex items-center gap-2 px-4 py-2 rounded-full border ${statusCardClass}`}
+            >
+              <Clock className="w-4 h-4" />
+              <span className="text-sm font-bold">
+                {statusLabelMap[budget.status] || budget.status}
+              </span>
+            </div>
+
+            <div className="space-y-8">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-3xl font-black text-gray-900 leading-tight">
+                    {items[0]?.description || "Budget Request"}
+                  </h2>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                    {typeLabel}
+                  </span>
+                </div>
+                <p className="text-gray-400 font-bold text-sm tracking-wide">
+                  PROJ-{budget.id.slice(0, 8).toUpperCase()} -{" "}
+                  {requester?.department || ""}
                 </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-y-10 gap-x-12">
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Requester
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {requester?.full_name || requester?.email || "Unknown"}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Total amount
+                  </p>
+                  <p className="text-3xl font-black text-gray-900">
+                    {formatPhp(budget.total_amount)}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Submitted
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {formatDate(budget.created_at)}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Timeline
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {formatDate(budget.start_date ?? budget.created_at)} to{" "}
+                    {formatDate(
+                      budget.end_date ??
+                        new Date(
+                          budget.created_at.getTime() +
+                            365 * 24 * 60 * 60 * 1000,
+                        ),
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -320,23 +353,37 @@ export default async function ReviewBudgetDetailPage({
           {/* Cost Breakdown */}
           <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-lg font-bold text-gray-900">₱ Cost Breakdown</span>
+              <span className="text-lg font-bold text-gray-900">
+                ₱ Cost Breakdown
+              </span>
             </div>
 
             {items.length > 0 ? (
               <div className="space-y-3">
                 {items.map((item) => (
-                  <div key={item.id} className="p-4 bg-gray-50/50 rounded-xl flex justify-between items-center">
+                  <div
+                    key={item.id}
+                    className="p-4 bg-gray-50/50 rounded-xl flex justify-between items-center"
+                  >
                     <div className="space-y-1">
-                      <p className="text-sm font-bold text-gray-900">{item.description}</p>
-                      <p className="text-xs text-gray-500 font-medium">Equipment | Qty: {item.quantity}</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {item.description}
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Equipment | Qty: {item.quantity}
+                      </p>
                     </div>
-                    <p className="text-sm font-bold text-gray-900">{formatPhp(item.total_cost)}</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {formatPhp(item.total_cost)}
+                    </p>
                   </div>
                 ))}
                 <div className="flex justify-end pt-4 mt-2">
                   <p className="text-lg font-bold text-gray-900">
-                    Total: <span className="font-black ml-1">{formatPhp(budget.total_amount)}</span>
+                    Total:{" "}
+                    <span className="font-black ml-1">
+                      {formatPhp(budget.total_amount)}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -349,38 +396,61 @@ export default async function ReviewBudgetDetailPage({
           <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-6">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-gray-700" />
-              <h2 className="text-lg font-bold text-gray-900">Project timeline & milestones</h2>
+              <h2 className="text-lg font-bold text-gray-900">
+                Project timeline & milestones
+              </h2>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
-                <span className="text-sm text-gray-500 font-bold tracking-tight">Start Date</span>
-                <span className="text-sm font-bold text-gray-900">{formatDate(budget.created_at)}</span>
+                <span className="text-sm text-gray-500 font-bold tracking-tight">
+                  Start Date
+                </span>
+                <span className="text-sm font-bold text-gray-900">
+                  {formatDate(budget.start_date ?? budget.created_at)}
+                </span>
               </div>
               <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
-                <span className="text-sm text-gray-500 font-bold tracking-tight">End Date</span>
+                <span className="text-sm text-gray-500 font-bold tracking-tight">
+                  End Date
+                </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {new Date(budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString("en-PH")}
+                  {formatDate(
+                    budget.end_date ??
+                      new Date(
+                        budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000,
+                      ),
+                  )}
                 </span>
               </div>
             </div>
 
             <div className="p-5 bg-gray-50/30 rounded-2xl border border-gray-50">
-              <p className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider opacity-60">Milestones:</p>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2 text-sm font-semibold text-gray-600">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
-                  Planning & Procurement - Q1
-                </li>
-                <li className="flex items-start gap-2 text-sm font-semibold text-gray-600">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
-                  Installation - Q2
-                </li>
-                <li className="flex items-start gap-2 text-sm font-semibold text-gray-600">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
-                  Testing & Commissioning - Q3
-                </li>
-              </ul>
+              <p className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider opacity-60">
+                Milestones:
+              </p>
+              {milestones.length === 0 ? (
+                <div className="text-sm text-gray-600">No milestones set.</div>
+              ) : (
+                <ul className="space-y-2">
+                  {milestones.map((m) => (
+                    <li
+                      key={m.id}
+                      className="flex items-start gap-2 text-sm font-semibold text-gray-600"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
+                      <div className="min-w-0">
+                        <div className="truncate">{m.description}</div>
+                        {m.target_quarter ? (
+                          <div className="text-xs text-gray-500">
+                            {m.target_quarter}
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 
@@ -389,10 +459,12 @@ export default async function ReviewBudgetDetailPage({
             <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <AlertCircle className="w-5 h-5 text-gray-700" />
-                <h2 className="text-lg font-bold text-gray-900">Variance Explanation</h2>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Variance Explanation
+                </h2>
               </div>
               <p className="text-sm text-gray-600 font-medium italic leading-relaxed">
-                "{budget.variance_explanation}"
+                &quot;{budget.variance_explanation}&quot;
               </p>
             </div>
           )}
@@ -409,51 +481,22 @@ export default async function ReviewBudgetDetailPage({
           />
         </div>
 
-        {/* Right Sidebar - Review Decision Panel */}
-        <div className="col-span-1">
-          <div className="sticky top-6 space-y-6">
-            {/* Review Checklist */}
-            <ReviewChecklist
-              budgetId={budget.id}
-              items={[
-                {
-                  key: "documented_costs",
-                  label: "All costs are documented",
-                  defaultChecked:
-                    checklistMap.get("documented_costs") || false,
-                },
-                {
-                  key: "reasonable_costs",
-                  label: "Unit Costs are reasonable",
-                  defaultChecked: checklistMap.get("reasonable_costs") || false,
-                },
-                {
-                  key: "realistic_timeline",
-                  label: "Timeline is realistic",
-                  defaultChecked: checklistMap.get("realistic_timeline") || false,
-                },
-                {
-                  key: "variance_clear",
-                  label: "Variance explanation is clear",
-                  defaultChecked: checklistMap.get("variance_clear") || false,
-                },
-                {
-                  key: "departmental_goals",
-                  label: "Aligns with departmental goals",
-                  defaultChecked:
-                    checklistMap.get("departmental_goals") || false,
-                },
-                {
-                  key: "budget_policies",
-                  label: "Complies with budget policies",
-                  defaultChecked: checklistMap.get("budget_policies") || false,
-                },
-              ]}
-            />
-
-            {/* Review Decision Modal */}
-            <ReviewDecisionModal budgetId={budget.id} budgetStatus={budget.status} />
-          </div>
+        {/* Right Sidebar */}
+        <div className="lg:col-span-4">
+          <ReviewPageClient
+            budgetId={budget.id}
+            budgetStatus={budget.status}
+            checklistDefaults={{
+              documented_costs: checklistMap.get("documented_costs") || false,
+              reasonable_costs: checklistMap.get("reasonable_costs") || false,
+              realistic_timeline:
+                checklistMap.get("realistic_timeline") || false,
+              variance_clear: checklistMap.get("variance_clear") || false,
+              departmental_goals:
+                checklistMap.get("departmental_goals") || false,
+              budget_policies: checklistMap.get("budget_policies") || false,
+            }}
+          />
         </div>
       </div>
     </div>

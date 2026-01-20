@@ -4,7 +4,7 @@ import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, and } from "drizzle-orm";
 import ReviewerDashboard, {
   type ReviewerDashboardRow,
 } from "../../_components/ReviewerDashboard";
@@ -26,7 +26,34 @@ function formatDateShort(d: Date) {
   return `${month}-${day}-${yy}`;
 }
 
-export default async function ReviewerReviewQueuePage() {
+type StatusFilter = "all" | "pending" | "reviewed";
+
+function getStatusFilterFromSearchParam(
+  value: string | undefined,
+): StatusFilter {
+  if (value === "pending" || value === "reviewed") {
+    return value;
+  }
+  return "all";
+}
+
+function includesQuery(haystack: string | null | undefined, q: string) {
+  if (!haystack) return false;
+  return haystack.toLowerCase().includes(q);
+}
+
+export default async function ReviewerReviewQueuePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const qRaw = Array.isArray(sp.q) ? sp.q[0] : sp.q;
+  const statusRaw = Array.isArray(sp.status) ? sp.status[0] : sp.status;
+
+  const q = (qRaw ?? "").trim().toLowerCase();
+  const activeStatus = getStatusFilterFromSearchParam(statusRaw);
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -47,6 +74,13 @@ export default async function ReviewerReviewQueuePage() {
     redirect("/dashboard");
   }
 
+  const statusWhere =
+    activeStatus === "pending"
+      ? eq(budgets.status, "submitted")
+      : activeStatus === "reviewed"
+        ? eq(budgets.status, "verified_by_reviewer")
+        : undefined;
+
   const reviewQueue = await db
     .select({
       id: budgets.id,
@@ -60,12 +94,12 @@ export default async function ReviewerReviewQueuePage() {
     .from(budgets)
     .leftJoin(users, eq(budgets.user_id, users.id))
     .where(
-      inArray(budgets.status, [
-        "submitted",
-        "verified",
-        "verified_by_reviewer",
-        "revision_requested",
-      ])
+      statusWhere
+        ? and(
+            inArray(budgets.status, ["submitted", "verified_by_reviewer"]),
+            statusWhere,
+          )
+        : inArray(budgets.status, ["submitted", "verified_by_reviewer"]),
     )
     .orderBy(desc(budgets.created_at))
     .limit(50);
@@ -89,18 +123,41 @@ export default async function ReviewerReviewQueuePage() {
     }
   }
 
-  const rows: ReviewerDashboardRow[] = reviewQueue.map((b) => {
+  // Apply client-side search filter
+  const filteredQueue = !q
+    ? reviewQueue
+    : reviewQueue.filter((b) => {
+        const budDisplayId = `bud-${b.budget_number}`;
+        const budNum = String(b.budget_number);
+        const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
+        const dept = b.department ?? "";
+
+        return (
+          includesQuery(b.id, q) ||
+          includesQuery(budDisplayId, q) ||
+          includesQuery(budNum, q) ||
+          includesQuery(projectName, q) ||
+          includesQuery(dept, q)
+        );
+      });
+
+  const rows: ReviewerDashboardRow[] = filteredQueue.map((b) => {
     const type =
       b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
-    const statusLabel =
-      b.status === "revision_requested"
-        ? ("Revision" as const)
-        : b.status === "submitted"
-        ? ("Pending" as const)
-        : ("Reviewed" as const);
+    const statusLabel = (() => {
+      if (b.status === "verified_by_reviewer") return "Reviewed" as const;
+      return "Pending" as const;
+    })();
 
-    const actionLabel = b.status === "submitted" ? "Review" : "View";
+    const isPendingDecision =
+      b.status === "submitted" || b.status === "verified_by_reviewer";
+
+    const actionLabel = isPendingDecision ? "Review" : "View";
+
+    const actionHref = isPendingDecision
+      ? `/dashboard/reviewer/${b.id}`
+      : `/dashboard/reviewer/${b.id}/tracking`;
 
     return {
       budgetId: b.id,
@@ -112,7 +169,7 @@ export default async function ReviewerReviewQueuePage() {
       statusLabel,
       dateLabel: formatDateShort(b.created_at),
       actionLabel,
-      actionHref: `/dashboard/budget/${b.id}`,
+      actionHref,
     };
   });
 
@@ -124,7 +181,7 @@ export default async function ReviewerReviewQueuePage() {
             Budget Review
           </div>
           <div className="text-sm text-gray-500">
-            All budgets in the review pipeline
+            Review and verify budget details before forwarding to approver{" "}
           </div>
         </div>
         <Link
@@ -145,6 +202,8 @@ export default async function ReviewerReviewQueuePage() {
         }}
         showStats={false}
         rows={rows}
+        activeFilter={activeStatus}
+        searchQuery={qRaw ?? ""}
       />
     </div>
   );

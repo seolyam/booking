@@ -2,7 +2,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
+import {
+  auditLogs,
+  budgetItems,
+  budgets,
+  users,
+  budgetMilestones,
+} from "@/db/schema";
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
 import WorkflowProgress, {
@@ -68,10 +74,17 @@ function statusMeta(status: string): {
       icon: <XCircle className="h-4 w-4" />,
     };
   }
-  if (status === "verified" || status === "verified_by_reviewer") {
+  if (status === "verified") {
     return {
       label: "Verified",
-      cls: "bg-blue-100 text-blue-700",
+      cls: "bg-green-100 text-green-700",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+    };
+  }
+  if (status === "verified_by_reviewer") {
+    return {
+      label: "Reviewed",
+      cls: "bg-yellow-100 text-yellow-800",
       icon: <CheckCircle2 className="h-4 w-4" />,
     };
   }
@@ -92,6 +105,7 @@ function statusMeta(status: string): {
 function actionLabel(action: string) {
   if (action === "create_draft") return "Created";
   if (action === "submit") return "Submitted";
+  if (action === "reviewed") return "Reviewed";
   if (action === "verify") return "Verified";
   if (action === "request_revision") return "Revision requested";
   if (action === "approve") return "Approved";
@@ -105,6 +119,7 @@ function actionLabel(action: string) {
 function auditDescription(action: string) {
   if (action === "create_draft") return "Budget Created";
   if (action === "submit") return "Budget Submitted for Review";
+  if (action === "reviewed") return "Budget opened for review";
   if (action === "request_revision") return "Proposal Returned for Revisions";
   if (action === "verify") return "Budget verified and forwarded to approver";
   if (action === "approve")
@@ -117,27 +132,41 @@ function computeSteps(status: string): WorkflowStep[] {
   const steps: Array<{ key: string; label: string }> = [
     { key: "created", label: "Created" },
     { key: "submitted", label: "Submitted" },
-    { key: "review", label: "Review" },
+    { key: "reviewed", label: "Reviewed" },
     { key: "verified", label: "Verified" },
-    { key: "final", label: "Review" },
+    { key: "approved", label: "Approved" },
   ];
 
+  // Map status to progression index; rejected/revision stop at review
   const activeIndex = (() => {
     if (status === "draft") return 0;
     if (status === "submitted") return 1;
-    if (status === "revision_requested") return 2;
-    if (status === "verified" || status === "verified_by_reviewer") return 3;
-    if (status === "approved" || status === "rejected") return 4;
+    if (
+      status === "revision_requested" ||
+      status === "verified_by_reviewer" ||
+      status === "rejected"
+    )
+      return 2;
+    if (status === "verified") return 3;
+    if (status === "approved") return 4;
     return 0;
   })();
+
+  // Adjust labels ONLY when currently at terminal review outcomes
+  // Once workflow moves past (e.g., to verified/approved), revert to "Reviewed"
+  if (status === "revision_requested" && activeIndex === 2) {
+    steps[2] = { ...steps[2], label: "Revision" };
+  } else if (status === "rejected" && activeIndex === 2) {
+    steps[2] = { ...steps[2], label: "Rejected" };
+  }
 
   return steps.map((s, idx) => {
     if (idx < activeIndex) return { ...s, state: "done" as const };
     if (idx === activeIndex) {
-      const isTerminal = status === "approved" || status === "rejected";
       return {
         ...s,
-        state: isTerminal ? ("done" as const) : ("current" as const),
+        state: "current" as const,
+        statusType: status as string, // Pass status for color determination
       };
     }
     return { ...s, state: "todo" as const };
@@ -146,6 +175,7 @@ function computeSteps(status: string): WorkflowStep[] {
 
 type MilestoneLabel =
   | "Submitted"
+  | "Reviewed"
   | "Verified"
   | "Approved"
   | "Rejected"
@@ -187,6 +217,11 @@ export default async function RequestViewPage({
     orderBy: [desc(budgetItems.total_cost)],
   });
 
+  const milestones = await db.query.budgetMilestones.findMany({
+    where: eq(budgetMilestones.budget_id, budget.id),
+    orderBy: [asc(budgetMilestones.created_at)],
+  });
+
   const logs = await db.query.auditLogs.findMany({
     where: eq(auditLogs.budget_id, budget.id),
     orderBy: [asc(auditLogs.timestamp)],
@@ -206,7 +241,7 @@ export default async function RequestViewPage({
           .where(inArray(users.id, actorIds));
 
   const actorNameById = new Map(
-    actorRows.map((a) => [a.id, a.full_name || a.email])
+    actorRows.map((a) => [a.id, a.full_name || a.email]),
   );
 
   const projectName = items[0]?.description ?? "Budget Request";
@@ -223,6 +258,7 @@ export default async function RequestViewPage({
     description: auditDescription(l.action),
     actorName: actorNameById.get(l.actor_id) ?? null,
     note: l.comment,
+    action: l.action, // Include action for color determination
   }));
 
   const createdAt = formatDateShort(budget.created_at);
@@ -232,12 +268,13 @@ export default async function RequestViewPage({
     const labels = new Set<MilestoneLabel | null>(
       logs.map((l): MilestoneLabel | null => {
         if (l.action === "submit") return "Submitted";
+        if (l.action === "reviewed") return "Reviewed";
         if (l.action === "verify") return "Verified";
         if (l.action === "approve") return "Approved";
         if (l.action === "reject") return "Rejected";
         if (l.action === "request_revision") return "Revision requested";
         return null;
-      })
+      }),
     );
 
     return Array.from(labels)
@@ -358,33 +395,45 @@ export default async function RequestViewPage({
           </div>
 
           <div className="mt-4 space-y-4 rounded-lg bg-black/5 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-gray-700">Start Date</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {createdAt}
+            {budget.start_date && (
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-gray-700">Start Date</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {formatDateShort(budget.start_date)}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-gray-700">Last Updated</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {updatedAt}
+            )}
+            {budget.end_date && (
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-gray-700">End Date</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {formatDateShort(budget.end_date)}
+                </div>
               </div>
-            </div>
+            )}
+            {!budget.start_date && !budget.end_date && (
+              <div className="text-sm text-gray-600">No timeline set.</div>
+            )}
 
             <div className="pt-2">
               <div className="text-sm font-semibold text-gray-900">
                 Milestones:
               </div>
-              {milestoneLines.length === 0 ? (
+              {milestones.length === 0 ? (
                 <div className="mt-2 text-sm text-gray-600">
-                  No milestones yet.
+                  No milestones set.
                 </div>
               ) : (
                 <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                  {milestoneLines.map((m) => (
-                    <li key={m} className="flex items-center gap-2">
+                  {milestones.map((m) => (
+                    <li key={m.id} className="flex items-center gap-2">
                       <span aria-hidden="true">•</span>
-                      <span>{m}</span>
+                      <span>{m.description}</span>
+                      {m.target_quarter && (
+                        <span className="text-xs text-gray-500">
+                          ({m.target_quarter})
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
