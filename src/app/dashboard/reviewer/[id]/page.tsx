@@ -12,8 +12,7 @@ import {
   auditLogs,
 } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import ReviewDecisionModal from "@/components/ReviewDecisionModal";
-import ReviewChecklist from "@/components/ReviewChecklist";
+import ReviewPageClient from "./ReviewPageClient";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import { Calendar, AlertCircle } from "lucide-react";
 
@@ -507,52 +506,20 @@ export default async function ReviewBudgetDetailPage({
 
         {/* Right Sidebar - Review Decision Panel */}
         <div className="col-span-1">
-          <div className="sticky top-6 space-y-6">
-            {/* Review Checklist */}
-            <ReviewChecklist
-              budgetId={budget.id}
-              items={[
-                {
-                  key: "documented_costs",
-                  label: "All costs are documented",
-                  defaultChecked: checklistMap.get("documented_costs") || false,
-                },
-                {
-                  key: "reasonable_costs",
-                  label: "Unit Costs are reasonable",
-                  defaultChecked: checklistMap.get("reasonable_costs") || false,
-                },
-                {
-                  key: "realistic_timeline",
-                  label: "Timeline is realistic",
-                  defaultChecked:
-                    checklistMap.get("realistic_timeline") || false,
-                },
-                {
-                  key: "variance_clear",
-                  label: "Variance explanation is clear",
-                  defaultChecked: checklistMap.get("variance_clear") || false,
-                },
-                {
-                  key: "departmental_goals",
-                  label: "Aligns with departmental goals",
-                  defaultChecked:
-                    checklistMap.get("departmental_goals") || false,
-                },
-                {
-                  key: "budget_policies",
-                  label: "Complies with budget policies",
-                  defaultChecked: checklistMap.get("budget_policies") || false,
-                },
-              ]}
-            />
-
-            {/* Review Decision Modal */}
-            <ReviewDecisionModal
-              budgetId={budget.id}
-              budgetStatus={budget.status}
-            />
-          </div>
+          <ReviewPageClient
+            budgetId={budget.id}
+            budgetStatus={budget.status}
+            checklistDefaults={{
+              documented_costs: checklistMap.get("documented_costs") || false,
+              reasonable_costs: checklistMap.get("reasonable_costs") || false,
+              realistic_timeline:
+                checklistMap.get("realistic_timeline") || false,
+              variance_clear: checklistMap.get("variance_clear") || false,
+              departmental_goals:
+                checklistMap.get("departmental_goals") || false,
+              budget_policies: checklistMap.get("budget_policies") || false,
+            }}
+          />
         </div>
       </div>
     </div>

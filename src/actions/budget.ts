@@ -8,7 +8,7 @@ import {
   users,
   reviewChecklists,
 } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -222,8 +222,74 @@ export async function reviewBudget(
   return { message: "Review action recorded" };
 }
 
+// Helper function to save checklist state
+async function saveChecklistState(
+  budgetId: string,
+  reviewerId: string,
+  checklistStateStr: string,
+  checklistItemsStr: string,
+) {
+  try {
+    const checklistState = JSON.parse(checklistStateStr) as Record<
+      string,
+      boolean
+    >;
+    const checklistItems = JSON.parse(checklistItemsStr) as Array<{
+      key: string;
+      label: string;
+    }>;
+
+    // Save each checklist item
+    for (const item of checklistItems) {
+      const isChecked = checklistState[item.key] || false;
+
+      // Check if exists
+      const existing = await db
+        .select()
+        .from(reviewChecklists)
+        .where(
+          and(
+            eq(reviewChecklists.budget_id, budgetId),
+            eq(reviewChecklists.reviewer_id, reviewerId),
+            eq(reviewChecklists.item_key, item.key),
+          ),
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update
+        await db
+          .update(reviewChecklists)
+          .set({ is_checked: isChecked, updated_at: new Date() })
+          .where(
+            and(
+              eq(reviewChecklists.budget_id, budgetId),
+              eq(reviewChecklists.reviewer_id, reviewerId),
+              eq(reviewChecklists.item_key, item.key),
+            ),
+          );
+      } else {
+        // Insert
+        await db.insert(reviewChecklists).values({
+          budget_id: budgetId,
+          reviewer_id: reviewerId,
+          item_key: item.key,
+          item_label: item.label,
+          is_checked: isChecked,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to save checklist state:", error);
+    // Don't throw - checklist is supplementary
+  }
+}
+
 export async function verifyBudget(formData: FormData): Promise<void> {
   const budgetId = formData.get("budgetId") as string;
+  const checklistStateStr = formData.get("checklistState") as string;
+  const checklistItemsStr = formData.get("checklistItems") as string;
+
   const user = await getUser();
   if (!user) throw new Error("Unauthorized");
 
@@ -232,11 +298,24 @@ export async function verifyBudget(formData: FormData): Promise<void> {
     throw new Error("Only reviewers can verify budgets");
   }
 
+  // Save checklist state
+  if (checklistStateStr && checklistItemsStr) {
+    await saveChecklistState(
+      budgetId,
+      user.id,
+      checklistStateStr,
+      checklistItemsStr,
+    );
+  }
+
   await reviewBudget(budgetId, "verify", "");
 }
 
 export async function requestRevision(formData: FormData): Promise<void> {
   const budgetId = formData.get("budgetId") as string;
+  const checklistStateStr = formData.get("checklistState") as string;
+  const checklistItemsStr = formData.get("checklistItems") as string;
+
   const user = await getUser();
   if (!user) throw new Error("Unauthorized");
 
@@ -245,18 +324,41 @@ export async function requestRevision(formData: FormData): Promise<void> {
     throw new Error("Only reviewers can request revisions");
   }
 
+  // Save checklist state
+  if (checklistStateStr && checklistItemsStr) {
+    await saveChecklistState(
+      budgetId,
+      user.id,
+      checklistStateStr,
+      checklistItemsStr,
+    );
+  }
+
   const comment = formData.get("comment") as string;
   await reviewBudget(budgetId, "request_revision", comment);
 }
 
 export async function rejectBudget(formData: FormData): Promise<void> {
   const budgetId = formData.get("budgetId") as string;
+  const checklistStateStr = formData.get("checklistState") as string;
+  const checklistItemsStr = formData.get("checklistItems") as string;
+
   const user = await getUser();
   if (!user) throw new Error("Unauthorized");
 
   const appUser = await ensureAppUser(user.id);
   if (!appUser || appUser.role !== "reviewer") {
     throw new Error("Only reviewers can reject budgets");
+  }
+
+  // Save checklist state
+  if (checklistStateStr && checklistItemsStr) {
+    await saveChecklistState(
+      budgetId,
+      user.id,
+      checklistStateStr,
+      checklistItemsStr,
+    );
   }
 
   const comment = formData.get("comment") as string;
@@ -411,61 +513,81 @@ export async function addBudgetItem(prevState: unknown, formData: FormData) {
 
 // Update review checklist item
 export async function updateReviewChecklist(formData: FormData) {
-  const user = await getUser();
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
+  try {
+    const user = await getUser();
+    if (!user) {
+      console.error("updateReviewChecklist: No user found in session");
+      throw new Error("Unauthorized");
+    }
 
-  const appUser = await ensureAppUser(user.id);
-  if (
-    !appUser ||
-    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
-  ) {
-    throw new Error("Forbidden");
-  }
-
-  const budgetId = formData.get("budgetId") as string;
-  const itemKey = formData.get("itemKey") as string;
-  const itemLabel = formData.get("itemLabel") as string;
-  const isChecked = formData.get("isChecked") === "true";
-
-  if (!budgetId || !itemKey || !itemLabel) {
-    throw new Error("Missing required fields");
-  }
-
-  // Check if checklist item exists
-  const existing = await db
-    .select()
-    .from(reviewChecklists)
-    .where(
-      sql`${reviewChecklists.budget_id} = ${budgetId} 
-          AND ${reviewChecklists.reviewer_id} = ${user.id} 
-          AND ${reviewChecklists.item_key} = ${itemKey}`,
-    )
-    .limit(1);
-
-  if (existing.length > 0) {
-    // Update existing
-    await db
-      .update(reviewChecklists)
-      .set({ is_checked: isChecked, updated_at: new Date() })
-      .where(
-        sql`${reviewChecklists.budget_id} = ${budgetId} 
-            AND ${reviewChecklists.reviewer_id} = ${user.id} 
-            AND ${reviewChecklists.item_key} = ${itemKey}`,
+    const appUser = await ensureAppUser(user.id);
+    if (
+      !appUser ||
+      (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+    ) {
+      console.error(
+        "updateReviewChecklist: User not authorized",
+        appUser?.role,
       );
-  } else {
-    // Insert new
-    await db.insert(reviewChecklists).values({
-      budget_id: budgetId,
-      reviewer_id: user.id,
-      item_key: itemKey,
-      item_label: itemLabel,
-      is_checked: isChecked,
-    });
-  }
+      throw new Error("Forbidden");
+    }
 
-  revalidatePath(`/dashboard/reviewer/${budgetId}`);
+    const budgetId = formData.get("budgetId") as string;
+    const itemKey = formData.get("itemKey") as string;
+    const itemLabel = formData.get("itemLabel") as string;
+    const isChecked = formData.get("isChecked") === "true";
+
+    if (!budgetId || !itemKey || !itemLabel) {
+      console.error("updateReviewChecklist: Missing required fields", {
+        budgetId,
+        itemKey,
+        itemLabel,
+      });
+      throw new Error("Missing required fields");
+    }
+
+    // Check if checklist item exists
+    const existing = await db
+      .select()
+      .from(reviewChecklists)
+      .where(
+        and(
+          eq(reviewChecklists.budget_id, budgetId),
+          eq(reviewChecklists.reviewer_id, user.id),
+          eq(reviewChecklists.item_key, itemKey),
+        ),
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update existing
+      await db
+        .update(reviewChecklists)
+        .set({ is_checked: isChecked, updated_at: new Date() })
+        .where(
+          and(
+            eq(reviewChecklists.budget_id, budgetId),
+            eq(reviewChecklists.reviewer_id, user.id),
+            eq(reviewChecklists.item_key, itemKey),
+          ),
+        );
+    } else {
+      // Insert new
+      await db.insert(reviewChecklists).values({
+        budget_id: budgetId,
+        reviewer_id: user.id,
+        item_key: itemKey,
+        item_label: itemLabel,
+        is_checked: isChecked,
+      });
+    }
+
+    revalidatePath(`/dashboard/reviewer/${budgetId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("updateReviewChecklist error:", error);
+    throw error;
+  }
 }
 
 // Get review checklist for a budget

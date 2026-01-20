@@ -1,6 +1,5 @@
 "use client";
 
-import { updateReviewChecklist } from "@/actions/budget";
 import { useState } from "react";
 
 export type ChecklistItem = {
@@ -12,11 +11,13 @@ export type ChecklistItem = {
 interface ReviewChecklistProps {
   budgetId: string;
   items: ChecklistItem[];
+  onChecklistChange?: (checkedItems: Record<string, boolean>) => void;
 }
 
 export default function ReviewChecklist({
   budgetId,
   items,
+  onChecklistChange,
 }: ReviewChecklistProps) {
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(
     items.reduce(
@@ -24,45 +25,32 @@ export default function ReviewChecklist({
         acc[item.key] = item.defaultChecked;
         return acc;
       },
-      {} as Record<string, boolean>
-    )
+      {} as Record<string, boolean>,
+    ),
   );
-  const [isSaving, setIsSaving] = useState(false);
 
-  const handleToggle = async (itemKey: string, itemLabel: string) => {
-    const newValue = !checkedItems[itemKey];
-    setCheckedItems((prev) => ({
-      ...prev,
-      [itemKey]: newValue,
-    }));
+  const handleToggle = (itemKey: string) => {
+    const newCheckedItems = {
+      ...checkedItems,
+      [itemKey]: !checkedItems[itemKey],
+    };
+    setCheckedItems(newCheckedItems);
 
-    // Save to database
-    setIsSaving(true);
-    try {
-      const formData = new FormData();
-      formData.append("budgetId", budgetId);
-      formData.append("itemKey", itemKey);
-      formData.append("itemLabel", itemLabel);
-      formData.append("isChecked", String(newValue));
-
-      await updateReviewChecklist(formData);
-    } catch (error) {
-      console.error("Failed to update checklist:", error);
-      // Revert on error
-      setCheckedItems((prev) => ({
-        ...prev,
-        [itemKey]: !newValue,
-      }));
-    } finally {
-      setIsSaving(false);
+    // Notify parent of changes
+    if (onChecklistChange) {
+      onChecklistChange(newCheckedItems);
     }
   };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <h2 className="text-lg font-semibold text-gray-900 mb-2">
         Review Checklist
       </h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Check all items that have been reviewed and verified
+      </p>
+
       <div className="space-y-3">
         {items.map((item) => (
           <label
@@ -72,11 +60,10 @@ export default function ReviewChecklist({
             <input
               type="checkbox"
               checked={checkedItems[item.key] || false}
-              onChange={() => handleToggle(item.key, item.label)}
-              disabled={isSaving}
-              className="mt-1 rounded cursor-pointer"
+              onChange={() => handleToggle(item.key)}
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
             />
-            <span className="text-sm text-gray-700">{item.label}</span>
+            <span className="text-sm text-gray-700 flex-1">{item.label}</span>
           </label>
         ))}
       </div>

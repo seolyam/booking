@@ -6,11 +6,13 @@ import { verifyBudget, requestRevision, rejectBudget } from "@/actions/budget";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, X } from "lucide-react";
 
 interface ReviewDecisionModalProps {
   budgetId: string;
   budgetStatus?: string;
+  checklistState?: Record<string, boolean>;
+  checklistItems?: Array<{ key: string; label: string }>;
 }
 
 type ReviewAction = "verify" | "request_revision" | "reject";
@@ -18,6 +20,8 @@ type ReviewAction = "verify" | "request_revision" | "reject";
 export default function ReviewDecisionModal({
   budgetId,
   budgetStatus = "submitted",
+  checklistState = {},
+  checklistItems = [],
 }: ReviewDecisionModalProps) {
   const router = useRouter();
   const [selectedAction, setSelectedAction] = useState<ReviewAction | null>(
@@ -26,8 +30,23 @@ export default function ReviewDecisionModal({
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleDecisionClick = () => {
+    if (!selectedAction) return;
+
+    const isCommentRequired =
+      selectedAction === "request_revision" || selectedAction === "reject";
+
+    if (isCommentRequired && !comment.trim()) {
+      setErrorMessage("Comment is required for this action");
+      return;
+    }
+
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmedSubmit = async () => {
     if (!selectedAction) return;
 
     setIsSubmitting(true);
@@ -41,13 +60,12 @@ export default function ReviewDecisionModal({
         selectedAction === "request_revision" ||
         selectedAction === "reject"
       ) {
-        if (!comment.trim()) {
-          setErrorMessage("Comment is required for this action");
-          setIsSubmitting(false);
-          return;
-        }
         formData.append("comment", comment);
       }
+
+      // Add checklist state
+      formData.append("checklistState", JSON.stringify(checklistState));
+      formData.append("checklistItems", JSON.stringify(checklistItems));
 
       if (selectedAction === "verify") {
         await verifyBudget(formData);
@@ -59,12 +77,18 @@ export default function ReviewDecisionModal({
 
       // Refresh to show updated status
       router.refresh();
+      router.push("/dashboard/reviewer/review");
     } catch (error) {
       console.error("Review action failed:", error);
       setErrorMessage("Failed to process review action. Please try again.");
+      setShowConfirmation(false);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancelConfirmation = () => {
+    setShowConfirmation(false);
   };
 
   const isCommentRequired =
@@ -196,7 +220,7 @@ export default function ReviewDecisionModal({
 
       {/* Action Button */}
       <Button
-        onClick={handleSubmit}
+        onClick={handleDecisionClick}
         disabled={
           !selectedAction ||
           isSubmitting ||
@@ -219,6 +243,83 @@ export default function ReviewDecisionModal({
               ? "Request Revision"
               : "Reject"}
       </Button>
+
+      {/* Confirmation Modal */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start gap-3">
+                {selectedAction === "verify" && (
+                  <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                )}
+                {selectedAction === "request_revision" && (
+                  <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
+                )}
+                {selectedAction === "reject" && (
+                  <XCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedAction === "verify"
+                      ? "Confirm Verification"
+                      : selectedAction === "request_revision"
+                        ? "Confirm Revision Request"
+                        : "Confirm Rejection"}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {selectedAction === "verify"
+                      ? "This budget will be forwarded to the approver."
+                      : selectedAction === "request_revision"
+                        ? "This budget will be sent back to the requester for revisions."
+                        : "This budget request will be permanently rejected."}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCancelConfirmation}
+                disabled={isSubmitting}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {comment && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                <p className="text-xs font-medium text-gray-700 mb-1">
+                  Comment:
+                </p>
+                <p className="text-sm text-gray-900">{comment}</p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button
+                onClick={handleCancelConfirmation}
+                disabled={isSubmitting}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmedSubmit}
+                disabled={isSubmitting}
+                className={`flex-1 ${
+                  selectedAction === "verify"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : selectedAction === "reject"
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-orange-600 hover:bg-orange-700"
+                }`}
+              >
+                {isSubmitting ? "Processing..." : "Confirm"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
