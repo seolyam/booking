@@ -326,7 +326,10 @@ export async function verifyBudget(formData: FormData): Promise<void> {
   if (!user) throw new Error("Unauthorized");
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser || (appUser.role !== "reviewer" && appUser.role !== "superadmin")) {
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
     throw new Error("Only reviewers can verify budgets");
   }
 
@@ -352,7 +355,10 @@ export async function requestRevision(formData: FormData): Promise<void> {
   if (!user) throw new Error("Unauthorized");
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser || (appUser.role !== "reviewer" && appUser.role !== "superadmin")) {
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
     throw new Error("Only reviewers can request revisions");
   }
 
@@ -379,7 +385,10 @@ export async function rejectBudget(formData: FormData): Promise<void> {
   if (!user) throw new Error("Unauthorized");
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser || (appUser.role !== "reviewer" && appUser.role !== "superadmin")) {
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
     throw new Error("Only reviewers can reject budgets");
   }
 

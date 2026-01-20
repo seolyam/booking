@@ -1,7 +1,13 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { budgets, budgetItems, budgetMilestones, auditLogs, users } from "@/db/schema";
+import {
+  budgets,
+  budgetItems,
+  budgetMilestones,
+  auditLogs,
+  users,
+} from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import EditBudgetForm from "./_components/EditBudgetForm";
 
@@ -54,14 +60,18 @@ export default async function EditBudgetPage({
     .where(
       and(
         eq(auditLogs.budget_id, id),
-        eq(auditLogs.action, "request_revision")
-      )
+        eq(auditLogs.action, "request_revision"),
+      ),
     )
     .orderBy(desc(auditLogs.timestamp))
     .limit(1);
 
   // Get reviewer name if we have a revision log
-  let reviewerComment: { comment: string; reviewerName: string; date: Date } | null = null;
+  let reviewerComment: {
+    comment: string;
+    reviewerName: string;
+    date: Date;
+  } | null = null;
   if (revisionLog.length > 0 && revisionLog[0].comment) {
     const reviewer = await db
       .select({ full_name: users.full_name, email: users.email })

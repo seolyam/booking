@@ -56,18 +56,24 @@ type Props = {
   reviewerComment?: ReviewerComment;
 };
 
-export default function EditBudgetForm({ budget, items: initialItems, milestones: initialMilestones, reviewerComment }: Props) {
+export default function EditBudgetForm({
+  budget,
+  items: initialItems,
+  milestones: initialMilestones,
+  reviewerComment,
+}: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Existing items from database
   const [existingItems, setExistingItems] = useState(
     initialItems.map((item) => {
       const parts = item.description.split(" - ");
       const category = parts.length > 1 ? parts[0] : "";
-      const description = parts.length > 1 ? parts.slice(1).join(" - ") : item.description;
-      
+      const description =
+        parts.length > 1 ? parts.slice(1).join(" - ") : item.description;
+
       return {
         id: item.id,
         category,
@@ -75,31 +81,37 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
         quantity: item.quantity,
         unitCost: item.unit_cost,
       };
-    })
+    }),
   );
 
   // New items to be added
-  const [newItems, setNewItems] = useState<Array<{
-    category: string;
-    description: string;
-    quantity: number;
-    unitCost: string;
-  }>>([]);
+  const [newItems, setNewItems] = useState<
+    Array<{
+      category: string;
+      description: string;
+      quantity: number;
+      unitCost: string;
+    }>
+  >([]);
 
   // Existing milestones from database
   const [existingMilestones, setExistingMilestones] = useState(
-    initialMilestones.map((m) => ({ id: m.id, description: m.description }))
+    initialMilestones.map((m) => ({ id: m.id, description: m.description })),
   );
 
   // New milestones to be added
   const [milestone, setMilestone] = useState("");
   const [newMilestones, setNewMilestones] = useState<string[]>([]);
-  
+
   const [startDate, setStartDate] = useState(
-    budget.start_date ? new Date(budget.start_date).toISOString().split("T")[0] : ""
+    budget.start_date
+      ? new Date(budget.start_date).toISOString().split("T")[0]
+      : "",
   );
   const [endDate, setEndDate] = useState(
-    budget.end_date ? new Date(budget.end_date).toISOString().split("T")[0] : ""
+    budget.end_date
+      ? new Date(budget.end_date).toISOString().split("T")[0]
+      : "",
   );
   const [varianceExplanation, setVarianceExplanation] = useState("");
 
@@ -126,13 +138,21 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
     setNewItems(newItems.filter((_, i) => i !== index));
   };
 
-  const updateNewItem = (index: number, field: string, value: string | number) => {
+  const updateNewItem = (
+    index: number,
+    field: string,
+    value: string | number,
+  ) => {
     const updated = [...newItems];
     updated[index] = { ...updated[index], [field]: value };
     setNewItems(updated);
   };
 
-  const updateExistingItem = (index: number, field: string, value: string | number) => {
+  const updateExistingItem = (
+    index: number,
+    field: string,
+    value: string | number,
+  ) => {
     const updated = [...existingItems];
     updated[index] = { ...updated[index], [field]: value };
     setExistingItems(updated);
@@ -141,11 +161,11 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
   const removeExistingItem = async (index: number) => {
     const item = existingItems[index];
     if (!item) return;
-    
+
     try {
       const formData = new FormData();
       formData.set("itemId", item.id);
-      
+
       await deleteBudgetItem(formData);
       setExistingItems(existingItems.filter((_, i) => i !== index));
     } catch (e) {
@@ -167,11 +187,11 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
   const removeExistingMilestone = async (index: number) => {
     const ms = existingMilestones[index];
     if (!ms) return;
-    
+
     try {
       const formData = new FormData();
       formData.set("milestoneId", ms.id);
-      
+
       await deleteBudgetMilestone(formData);
       setExistingMilestones(existingMilestones.filter((_, i) => i !== index));
     } catch (e) {
@@ -195,9 +215,11 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
         it.quantity > 0 &&
         parseFloat(it.unitCost as string) > 0,
     );
-    
+
     if (!hasAnyValidItem) {
-      setError("Please have at least one cost item with quantity and unit cost.");
+      setError(
+        "Please have at least one cost item with quantity and unit cost.",
+      );
       return;
     }
 
@@ -206,7 +228,11 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
       // Update existing items
       for (const item of existingItems) {
         const desc = item.description.trim();
-        if (!desc || item.quantity <= 0 || parseFloat(item.unitCost as string) <= 0) {
+        if (
+          !desc ||
+          item.quantity <= 0 ||
+          parseFloat(item.unitCost as string) <= 0
+        ) {
           continue;
         }
 
@@ -214,7 +240,7 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
         itemFd.set("itemId", item.id);
         itemFd.set(
           "description",
-          item.category ? `${item.category} - ${desc}` : desc
+          item.category ? `${item.category} - ${desc}` : desc,
         );
         itemFd.set("quantity", String(item.quantity));
         itemFd.set("unitCost", String(item.unitCost));
@@ -229,7 +255,11 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
       // Add new items
       for (const item of newItems) {
         const desc = item.description.trim();
-        if (!desc || item.quantity <= 0 || parseFloat(item.unitCost as string) <= 0) {
+        if (
+          !desc ||
+          item.quantity <= 0 ||
+          parseFloat(item.unitCost as string) <= 0
+        ) {
           continue;
         }
 
@@ -237,7 +267,7 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
         itemFd.set("budgetId", budget.id);
         itemFd.set(
           "description",
-          item.category ? `${item.category} - ${desc}` : desc
+          item.category ? `${item.category} - ${desc}` : desc,
         );
         itemFd.set("quantity", String(item.quantity));
         itemFd.set("unitCost", String(item.unitCost));
@@ -258,7 +288,10 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
         milestoneFd.set("targetQuarter", "Q1");
 
         const milestoneRes = await addBudgetMilestone(null, milestoneFd);
-        if (milestoneRes?.message && milestoneRes.message !== "Milestone added") {
+        if (
+          milestoneRes?.message &&
+          milestoneRes.message !== "Milestone added"
+        ) {
           console.error("Failed to add milestone:", milestoneRes.message);
         }
       }
@@ -266,9 +299,9 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
       // Resubmit the budget
       const submitRes = await resubmitBudget(
         budget.id,
-        varianceExplanation.trim() ? varianceExplanation.trim() : undefined
+        varianceExplanation.trim() ? varianceExplanation.trim() : undefined,
       );
-      
+
       if (submitRes?.message !== "Budget resubmitted successfully") {
         setError(submitRes?.message ?? "Failed to resubmit budget.");
         return;
@@ -323,13 +356,19 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
                 </span>
               </div>
               <p className="text-sm text-orange-700 mb-3">
-                <span className="font-medium">{reviewerComment.reviewerName}</span> has requested changes to your budget request:
+                <span className="font-medium">
+                  {reviewerComment.reviewerName}
+                </span>{" "}
+                has requested changes to your budget request:
               </p>
               <div className="bg-white rounded-lg border border-orange-200 p-4">
-                <p className="text-gray-800 whitespace-pre-wrap">{reviewerComment.comment}</p>
+                <p className="text-gray-800 whitespace-pre-wrap">
+                  {reviewerComment.comment}
+                </p>
               </div>
               <p className="text-xs text-orange-600 mt-3 italic">
-                Please address the above feedback and resubmit your budget request.
+                Please address the above feedback and resubmit your budget
+                request.
               </p>
             </div>
           </div>
@@ -437,7 +476,11 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
                         placeholder="Item Description"
                         value={item.description}
                         onChange={(e) =>
-                          updateExistingItem(index, "description", e.target.value)
+                          updateExistingItem(
+                            index,
+                            "description",
+                            e.target.value,
+                          )
                         }
                         className="border-gray-300"
                       />
@@ -451,7 +494,7 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
                           updateExistingItem(
                             index,
                             "quantity",
-                            parseInt(e.target.value) || 1
+                            parseInt(e.target.value) || 1,
                           )
                         }
                         className="border-gray-300 w-20"
@@ -490,7 +533,7 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
                     </td>
                   </tr>
                 ))}
-                
+
                 {/* New items */}
                 {newItems.map((item, index) => (
                   <tr
@@ -535,7 +578,7 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
                           updateNewItem(
                             index,
                             "quantity",
-                            parseInt(e.target.value) || 1
+                            parseInt(e.target.value) || 1,
                           )
                         }
                         className="border-gray-300 w-20"
@@ -647,11 +690,13 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
             onChange={(e) => setMilestone(e.target.value)}
             className="border-gray-300"
           />
-          
+
           {/* Existing milestones */}
           {existingMilestones.length > 0 && (
             <div className="mt-3 space-y-2">
-              <p className="text-xs text-gray-500 font-medium">Existing Milestones:</p>
+              <p className="text-xs text-gray-500 font-medium">
+                Existing Milestones:
+              </p>
               {existingMilestones.map((m, idx) => (
                 <div
                   key={`existing-${m.id}`}
@@ -669,11 +714,13 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
               ))}
             </div>
           )}
-          
+
           {/* New milestones */}
           {newMilestones.length > 0 && (
             <div className="mt-3 space-y-2">
-              <p className="text-xs text-blue-600 font-medium">New Milestones:</p>
+              <p className="text-xs text-blue-600 font-medium">
+                New Milestones:
+              </p>
               {newMilestones.map((m, idx) => (
                 <div
                   key={`new-${idx}`}

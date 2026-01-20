@@ -493,7 +493,13 @@ export default function BudgetTrackingView({
                             Comment:
                           </p>
                           <p className="text-sm text-[#1E293B] font-medium bg-white p-3 rounded-lg border border-gray-100">
-                            {log.comment && log.comment.trim() ? log.comment : <span className="text-gray-400 italic">No comment provided</span>}
+                            {log.comment && log.comment.trim() ? (
+                              log.comment
+                            ) : (
+                              <span className="text-gray-400 italic">
+                                No comment provided
+                              </span>
+                            )}
                           </p>
                         </div>
 
