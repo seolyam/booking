@@ -6,11 +6,12 @@ import { db } from "@/db";
 import {
   budgets,
   budgetItems,
+  budgetMilestones,
   users,
   reviewChecklists,
   auditLogs,
 } from "@/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, asc } from "drizzle-orm";
 import ReviewPageClient from "./ReviewPageClient";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import { Calendar, AlertCircle } from "lucide-react";
@@ -70,6 +71,8 @@ export default async function ReviewBudgetDetailPage({
       variance_explanation: budgets.variance_explanation,
       created_at: budgets.created_at,
       user_id: budgets.user_id,
+      start_date: budgets.start_date,
+      end_date: budgets.end_date,
     })
     .from(budgets)
     .where(eq(budgets.id, id))
@@ -107,6 +110,11 @@ export default async function ReviewBudgetDetailPage({
     })
     .from(budgetItems)
     .where(eq(budgetItems.budget_id, budget.id));
+
+  const milestones = await db.query.budgetMilestones.findMany({
+    where: eq(budgetMilestones.budget_id, budget.id),
+    orderBy: [asc(budgetMilestones.created_at)],
+  });
 
   // Get audit logs for this budget
   const logs = await db
@@ -165,15 +173,6 @@ export default async function ReviewBudgetDetailPage({
   const checklistMap = new Map(
     checklist.map((c) => [c.item_key, c.is_checked]),
   );
-
-  // Group items by quarter
-  const itemsByQuarter = new Map<string, typeof items>();
-  for (const item of items) {
-    if (!itemsByQuarter.has(item.quarter)) {
-      itemsByQuarter.set(item.quarter, []);
-    }
-    itemsByQuarter.get(item.quarter)!.push(item);
-  }
 
   // Fetch similar approved budgets for comparison
   const similarBudgets = await db
@@ -255,11 +254,6 @@ export default async function ReviewBudgetDetailPage({
     historicalAmounts.length > 0 ? Math.min(...historicalAmounts) : 170500;
   const historicalMax =
     historicalAmounts.length > 0 ? Math.max(...historicalAmounts) : 340650;
-
-  const quarterOrder = ["Q1", "Q2", "Q3", "Q4"];
-  const sortedQuarters = Array.from(itemsByQuarter.keys()).sort(
-    (a, b) => quarterOrder.indexOf(a) - quarterOrder.indexOf(b),
-  );
 
   const statusLabelMap: Record<string, string> = {
     draft: "Draft",
@@ -347,10 +341,14 @@ export default async function ReviewBudgetDetailPage({
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-gray-400">Timeline</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {formatDate(budget.created_at)} to{" "}
-                  {new Date(
-                    budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000,
-                  ).toLocaleDateString("en-PH")}
+                  {formatDate(budget.start_date ?? budget.created_at)} to{" "}
+                  {formatDate(
+                    budget.end_date ??
+                      new Date(
+                        budget.created_at.getTime() +
+                          365 * 24 * 60 * 60 * 1000,
+                      ),
+                  )}
                 </p>
               </div>
             </div>
@@ -413,7 +411,7 @@ export default async function ReviewBudgetDetailPage({
                   Start Date
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {formatDate(budget.created_at)}
+                  {formatDate(budget.start_date ?? budget.created_at)}
                 </span>
               </div>
               <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
@@ -421,9 +419,13 @@ export default async function ReviewBudgetDetailPage({
                   End Date
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {new Date(
-                    budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000,
-                  ).toLocaleDateString("en-PH")}
+                  {formatDate(
+                    budget.end_date ??
+                      new Date(
+                        budget.created_at.getTime() +
+                          365 * 24 * 60 * 60 * 1000,
+                      ),
+                  )}
                 </span>
               </div>
             </div>
@@ -432,20 +434,28 @@ export default async function ReviewBudgetDetailPage({
               <p className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider opacity-60">
                 Milestones:
               </p>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2 text-sm font-semibold text-gray-600">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
-                  Planning & Procurement - Q1
-                </li>
-                <li className="flex items-start gap-2 text-sm font-semibold text-gray-600">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
-                  Installation - Q2
-                </li>
-                <li className="flex items-start gap-2 text-sm font-semibold text-gray-600">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
-                  Testing & Commissioning - Q3
-                </li>
-              </ul>
+              {milestones.length === 0 ? (
+                <div className="text-sm text-gray-600">No milestones set.</div>
+              ) : (
+                <ul className="space-y-2">
+                  {milestones.map((m) => (
+                    <li
+                      key={m.id}
+                      className="flex items-start gap-2 text-sm font-semibold text-gray-600"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
+                      <div className="min-w-0">
+                        <div className="truncate">{m.description}</div>
+                        {m.target_quarter ? (
+                          <div className="text-xs text-gray-500">
+                            {m.target_quarter}
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 
