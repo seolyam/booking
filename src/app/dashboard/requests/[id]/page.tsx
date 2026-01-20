@@ -342,6 +342,30 @@ export default async function RequestViewPage({
             <div className="mt-1 font-semibold text-gray-900">{updatedAt}</div>
           </div>
         </div>
+
+        {(budget.start_date || budget.end_date) && (
+          <div className="mt-4 rounded-xl bg-blue-50 p-4">
+            <div className="text-sm font-semibold text-gray-900 mb-2">📅 Timeline</div>
+            <div className="grid grid-cols-2 gap-4">
+              {budget.start_date && (
+                <div>
+                  <div className="text-xs text-gray-600">Start Date</div>
+                  <div className="mt-1 font-semibold text-gray-900">
+                    {formatDateShort(budget.start_date)}
+                  </div>
+                </div>
+              )}
+              {budget.end_date && (
+                <div>
+                  <div className="text-xs text-gray-600">End Date</div>
+                  <div className="mt-1 font-semibold text-gray-900">
+                    {formatDateShort(budget.end_date)}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <WorkflowProgress steps={steps} events={events} />

@@ -64,6 +64,8 @@ export async function createBudgetDraft(
 
   const budgetType = formData.get("budgetType") as "capex" | "opex";
   const fiscalYear = parseInt(formData.get("fiscalYear") as string);
+  const startDateStr = formData.get("startDate") as string | null;
+  const endDateStr = formData.get("endDate") as string | null;
 
   const validated = CreateBudgetSchema.safeParse({ budgetType, fiscalYear });
 
@@ -83,6 +85,8 @@ export async function createBudgetDraft(
         fiscal_year: validated.data.fiscalYear,
         status: "draft",
         total_amount: "0",
+        start_date: startDateStr ? new Date(startDateStr) : null,
+        end_date: endDateStr ? new Date(endDateStr) : null,
       })
       .returning();
 

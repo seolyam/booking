@@ -114,6 +114,8 @@ export default function CreateBudgetPage() {
       const draftFd = new FormData();
       draftFd.set("budgetType", selectedType);
       draftFd.set("fiscalYear", String(new Date().getFullYear()));
+      if (startDate) draftFd.set("startDate", startDate);
+      if (endDate) draftFd.set("endDate", endDate);
 
       const draftRes = await createBudgetDraft(null, draftFd);
       if (!draftRes?.budgetId) {
