@@ -686,9 +686,13 @@ export default function EditBudgetForm({
             <button
               type="button"
               onClick={addMilestoneToList}
-              disabled={existingMilestones.length + newMilestones.length >= MAX_MILESTONES}
+              disabled={
+                existingMilestones.length + newMilestones.length >=
+                MAX_MILESTONES
+              }
               className={`text-sm font-medium ${
-                existingMilestones.length + newMilestones.length >= MAX_MILESTONES
+                existingMilestones.length + newMilestones.length >=
+                MAX_MILESTONES
                   ? "text-gray-400 cursor-not-allowed"
                   : "text-blue-600 hover:text-blue-700"
               }`}
@@ -703,7 +707,8 @@ export default function EditBudgetForm({
             className="border-gray-300"
           />
           <p className="text-xs text-gray-500 mt-2">
-            {existingMilestones.length + newMilestones.length}/{MAX_MILESTONES} milestones
+            {existingMilestones.length + newMilestones.length}/{MAX_MILESTONES}{" "}
+            milestones
           </p>
 
           {/* Existing milestones */}
