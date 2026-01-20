@@ -122,62 +122,50 @@ export default function BudgetTrackingView({
   const statusConfig = getStatusConfig(budget.status);
 
   const getSteps = (status: string) => {
-    const isPast = (target: string[]) =>
-      target.includes(status) ||
-      (status === "submitted" && target.includes("draft")) ||
-      (status === "revision_requested" &&
-        ["draft", "submitted"].includes(target[0])) ||
-      ["verified", "verified_by_reviewer", "approved", "rejected"].includes(
-        status,
-      );
-
-    const isCurrent = (target: string[]) => target.includes(status);
-
-    const baseSteps = [
-      { id: "draft", label: "Created", target: ["draft"] },
-      { id: "submitted", label: "Submitted", target: ["submitted"] },
-      {
-        id: "review",
-        label: "Review",
-        target: ["revision_requested", "verified_by_reviewer"],
-      },
-      { id: "verified", label: "Verified", target: ["verified"] },
-      { id: "approved", label: "Approved", target: ["approved", "rejected"] },
+    const steps = [
+      { id: "draft", label: "Created" },
+      { id: "submitted", label: "Submitted" },
+      { id: "review", label: "Review" },
+      { id: "verified", label: "Verified" },
+      { id: "approved", label: "Approved" },
     ];
 
-    return baseSteps.map((s, idx) => {
-      let icon = null;
+    const currentIndex = (() => {
+      if (status === "draft") return 0;
+      if (status === "submitted") return 1;
+      if (
+        status === "revision_requested" ||
+        status === "verified_by_reviewer" ||
+        status === "rejected"
+      )
+        return 2;
+      if (status === "verified") return 3;
+      if (status === "approved") return 4;
+      return 0;
+    })();
+
+    // Adjust labels for terminal review outcomes
+    if (status === "revision_requested") {
+      steps[2] = { ...steps[2], label: "Revision" };
+    } else if (status === "rejected") {
+      steps[2] = { ...steps[2], label: "Rejected" };
+    } else if (status === "verified_by_reviewer") {
+      steps[2] = { ...steps[2], label: "Reviewed" };
+    }
+
+    return steps.map((s, idx) => {
+      const isDone = idx < currentIndex;
+      const isCurrent = idx === currentIndex;
+
+      let icon: React.ReactNode = null;
       let color = "bg-gray-50 text-gray-400 border-gray-300";
       let lineColor = "bg-gray-200";
 
-      const completed =
-        (idx === 0 &&
-          [
-            "submitted",
-            "revision_requested",
-            "verified_by_reviewer",
-            "verified",
-            "approved",
-            "rejected",
-          ].includes(status)) ||
-        (idx === 1 &&
-          [
-            "revision_requested",
-            "verified_by_reviewer",
-            "verified",
-            "approved",
-            "rejected",
-          ].includes(status)) ||
-        (idx === 2 && ["verified", "approved", "rejected"].includes(status)) ||
-        (idx === 3 && ["approved", "rejected"].includes(status));
-
-      const active = s.target.includes(status);
-
-      if (completed) {
+      if (isDone) {
         icon = <Check className="w-4 h-4" />;
         color = "bg-green-100 text-green-600 border-green-500";
         lineColor = "bg-green-500";
-      } else if (active) {
+      } else if (isCurrent) {
         if (status === "revision_requested") {
           icon = <AlertCircle className="w-4 h-4" />;
           color = "bg-orange-100 text-orange-600 border-orange-500";
@@ -198,7 +186,7 @@ export default function BudgetTrackingView({
         ...s,
         icon,
         color,
-        line: idx < baseSteps.length - 1 ? lineColor : null,
+        line: idx < steps.length - 1 ? lineColor : null,
       };
     });
   };
