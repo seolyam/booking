@@ -82,7 +82,7 @@ export default function ApproverApprovalsList({
         </p>
       </div>
 
-      <div className="rounded-[2rem] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
             <div className="relative flex-1 max-w-md">

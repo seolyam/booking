@@ -326,7 +326,7 @@ export default function BudgetTrackingView({
                   </div>
                   {step.line && (
                     <div
-                      className={`flex-1 h-1 mx-[-2px] ${step.line} transition-all`}
+                      className={`flex-1 h-1 mx-0.5 ${step.line} transition-all`}
                     />
                   )}
                 </React.Fragment>
@@ -399,7 +399,7 @@ export default function BudgetTrackingView({
                 </div>
 
                 <div className="p-5 bg-gray-50/30 rounded-2xl border border-gray-100">
-                  <p className="text-sm font-bold text-[#1E293B] mb-3 uppercase tracking-wider text-gray-400">
+                  <p className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">
                     Milestones:
                   </p>
                   <ul className="space-y-2">
@@ -488,7 +488,7 @@ export default function BudgetTrackingView({
                       <div key={log.id} className="relative group">
                         {/* Step Dot */}
                         <div
-                          className={`absolute -left-[22px] top-1.5 w-3 h-3 rounded-full ${dotColor} z-10`}
+                          className={`absolute -left-5.5 top-1.5 w-3 h-3 rounded-full ${dotColor} z-10`}
                         />
 
                         <div className="flex justify-between items-start bg-gray-50/50 p-4 rounded-2xl group-hover:bg-gray-100/80 transition-colors">

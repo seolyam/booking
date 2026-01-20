@@ -272,7 +272,7 @@ export default async function RequestsPage({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] table-fixed text-sm">
+          <table className="w-full min-w-245 table-fixed text-sm">
             <colgroup>
               <col style={{ width: 140 }} />
               <col style={{ width: 360 }} />

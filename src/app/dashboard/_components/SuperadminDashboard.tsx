@@ -9,12 +9,10 @@ import {
   CheckCircle,
   Eye,
   Check,
-  Search,
   Users,
   Settings,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ApproverDashboardRow } from "./ApproverDashboard";
 
 export type SuperadminDashboardRow = {
   budgetId: string;
@@ -51,16 +49,6 @@ interface SuperadminDashboardProps {
   };
   approverRows: SuperadminDashboardRow[];
   pendingUserCount: number;
-}
-
-function formatPhp(amount: string) {
-  const n = Number(amount);
-  if (!Number.isFinite(n)) return "₱0";
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    maximumFractionDigits: 0,
-  }).format(n);
 }
 
 function StatCard({
@@ -137,13 +125,19 @@ function BudgetTable({ rows }: { rows: SuperadminDashboardRow[] }) {
         <tbody className="divide-y divide-gray-50">
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={7} className="py-20 text-center text-gray-400 font-medium">
+              <td
+                colSpan={7}
+                className="py-20 text-center text-gray-400 font-medium"
+              >
                 No budgets found.
               </td>
             </tr>
           ) : (
             rows.map((r) => (
-              <tr key={r.budgetId} className="group hover:bg-gray-50/50 transition-colors">
+              <tr
+                key={r.budgetId}
+                className="group hover:bg-gray-50/50 transition-colors"
+              >
                 <td className="py-5 pr-4 font-bold text-gray-400 text-xs">
                   {r.displayId}
                 </td>
@@ -159,7 +153,9 @@ function BudgetTable({ rows }: { rows: SuperadminDashboardRow[] }) {
                 <td className="py-5 pr-4 text-gray-900 font-bold text-center">
                   {r.amount}
                 </td>
-                <td className="py-5 pr-4 text-center">{statusPill(r.statusLabel)}</td>
+                <td className="py-5 pr-4 text-center">
+                  {statusPill(r.statusLabel)}
+                </td>
                 <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
                   {r.dateLabel}
                 </td>
@@ -173,7 +169,11 @@ function BudgetTable({ rows }: { rows: SuperadminDashboardRow[] }) {
                     }`}
                   >
                     {r.actionLabel || "View"}{" "}
-                    {r.actionLabel === "Edit" ? <Check className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    {r.actionLabel === "Edit" ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
                   </Link>
                 </td>
               </tr>
@@ -194,7 +194,6 @@ export default function SuperadminDashboard({
   approverRows,
   pendingUserCount,
 }: SuperadminDashboardProps) {
-  const [searchTerm, setSearchTerm] = React.useState("");
   const [activeTab, setActiveTab] = React.useState("overview");
 
   return (
@@ -246,7 +245,7 @@ export default function SuperadminDashboard({
       </div>
 
       {/* Tabbed Interface for All Roles */}
-      <div className="rounded-[2rem] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start rounded-none border-b border-gray-100 bg-gray-50/50 p-0">
             <TabsTrigger
@@ -284,14 +283,18 @@ export default function SuperadminDashboard({
           {/* Overview Tab */}
           <TabsContent value="overview" className="p-8 space-y-8">
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                Recent Activity
+              </h3>
               <div className="space-y-4">
                 <div className="p-4 rounded-lg bg-blue-50 border border-blue-100">
                   <p className="text-sm font-semibold text-blue-900">
                     🔍 Quick Access
                   </p>
                   <p className="text-sm text-blue-800 mt-1">
-                    Switch between Requester, Reviewer, and Approver roles using the tabs above. All actions are logged and attributed to the superadmin account.
+                    Switch between Requester, Reviewer, and Approver roles using
+                    the tabs above. All actions are logged and attributed to the
+                    superadmin account.
                   </p>
                 </div>
               </div>
@@ -302,7 +305,9 @@ export default function SuperadminDashboard({
           <TabsContent value="requester" className="p-8 space-y-8">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-bold text-gray-900">Your Budgets</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Your Budgets
+                </h3>
                 <Link href="/dashboard/budget/create">
                   <Button className="bg-[#358334] hover:bg-[#2d6f2c]">
                     Create Budget
@@ -350,7 +355,9 @@ export default function SuperadminDashboard({
           {/* Reviewer Tab */}
           <TabsContent value="reviewer" className="p-8 space-y-8">
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Budgets for Review</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                Budgets for Review
+              </h3>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
                   <p className="text-xs text-gray-500 font-semibold uppercase">
@@ -384,7 +391,9 @@ export default function SuperadminDashboard({
           {/* Approver Tab */}
           <TabsContent value="approver" className="p-8 space-y-8">
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Budget Approvals</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                Budget Approvals
+              </h3>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                 <div className="rounded-lg bg-green-50 p-4 border border-green-100">
                   <p className="text-xs text-green-600 font-semibold uppercase">
@@ -426,7 +435,9 @@ export default function SuperadminDashboard({
           {/* Users Tab */}
           <TabsContent value="users" className="p-8 space-y-8">
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">User Management</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                User Management
+              </h3>
               <Card>
                 <CardHeader>
                   <CardTitle className="text-gray-900 flex items-center gap-2">

@@ -175,7 +175,7 @@ export default function ReviewerDashboard({
         </div>
       )}
 
-      <div className="rounded-[2rem] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-8">
           <div className="flex items-center justify-between mb-6">
             <div className="text-xl font-bold text-gray-900">
