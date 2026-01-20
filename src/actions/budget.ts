@@ -857,7 +857,11 @@ export async function resubmitBudget(
     }
 
     // Update status to submitted and update variance explanation if provided
-    const updateData: { status: "submitted"; variance_explanation?: string; updated_at: Date } = {
+    const updateData: {
+      status: "submitted";
+      variance_explanation?: string;
+      updated_at: Date;
+    } = {
       status: "submitted",
       updated_at: new Date(),
     };
@@ -867,10 +871,7 @@ export async function resubmitBudget(
       updateData.variance_explanation = varianceExplanation.trim();
     }
 
-    await db
-      .update(budgets)
-      .set(updateData)
-      .where(eq(budgets.id, budgetId));
+    await db.update(budgets).set(updateData).where(eq(budgets.id, budgetId));
 
     // Log the resubmission
     await db.insert(auditLogs).values({

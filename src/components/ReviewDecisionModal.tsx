@@ -126,16 +126,28 @@ export default function ReviewDecisionModal({
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <CheckCircle className={`h-5 w-5 shrink-0 mt-0.5 ${
-              selectedAction === "verify" ? "text-green-600" : "text-gray-400"
-            }`} />
+            <CheckCircle
+              className={`h-5 w-5 shrink-0 mt-0.5 ${
+                selectedAction === "verify" ? "text-green-600" : "text-gray-400"
+              }`}
+            />
             <div>
-              <div className={`font-medium ${
-                selectedAction === "verify" ? "text-green-800" : "text-gray-700"
-              }`}>Verify & Forward</div>
-              <div className={`text-sm ${
-                selectedAction === "verify" ? "text-green-600" : "text-gray-500"
-              }`}>
+              <div
+                className={`font-medium ${
+                  selectedAction === "verify"
+                    ? "text-green-800"
+                    : "text-gray-700"
+                }`}
+              >
+                Verify & Forward
+              </div>
+              <div
+                className={`text-sm ${
+                  selectedAction === "verify"
+                    ? "text-green-600"
+                    : "text-gray-500"
+                }`}
+              >
                 Approve and send to approver
               </div>
             </div>
@@ -153,18 +165,30 @@ export default function ReviewDecisionModal({
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <AlertTriangle className={`h-5 w-5 shrink-0 mt-0.5 ${
-              selectedAction === "request_revision" ? "text-orange-600" : "text-gray-400"
-            }`} />
+            <AlertTriangle
+              className={`h-5 w-5 shrink-0 mt-0.5 ${
+                selectedAction === "request_revision"
+                  ? "text-orange-600"
+                  : "text-gray-400"
+              }`}
+            />
             <div>
-              <div className={`font-medium ${
-                selectedAction === "request_revision" ? "text-orange-800" : "text-gray-700"
-              }`}>
+              <div
+                className={`font-medium ${
+                  selectedAction === "request_revision"
+                    ? "text-orange-800"
+                    : "text-gray-700"
+                }`}
+              >
                 Request Revision
               </div>
-              <div className={`text-sm ${
-                selectedAction === "request_revision" ? "text-orange-600" : "text-gray-500"
-              }`}>
+              <div
+                className={`text-sm ${
+                  selectedAction === "request_revision"
+                    ? "text-orange-600"
+                    : "text-gray-500"
+                }`}
+              >
                 Send back for changes
               </div>
             </div>
@@ -182,16 +206,24 @@ export default function ReviewDecisionModal({
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <XCircle className={`h-5 w-5 shrink-0 mt-0.5 ${
-              selectedAction === "reject" ? "text-red-600" : "text-gray-400"
-            }`} />
+            <XCircle
+              className={`h-5 w-5 shrink-0 mt-0.5 ${
+                selectedAction === "reject" ? "text-red-600" : "text-gray-400"
+              }`}
+            />
             <div>
-              <div className={`font-medium ${
-                selectedAction === "reject" ? "text-red-800" : "text-gray-700"
-              }`}>Reject</div>
-              <div className={`text-sm ${
-                selectedAction === "reject" ? "text-red-600" : "text-gray-500"
-              }`}>
+              <div
+                className={`font-medium ${
+                  selectedAction === "reject" ? "text-red-800" : "text-gray-700"
+                }`}
+              >
+                Reject
+              </div>
+              <div
+                className={`text-sm ${
+                  selectedAction === "reject" ? "text-red-600" : "text-gray-500"
+                }`}
+              >
                 Deny this budget request
               </div>
             </div>
