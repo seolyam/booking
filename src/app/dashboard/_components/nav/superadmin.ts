@@ -1,4 +1,4 @@
-import { ShieldCheck, LayoutDashboard, ListChecks } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, ListChecks, Eye, CheckCircle } from "lucide-react";
 import type { NavItem, NavSection } from "./types";
 
 export function superadminNav(): NavSection[] {
@@ -44,8 +44,30 @@ export function superadminNav(): NavSection[] {
     },
   ];
 
+  const reviewerItems: NavItem[] = [
+    {
+      key: "review",
+      label: "Budget Review",
+      href: "/dashboard/reviewer/review",
+      icon: Eye,
+      isActive: (p) => p.startsWith("/dashboard/reviewer/review"),
+    },
+  ];
+
+  const approverItems: NavItem[] = [
+    {
+      key: "approvals",
+      label: "List of Proposals",
+      href: "/dashboard/approver/approvals",
+      icon: CheckCircle,
+      isActive: (p) => p.startsWith("/dashboard/approver"),
+    },
+  ];
+
   return [
     { title: "Admin", items: adminItems },
     { title: "Requester", items: requesterItems },
+    { title: "Reviewer", items: reviewerItems },
+    { title: "Approver", items: approverItems },
   ];
 }
