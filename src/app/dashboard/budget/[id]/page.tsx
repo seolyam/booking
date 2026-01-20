@@ -411,18 +411,25 @@ export default async function BudgetDetailPage({
           </div>
 
           <div className="mt-4 space-y-4 rounded-lg bg-black/5 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-gray-700">Start Date</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {createdAt}
+            {budget.start_date && (
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-gray-700">Start Date</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {formatDateShort(budget.start_date)}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-gray-700">Last Updated</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {updatedAt}
+            )}
+            {budget.end_date && (
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-gray-700">End Date</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {formatDateShort(budget.end_date)}
+                </div>
               </div>
-            </div>
+            )}
+            {!budget.start_date && !budget.end_date && (
+              <div className="text-sm text-gray-600">No timeline set.</div>
+            )}
 
             <div className="pt-2">
               <div className="text-sm font-semibold text-gray-900">

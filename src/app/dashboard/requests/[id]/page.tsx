@@ -342,32 +342,6 @@ export default async function RequestViewPage({
             <div className="mt-1 font-semibold text-gray-900">{updatedAt}</div>
           </div>
         </div>
-
-        {(budget.start_date || budget.end_date) && (
-          <div className="mt-4 rounded-xl bg-blue-50 p-4">
-            <div className="text-sm font-semibold text-gray-900 mb-2">
-              📅 Timeline
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {budget.start_date && (
-                <div>
-                  <div className="text-xs text-gray-600">Start Date</div>
-                  <div className="mt-1 font-semibold text-gray-900">
-                    {formatDateShort(budget.start_date)}
-                  </div>
-                </div>
-              )}
-              {budget.end_date && (
-                <div>
-                  <div className="text-xs text-gray-600">End Date</div>
-                  <div className="mt-1 font-semibold text-gray-900">
-                    {formatDateShort(budget.end_date)}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       <WorkflowProgress steps={steps} events={events} />
@@ -410,18 +384,25 @@ export default async function RequestViewPage({
           </div>
 
           <div className="mt-4 space-y-4 rounded-lg bg-black/5 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-gray-700">Start Date</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {createdAt}
+            {budget.start_date && (
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-gray-700">Start Date</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {formatDateShort(budget.start_date)}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-gray-700">Last Updated</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {updatedAt}
+            )}
+            {budget.end_date && (
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-gray-700">End Date</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {formatDateShort(budget.end_date)}
+                </div>
               </div>
-            </div>
+            )}
+            {!budget.start_date && !budget.end_date && (
+              <div className="text-sm text-gray-600">No timeline set.</div>
+            )}
 
             <div className="pt-2">
               <div className="text-sm font-semibold text-gray-900">
