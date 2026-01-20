@@ -2,32 +2,50 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
-import { budgets, budgetItems, users, budgetMilestones, auditLogs } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import {
+  budgets,
+  budgetItems,
+  users,
+  budgetMilestones,
+  auditLogs,
+} from "@/db/schema";
+import { eq, inArray, asc } from "drizzle-orm";
 import BudgetTrackingView from "@/app/dashboard/_components/BudgetTrackingView";
 
+function deriveDisplayName(fullName?: string | null, email?: string | null) {
+  if (fullName && fullName.trim()) return fullName.trim();
+  if (!email) return "Unknown";
+  const local = email.split("@")[0] ?? email;
+  const cleaned = local.replace(/[._-]+/g, " ");
+  return cleaned
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0]!.toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function formatPhp(amount: string | number) {
-    const n = typeof amount === "string" ? Number(amount) : amount;
-    if (!Number.isFinite(n)) return "₱0";
-    return new Intl.NumberFormat("en-PH", {
-        style: "currency",
-        currency: "PHP",
-        maximumFractionDigits: 0,
-    }).format(n);
+  const n = typeof amount === "string" ? Number(amount) : amount;
+  if (!Number.isFinite(n)) return "₱0";
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    maximumFractionDigits: 0,
+  }).format(n);
 }
 
 function formatDate(d: Date) {
-    return new Intl.DateTimeFormat("en-PH", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).format(d);
+  return new Intl.DateTimeFormat("en-PH", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
 }
 
 export default async function BudgetTrackingPage({
-    params,
+  params,
 }: {
-    params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
 
@@ -66,12 +84,21 @@ export default async function BudgetTrackingPage({
         .where(eq(budgetItems.budget_id, id));
 
     // Fetch milestones
-    let milestones: any[] = [];
+    let milestones: Array<{
+        id: string;
+        description: string;
+        target_quarter: string | null;
+    }> = [];
     try {
         milestones = await db
-            .select()
+            .select({
+                id: budgetMilestones.id,
+                description: budgetMilestones.description,
+                target_quarter: budgetMilestones.target_quarter,
+            })
             .from(budgetMilestones)
-            .where(eq(budgetMilestones.budget_id, id));
+            .where(eq(budgetMilestones.budget_id, id))
+            .orderBy(asc(budgetMilestones.created_at));
     } catch (e) {
         console.error("Milestones table fetch error:", e);
     }
@@ -149,11 +176,7 @@ export default async function BudgetTrackingPage({
                 total_cost: it.total_cost,
                 quarter: it.quarter
             }))}
-            milestones={milestones.map(m => ({
-                id: m.id,
-                description: m.description,
-                target_quarter: m.target_quarter
-            }))}
+            milestones={milestones}
             auditHistory={auditHistory}
             backHref="/dashboard/reviewer"
         />

@@ -250,6 +250,8 @@ export async function reviewBudget(
   revalidatePath("/dashboard/reviewer");
   revalidatePath("/dashboard/budget");
   revalidatePath("/dashboard/requests");
+  revalidatePath("/dashboard/approver/approvals");
+  revalidatePath(`/dashboard/approver/approvals/${budgetId}`);
 
   return { message: "Review action recorded" };
 }
@@ -319,6 +321,7 @@ async function saveChecklistState(
 
 export async function verifyBudget(formData: FormData): Promise<void> {
   const budgetId = formData.get("budgetId") as string;
+  const comment = (formData.get("comment") as string | null) ?? "";
   const checklistStateStr = formData.get("checklistState") as string;
   const checklistItemsStr = formData.get("checklistItems") as string;
 
@@ -343,7 +346,7 @@ export async function verifyBudget(formData: FormData): Promise<void> {
     );
   }
 
-  await reviewBudget(budgetId, "verify", "");
+  await reviewBudget(budgetId, "verify", comment.trim());
 }
 
 export async function requestRevision(formData: FormData): Promise<void> {
@@ -857,7 +860,11 @@ export async function resubmitBudget(
     }
 
     // Update status to submitted and update variance explanation if provided
-    const updateData: { status: "submitted"; variance_explanation?: string; updated_at: Date } = {
+    const updateData: {
+      status: "submitted";
+      variance_explanation?: string;
+      updated_at: Date;
+    } = {
       status: "submitted",
       updated_at: new Date(),
     };
@@ -867,10 +874,7 @@ export async function resubmitBudget(
       updateData.variance_explanation = varianceExplanation.trim();
     }
 
-    await db
-      .update(budgets)
-      .set(updateData)
-      .where(eq(budgets.id, budgetId));
+    await db.update(budgets).set(updateData).where(eq(budgets.id, budgetId));
 
     // Log the resubmission
     await db.insert(auditLogs).values({

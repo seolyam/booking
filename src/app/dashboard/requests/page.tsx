@@ -4,7 +4,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
 import { desc, eq, inArray, and } from "drizzle-orm";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Eye } from "lucide-react";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -50,7 +50,7 @@ function statusPill(status: string) {
     return `${base} bg-orange-100 text-orange-700`;
   if (status === "rejected") return `${base} bg-red-100 text-red-700`;
   if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
-  return `${base} bg-amber-100 text-amber-700`;
+  return `${base} bg-blue-100 text-blue-700`;
 }
 
 type StatusFilter = "all" | "approved" | "pending" | "revision" | "draft";
@@ -223,7 +223,7 @@ export default async function RequestsPage({
                 href={buildRequestsHref({ q: qRaw ?? "", status: "pending" })}
                 className={
                   activeStatus === "pending"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 ring-2 ring-amber-400"
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 ring-2 ring-blue-400"
                     : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
                 }
               >
@@ -275,12 +275,12 @@ export default async function RequestsPage({
           <table className="w-full min-w-245 table-fixed text-sm">
             <colgroup>
               <col style={{ width: 140 }} />
-              <col style={{ width: 360 }} />
+              <col style={{ width: 220 }} />
               <col style={{ width: 90 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 110 }} />
-              <col style={{ width: 90 }} />
+              <col style={{ width: 120 }} />
             </colgroup>
             <thead>
               <tr className="text-left text-xs text-gray-500 border-t border-black/10">
@@ -314,7 +314,11 @@ export default async function RequestsPage({
                   return (
                     <tr
                       key={b.id}
-                      className="border-t border-black/5 hover:bg-gray-50/50"
+                      className={`border-t border-black/5 hover:bg-gray-50/50 ${
+                        b.status === "rejected"
+                          ? "opacity-60 bg-gray-50/30"
+                          : ""
+                      }`}
                     >
                       <td className="py-4 pl-6 pr-4">
                         <div className="font-medium text-gray-900">
@@ -322,7 +326,7 @@ export default async function RequestsPage({
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="font-medium text-gray-900 line-clamp-1">
+                        <div className="font-medium text-gray-900 line-clamp-2 leading-snug">
                           {projectName}
                         </div>
                       </td>
@@ -342,7 +346,7 @@ export default async function RequestsPage({
                       <td className="py-4 px-3 text-gray-600">
                         {formatDateShort(new Date(b.created_at))}
                       </td>
-                      <td className="py-4 px-3 pr-6 text-right">
+                      <td className="py-4 px-3 pr-6 text-right whitespace-nowrap">
                         {b.status === "revision_requested" ? (
                           <Link
                             href={`/dashboard/budget/edit/${b.id}`}
@@ -353,9 +357,9 @@ export default async function RequestsPage({
                         ) : (
                           <Link
                             href={`/dashboard/requests/${b.id}`}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300 transition-colors"
                           >
-                            View
+                            View <Eye className="h-4 w-4" />
                           </Link>
                         )}
                       </td>

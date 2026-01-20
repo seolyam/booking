@@ -33,6 +33,18 @@ function formatDate(d: Date) {
   }).format(d);
 }
 
+function displayName(fullName?: string | null, email?: string | null) {
+  if (fullName && fullName.trim()) return fullName.trim();
+  if (!email) return "Unknown";
+  const local = email.split("@")[0] ?? email;
+  const cleaned = local.replace(/[._-]+/g, " ");
+  return cleaned
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0]!.toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default async function ReviewBudgetDetailPage({
   params,
 }: {
@@ -312,7 +324,7 @@ export default async function ReviewBudgetDetailPage({
                     Requester
                   </p>
                   <p className="text-xl font-bold text-gray-900">
-                    {requester?.full_name || requester?.email || "Unknown"}
+                    {displayName(requester?.full_name, requester?.email)}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -336,13 +348,17 @@ export default async function ReviewBudgetDetailPage({
                     Timeline
                   </p>
                   <p className="text-xl font-bold text-gray-900">
-                    {formatDate(budget.start_date ?? budget.created_at)} to{" "}
-                    {formatDate(
-                      budget.end_date ??
-                        new Date(
-                          budget.created_at.getTime() +
-                            365 * 24 * 60 * 60 * 1000,
-                        ),
+                    {budget.start_date || budget.end_date ? (
+                      <>
+                        {budget.start_date
+                          ? formatDate(budget.start_date)
+                          : "Not set"} to{" "}
+                        {budget.end_date
+                          ? formatDate(budget.end_date)
+                          : "Not set"}
+                      </>
+                    ) : (
+                      "No timeline set."
                     )}
                   </p>
                 </div>
@@ -407,7 +423,7 @@ export default async function ReviewBudgetDetailPage({
                   Start Date
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {formatDate(budget.start_date ?? budget.created_at)}
+                  {budget.start_date ? formatDate(budget.start_date) : "Not set"}
                 </span>
               </div>
               <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
@@ -415,12 +431,7 @@ export default async function ReviewBudgetDetailPage({
                   End Date
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {formatDate(
-                    budget.end_date ??
-                      new Date(
-                        budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000,
-                      ),
-                  )}
+                  {budget.end_date ? formatDate(budget.end_date) : "Not set"}
                 </span>
               </div>
             </div>

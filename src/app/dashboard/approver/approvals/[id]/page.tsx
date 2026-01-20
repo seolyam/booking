@@ -3,8 +3,15 @@ import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
-import { budgets, budgetItems, users, auditLogs, reviewChecklists } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import {
+    budgets,
+    budgetItems,
+    users,
+    auditLogs,
+    reviewChecklists,
+    budgetMilestones,
+} from "@/db/schema";
+import { eq, and, desc, asc } from "drizzle-orm";
 import { Calendar, AlertCircle, ChevronLeft, Bell, CheckCircle2 } from "lucide-react";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import ReviewerAssessmentCard from "../../../_components/ReviewerAssessmentCard";
@@ -108,6 +115,11 @@ export default async function ApproverReviewDetailPage({
         .from(budgetItems)
         .where(eq(budgetItems.budget_id, budget.id));
 
+    const milestones = await db.query.budgetMilestones.findMany({
+        where: eq(budgetMilestones.budget_id, budget.id),
+        orderBy: [asc(budgetMilestones.created_at)],
+    });
+
     // Get reviewer assessment from audit logs
     // Looking for the most recent 'verify' action
     const reviewerLogs = await db
@@ -123,7 +135,7 @@ export default async function ApproverReviewDetailPage({
         .orderBy(desc(auditLogs.timestamp))
         .limit(1);
 
-    let reviewerAssessment = { name: "Unknown Reviewer", comment: "No assessment available." };
+    let reviewerAssessment = { name: "Unknown Reviewer", comment: "No assessment provided." };
     if (reviewerLogs.length > 0) {
         const reviewer = await db
             .select({ full_name: users.full_name })
@@ -131,9 +143,11 @@ export default async function ApproverReviewDetailPage({
             .where(eq(users.id, reviewerLogs[0].actor_id))
             .limit(1);
 
+        const reviewerComment = (reviewerLogs[0].comment ?? "").trim();
+
         reviewerAssessment = {
             name: reviewer[0]?.full_name || "Reviewer",
-            comment: reviewerLogs[0].comment || "Verified all costs. Project aligns with strategic goals. Ready for approval."
+            comment: reviewerComment || "No assessment provided.",
         };
     }
 
@@ -171,9 +185,10 @@ export default async function ApproverReviewDetailPage({
     const typeLabel = budget.budget_type === "capex" ? "CapEx" : "OpEx";
 
     // Quick Stats Calculations
-    const projectDuration = budget.start_date && budget.end_date
-        ? `${Math.ceil((budget.end_date.getTime() - budget.start_date.getTime()) / (1000 * 60 * 60 * 24 * 30.44))} Months`
-        : "12 Months";
+    const projectDuration =
+        budget.start_date && budget.end_date
+            ? `${Math.ceil((budget.end_date.getTime() - budget.start_date.getTime()) / (1000 * 60 * 60 * 24 * 30.44))} Months`
+            : "Not set";
     const averageItemsCost = items.length > 0
         ? Number(budget.total_amount) / items.length
         : 0;
@@ -239,7 +254,14 @@ export default async function ApproverReviewDetailPage({
                                 <div className="space-y-2">
                                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Timeline</p>
                                     <p className="text-xl font-bold text-gray-900">
-                                        {budget.start_date ? formatDate(budget.start_date) : formatDate(budget.created_at)} to {budget.end_date ? formatDate(budget.end_date) : "01-11-2027"}
+                                        {budget.start_date || budget.end_date ? (
+                                            <>
+                                                {budget.start_date ? formatDate(budget.start_date) : "Not set"} to{" "}
+                                                {budget.end_date ? formatDate(budget.end_date) : "Not set"}
+                                            </>
+                                        ) : (
+                                            "No timeline set."
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -247,7 +269,7 @@ export default async function ApproverReviewDetailPage({
                     </div>
 
                     {/* Cost Breakdown */}
-                    <div className="bg-white rounded-[2rem] p-10 border border-gray-100 shadow-sm space-y-8">
+                    <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
                         <div className="flex items-center gap-3">
                             <span className="text-2xl font-black text-gray-900">₱ Cost Breakdown</span>
                         </div>
@@ -277,7 +299,7 @@ export default async function ApproverReviewDetailPage({
                     </div>
 
                     {/* Project Timeline & Milestones */}
-                    <div className="bg-white rounded-[2rem] p-10 border border-gray-100 shadow-sm space-y-8">
+                    <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
                         <div className="flex items-center gap-3">
                             <Calendar className="w-6 h-6 text-gray-900" />
                             <h2 className="text-2xl font-black text-gray-900">Project timeline & milestones</h2>
@@ -286,36 +308,37 @@ export default async function ApproverReviewDetailPage({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex justify-between items-center p-5 bg-gray-50/50 rounded-2xl border border-gray-100/50">
                                 <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Start Date</span>
-                                <span className="text-lg font-bold text-gray-900">{budget.start_date ? formatDate(budget.start_date) : "01-08-2026"}</span>
+                                <span className="text-lg font-bold text-gray-900">{budget.start_date ? formatDate(budget.start_date) : "Not set"}</span>
                             </div>
                             <div className="flex justify-between items-center p-5 bg-gray-50/50 rounded-2xl border border-gray-100/50">
                                 <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">End Date</span>
-                                <span className="text-lg font-bold text-gray-900">{budget.end_date ? formatDate(budget.end_date) : "05-23-2026"}</span>
+                                <span className="text-lg font-bold text-gray-900">{budget.end_date ? formatDate(budget.end_date) : "Not set"}</span>
                             </div>
                         </div>
 
-                        <div className="p-8 bg-gray-50/30 rounded-[1.5rem] border border-gray-100/50">
+                        <div className="p-8 bg-gray-50/30 rounded-3xl border border-gray-100/50">
                             <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Milestones:</p>
-                            <ul className="space-y-4">
-                                <li className="flex items-center gap-3 text-gray-700 font-bold">
-                                    <div className="w-2 h-2 rounded-full bg-gray-300" />
-                                    Equipment Procurement - Q1
-                                </li>
-                                <li className="flex items-center gap-3 text-gray-700 font-bold">
-                                    <div className="w-2 h-2 rounded-full bg-gray-300" />
-                                    Installation - Q2
-                                </li>
-                                <li className="flex items-center gap-3 text-gray-700 font-bold">
-                                    <div className="w-2 h-2 rounded-full bg-gray-300" />
-                                    Testing & Commissioning - Q3
-                                </li>
-                            </ul>
+                            {milestones.length === 0 ? (
+                                <div className="text-gray-500 text-sm font-medium italic">No milestones set.</div>
+                            ) : (
+                                <ul className="space-y-4">
+                                    {milestones.map((m) => (
+                                        <li key={m.id} className="flex items-center gap-3 text-gray-700 font-bold">
+                                            <div className="w-2 h-2 rounded-full bg-gray-300" />
+                                            <span className="min-w-0 truncate">{m.description}</span>
+                                            {m.target_quarter ? (
+                                                <span className="text-gray-400 font-black">- {m.target_quarter}</span>
+                                            ) : null}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </div>
                     </div>
 
                     {/* Variance Explanation */}
                     {budget.variance_explanation && (
-                        <div className="bg-white rounded-[2rem] p-10 border border-gray-100 shadow-sm space-y-8">
+                        <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
                             <div className="flex items-center gap-3">
                                 <AlertCircle className="w-6 h-6 text-gray-900" />
                                 <h2 className="text-2xl font-black text-gray-900">Variance Explanation</h2>

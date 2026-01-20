@@ -43,7 +43,7 @@ function statusPill(status: string) {
   if (status === "rejected") return `${base} bg-red-100 text-red-700`;
   if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
   // submitted / verified / verified_by_reviewer -> pending-ish
-  return `${base} bg-amber-100 text-amber-700`;
+  return `${base} bg-blue-100 text-blue-700`;
 }
 
 function typePill(type: "capex" | "opex") {
@@ -257,7 +257,7 @@ export default async function BudgetIndexPage({
                 href={buildBudgetListHref({ q: qRaw ?? "", status: "pending" })}
                 className={
                   activeStatus === "pending"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 ring-2 ring-amber-400"
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 ring-2 ring-blue-400"
                     : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
                 }
               >
@@ -304,12 +304,12 @@ export default async function BudgetIndexPage({
           <table className="w-full min-w-245 table-fixed text-sm">
             <colgroup>
               <col style={{ width: 140 }} />
-              <col style={{ width: 360 }} />
+              <col style={{ width: 240 }} />
               <col style={{ width: 90 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 110 }} />
-              <col style={{ width: 90 }} />
+              <col style={{ width: 120 }} />
             </colgroup>
             <thead>
               <tr className="text-left text-xs text-gray-500 border-t border-black/10">
@@ -341,12 +341,19 @@ export default async function BudgetIndexPage({
                   const statusText = statusLabel(b.status);
 
                   return (
-                    <tr key={b.id} className="border-t border-black/10">
+                    <tr
+                      key={b.id}
+                      className={`border-t border-black/10 ${
+                        b.status === "rejected"
+                          ? "opacity-60 bg-gray-50/30"
+                          : ""
+                      }`}
+                    >
                       <td className="py-5 pl-6 pr-4 text-gray-900 font-medium whitespace-nowrap">
                         {`BUD-${b.budget_number}`}
                       </td>
                       <td className="py-5 px-4 align-top whitespace-normal">
-                        <div className="font-medium text-gray-900 whitespace-normal wrap-break-word leading-snug">
+                        <div className="font-medium text-gray-900 whitespace-normal wrap-break-word leading-snug line-clamp-2">
                           {projectName}
                         </div>
                         <div className="text-xs text-gray-500">

@@ -98,7 +98,7 @@ function BudgetTable({ rows }: { rows: SuperadminDashboardRow[] }) {
       s === "Approved"
         ? "bg-green-50 text-green-600 ring-1 ring-green-100"
         : s === "Pending"
-          ? "bg-orange-50 text-orange-600 ring-1 ring-orange-100"
+          ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
           : "bg-gray-100 text-gray-500 ring-1 ring-gray-200";
 
     return (
@@ -136,7 +136,9 @@ function BudgetTable({ rows }: { rows: SuperadminDashboardRow[] }) {
             rows.map((r) => (
               <tr
                 key={r.budgetId}
-                className="group hover:bg-gray-50/50 transition-colors"
+                className={`group hover:bg-gray-50/50 transition-colors ${
+                  r.statusLabel === "Rejected" ? "opacity-60 bg-gray-50/30" : ""
+                }`}
               >
                 <td className="py-5 pr-4 font-bold text-gray-400 text-xs">
                   {r.displayId}
