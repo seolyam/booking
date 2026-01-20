@@ -10,8 +10,10 @@ type DashboardRow = {
   projectSub: string;
   type: "CapEx" | "OpEx";
   amount: string;
-  statusLabel: "Approved" | "Pending" | "Revision" | "Rejected";
+  statusLabel: "Approved" | "Pending" | "Revision" | "Rejected" | "Verified";
   dateLabel: string;
+  actionLabel: "View" | "Edit";
+  actionHref: string;
 };
 
 export default function RequesterDashboard({
@@ -31,7 +33,7 @@ export default function RequesterDashboard({
     value: number,
     label: string,
     iconBg: string,
-    href: string
+    href: string,
   ) => (
     <Link
       href={href}
@@ -42,8 +44,12 @@ export default function RequesterDashboard({
       >
         {icon}
       </div>
-      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">{value}</div>
-      <div className="mt-1 text-sm font-semibold text-gray-500 uppercase tracking-wide">{label}</div>
+      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">
+        {value}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-gray-500 uppercase tracking-wide">
+        {label}
+      </div>
     </Link>
   );
 
@@ -53,7 +59,9 @@ export default function RequesterDashboard({
         ? "bg-blue-100 text-blue-600"
         : "bg-purple-100 text-purple-600";
     return (
-      <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${cls}`}>
+      <span
+        className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${cls}`}
+      >
         {type}
       </span>
     );
@@ -63,11 +71,13 @@ export default function RequesterDashboard({
     const cls =
       s === "Approved"
         ? "bg-green-50 text-green-600 ring-1 ring-green-100"
-        : s === "Pending"
-          ? "bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100"
-          : s === "Revision"
-            ? "bg-orange-50 text-orange-600 ring-1 ring-orange-100"
-            : "bg-red-50 text-red-600 ring-1 ring-red-100";
+        : s === "Verified"
+          ? "bg-green-50 text-green-600 ring-1 ring-green-100"
+          : s === "Pending"
+            ? "bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100"
+            : s === "Revision"
+              ? "bg-orange-50 text-orange-600 ring-1 ring-orange-100"
+              : "bg-red-50 text-red-600 ring-1 ring-red-100";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
@@ -84,32 +94,32 @@ export default function RequesterDashboard({
           stats.totalSubmitted,
           "Total submitted",
           "bg-blue-50",
-          "/dashboard/requests"
+          "/dashboard/requests",
         )}
         {statCard(
           <Clock className="h-6 w-6 text-yellow-500" />,
           stats.pendingReview,
           "Pending review",
           "bg-yellow-50",
-          "/dashboard/requests?status=pending"
+          "/dashboard/requests?status=pending",
         )}
         {statCard(
           <CheckCircle2 className="h-6 w-6 text-green-500" />,
           stats.approved,
           "Approved",
           "bg-green-50",
-          "/dashboard/requests?status=approved"
+          "/dashboard/requests?status=approved",
         )}
         {statCard(
           <AlertCircle className="h-6 w-6 text-orange-400" />,
           stats.needsRevision,
           "Needs revision",
           "bg-orange-50",
-          "/dashboard/requests?status=revision"
+          "/dashboard/requests?status=revision",
         )}
       </div>
 
-      <div className="rounded-[2rem] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-8">
           <div className="flex items-center justify-between gap-4 mb-8">
             <div className="text-xl font-bold text-gray-900">
@@ -139,7 +149,10 @@ export default function RequesterDashboard({
               <tbody className="divide-y divide-gray-50">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-gray-400 font-medium">
+                    <td
+                      colSpan={7}
+                      className="py-12 text-center text-gray-400 font-medium"
+                    >
                       No budget requests yet.
                     </td>
                   </tr>
@@ -161,15 +174,30 @@ export default function RequesterDashboard({
                         </div>
                       </td>
                       <td className="py-5 pr-4">{typePill(r.type)}</td>
-                      <td className="py-5 pr-4 text-gray-900 font-bold text-center">{r.amount}</td>
-                      <td className="py-5 pr-4 text-center">{statusPill(r.statusLabel)}</td>
-                      <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">{r.dateLabel}</td>
+                      <td className="py-5 pr-4 text-gray-900 font-bold text-center">
+                        {r.amount}
+                      </td>
+                      <td className="py-5 pr-4 text-center">
+                        {statusPill(r.statusLabel)}
+                      </td>
+                      <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
+                        {r.dateLabel}
+                      </td>
                       <td className="py-5 pr-0 text-right">
                         <Link
-                          href={`/dashboard/budget/${r.budgetId}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-700 px-4 py-2 text-xs font-bold text-white hover:bg-gray-800 transition-colors shadow-sm"
+                          href={r.actionHref}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition-colors shadow-sm ${
+                            r.actionLabel === "Edit"
+                              ? "bg-orange-600 hover:bg-orange-700"
+                              : "bg-gray-700 hover:bg-gray-800"
+                          }`}
                         >
-                          View <Eye className="h-3.5 w-3.5" />
+                          {r.actionLabel}{" "}
+                          {r.actionLabel === "Edit" ? (
+                            <span>✏️</span>
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
                         </Link>
                       </td>
                     </tr>
