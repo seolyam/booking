@@ -58,7 +58,7 @@ export default async function ApproverApprovalsPage() {
     .from(budgets)
     .leftJoin(users, eq(budgets.user_id, users.id))
     .where(
-      inArray(budgets.status, ["approved", "verified", "verified_by_reviewer", "submitted", "rejected"])
+      inArray(budgets.status, ["approved", "verified", "verified_by_reviewer", "rejected"])
     )
     .orderBy(desc(budgets.created_at));
 

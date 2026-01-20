@@ -123,7 +123,7 @@ export default async function DashboardPage() {
     const awaitingApprovalResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(budgets)
-      .where(inArray(budgets.status, ["verified", "verified_by_reviewer", "submitted"])); // 'submitted' potentially if reviewer hasn't touched it but technically pending for system
+      .where(inArray(budgets.status, ["verified", "verified_by_reviewer"]));
     const awaitingApproval = Number(awaitingApprovalResult[0]?.count ?? 1); // Mocking 1 if 0 for demo consistency with image if preferred, but let's be real
 
     const approvedThisMonthResult = await db
@@ -156,7 +156,7 @@ export default async function DashboardPage() {
       .from(budgets)
       .leftJoin(users, eq(budgets.user_id, users.id))
       .where(
-        inArray(budgets.status, ["approved", "verified", "verified_by_reviewer", "submitted", "rejected"])
+        inArray(budgets.status, ["approved", "verified", "verified_by_reviewer", "rejected"])
       )
       .orderBy(desc(budgets.created_at))
       .limit(4);
