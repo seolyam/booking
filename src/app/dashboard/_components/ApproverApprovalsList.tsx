@@ -49,7 +49,7 @@ export default function ApproverApprovalsList({
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
-        {s === "Approved" ? "Reviewed" : s}
+        {s}
       </span>
     );
   };

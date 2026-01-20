@@ -134,7 +134,7 @@ function computeSteps(status: string): WorkflowStep[] {
     { key: "submitted", label: "Submitted" },
     { key: "reviewed", label: "Reviewed" },
     { key: "verified", label: "Verified" },
-    { key: "final", label: "Final" },
+    { key: "approved", label: "Approved" },
   ];
 
   // Map status to progression index; rejected/revision stop at review
