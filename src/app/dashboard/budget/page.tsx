@@ -309,7 +309,7 @@ export default async function BudgetIndexPage({
               <col style={{ width: 140 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 110 }} />
-              <col style={{ width: 90 }} />
+              <col style={{ width: 120 }} />
             </colgroup>
             <thead>
               <tr className="text-left text-xs text-gray-500 border-t border-black/10">

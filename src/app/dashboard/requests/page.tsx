@@ -4,7 +4,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
 import { desc, eq, inArray, and } from "drizzle-orm";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Eye } from "lucide-react";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -280,7 +280,7 @@ export default async function RequestsPage({
               <col style={{ width: 140 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 110 }} />
-              <col style={{ width: 90 }} />
+              <col style={{ width: 120 }} />
             </colgroup>
             <thead>
               <tr className="text-left text-xs text-gray-500 border-t border-black/10">
@@ -346,7 +346,7 @@ export default async function RequestsPage({
                       <td className="py-4 px-3 text-gray-600">
                         {formatDateShort(new Date(b.created_at))}
                       </td>
-                      <td className="py-4 px-3 pr-6 text-right">
+                      <td className="py-4 px-3 pr-6 text-right whitespace-nowrap">
                         {b.status === "revision_requested" ? (
                           <Link
                             href={`/dashboard/budget/edit/${b.id}`}
@@ -357,9 +357,9 @@ export default async function RequestsPage({
                         ) : (
                           <Link
                             href={`/dashboard/requests/${b.id}`}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300 transition-colors"
                           >
-                            View
+                            View <Eye className="h-4 w-4" />
                           </Link>
                         )}
                       </td>
