@@ -36,7 +36,11 @@ export default function ApprovalDecisionPanel({
             // We might need to handle 'request_info' specifically or extend finalizeBudget
             const actionToSubmit = selectedAction === "request_info" ? "reject" : selectedAction; // fallback if not updated
 
-            const result = await finalizeBudget(budgetId, actionToSubmit as "approve" | "reject");
+            const result = await finalizeBudget(
+                budgetId,
+                actionToSubmit as "approve" | "reject",
+                comment,
+            );
 
             if (result && "message" in result && result.message.includes("Failed")) {
                 setErrorMessage(result.message);

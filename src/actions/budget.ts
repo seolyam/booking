@@ -400,9 +400,9 @@ export async function rejectBudget(formData: FormData): Promise<void> {
 export async function finalizeBudget(
   budgetId: string,
   decision: "approve" | "reject",
+  comment?: string,
 ) {
   const user = await getUser();
-  // Validations for role should go here (approver only)
   if (!user) return { message: "Unauthorized" };
 
   const appUser = await ensureAppUser(user.id);
@@ -413,10 +413,19 @@ export async function finalizeBudget(
     };
   }
 
+  if (appUser.role !== "approver" && appUser.role !== "superadmin") {
+    return { message: "Forbidden" };
+  }
+
   const existingBudget = await db.query.budgets.findFirst({
     where: eq(budgets.id, budgetId),
   });
   if (!existingBudget) return { message: "Budget not found" };
+
+  const approvableStatuses = ["verified", "verified_by_reviewer"];
+  if (!approvableStatuses.includes(existingBudget.status)) {
+    return { message: "Budget is not in an approvable state" };
+  }
 
   const newStatus = decision === "approve" ? "approved" : "rejected";
 
@@ -431,6 +440,7 @@ export async function finalizeBudget(
     action: decision,
     previous_status: existingBudget.status,
     new_status: newStatus,
+    comment: comment?.trim() ? comment.trim() : undefined,
   });
 
   revalidatePath("/dashboard/budget");
