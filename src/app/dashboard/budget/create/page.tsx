@@ -36,6 +36,7 @@ export default function CreateBudgetPage() {
   const [milestone, setMilestone] = useState("");
   const [milestones, setMilestones] = useState<string[]>([]);
   const [varianceExplanation, setVarianceExplanation] = useState("");
+  const MAX_MILESTONES = 6;
 
   const projectId = useMemo(() => {
     const now = new Date();
@@ -64,9 +65,14 @@ export default function CreateBudgetPage() {
   };
 
   const addMilestone = () => {
+    if (milestones.length >= MAX_MILESTONES) {
+      setError(`You can add up to ${MAX_MILESTONES} milestones.`);
+      return;
+    }
     if (milestone.trim()) {
       setMilestones([...milestones, milestone]);
       setMilestone("");
+      setError(null);
     }
   };
 
@@ -493,7 +499,12 @@ export default function CreateBudgetPage() {
             <button
               type="button"
               onClick={addMilestone}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              disabled={milestones.length >= MAX_MILESTONES}
+              className={`text-sm font-medium ${
+                milestones.length >= MAX_MILESTONES
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-blue-600 hover:text-blue-700"
+              }`}
             >
               + Add milestone
             </button>
@@ -504,6 +515,9 @@ export default function CreateBudgetPage() {
             onChange={(e) => setMilestone(e.target.value)}
             className="border-gray-300"
           />
+          <p className="text-xs text-gray-500 mt-2">
+            {milestones.length}/{MAX_MILESTONES} milestones
+          </p>
           {milestones.length > 0 && (
             <div className="mt-3 space-y-2">
               {milestones.map((m, idx) => (

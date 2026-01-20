@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
 import { desc, eq, inArray, and } from "drizzle-orm";
@@ -175,21 +176,22 @@ export default async function ReviewerReviewQueuePage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <Link
+          href="/dashboard"
+          className="p-2 rounded-full hover:bg-gray-100 text-gray-900 transition-colors"
+          aria-label="Back to dashboard"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </Link>
         <div>
           <div className="text-xl font-semibold text-gray-900">
             Budget Review
           </div>
           <div className="text-sm text-gray-500">
-            Review and verify budget details before forwarding to approver{" "}
+            Review and verify budget details before forwarding to approver
           </div>
         </div>
-        <Link
-          href="/dashboard"
-          className="text-sm text-gray-600 hover:underline"
-        >
-          Back to dashboard
-        </Link>
       </div>
 
       {/* Reuse the same table UI; stats are less relevant on the queue page */}
