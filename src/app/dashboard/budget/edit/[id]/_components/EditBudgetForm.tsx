@@ -114,6 +114,7 @@ export default function EditBudgetForm({
       : "",
   );
   const [varianceExplanation, setVarianceExplanation] = useState("");
+  const MAX_MILESTONES = 6;
 
   const categories = [
     "Equipment",
@@ -174,9 +175,15 @@ export default function EditBudgetForm({
   };
 
   const addMilestoneToList = () => {
+    const totalCount = existingMilestones.length + newMilestones.length;
+    if (totalCount >= MAX_MILESTONES) {
+      setError(`You can add up to ${MAX_MILESTONES} milestones.`);
+      return;
+    }
     if (milestone.trim()) {
       setNewMilestones([...newMilestones, milestone]);
       setMilestone("");
+      setError(null);
     }
   };
 
@@ -679,7 +686,12 @@ export default function EditBudgetForm({
             <button
               type="button"
               onClick={addMilestoneToList}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              disabled={existingMilestones.length + newMilestones.length >= MAX_MILESTONES}
+              className={`text-sm font-medium ${
+                existingMilestones.length + newMilestones.length >= MAX_MILESTONES
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-blue-600 hover:text-blue-700"
+              }`}
             >
               + Add milestone
             </button>
@@ -690,6 +702,9 @@ export default function EditBudgetForm({
             onChange={(e) => setMilestone(e.target.value)}
             className="border-gray-300"
           />
+          <p className="text-xs text-gray-500 mt-2">
+            {existingMilestones.length + newMilestones.length}/{MAX_MILESTONES} milestones
+          </p>
 
           {/* Existing milestones */}
           {existingMilestones.length > 0 && (
