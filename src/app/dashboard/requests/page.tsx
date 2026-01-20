@@ -54,8 +54,19 @@ function statusPill(status: string) {
 
 function chipClass(active: boolean) {
   return active
-    ? "ring-2 ring-[#358334]/40 cursor-default"
-    : "hover:ring-2 hover:ring-gray-300 transition-shadow cursor-pointer";
+    ? "ring-2 cursor-default"
+    : "bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer";
+}
+
+function activeChipColor(filterType: string) {
+  if (filterType === "approved")
+    return "bg-green-100 text-green-700 ring-green-400";
+  if (filterType === "revision")
+    return "bg-orange-100 text-orange-700 ring-orange-400";
+  if (filterType === "pending")
+    return "bg-amber-100 text-amber-700 ring-amber-400";
+  if (filterType === "draft") return "bg-gray-200 text-gray-700 ring-gray-400";
+  return "bg-blue-100 text-blue-700 ring-blue-400";
 }
 
 type StatusFilter = "all" | "approved" | "pending" | "revision" | "draft";
@@ -216,33 +227,41 @@ export default async function RequestsPage({
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "approved" })}
-                className={`${statusPill("approved")} ${chipClass(
-                  activeStatus === "approved",
-                )}`}
+                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+                  activeStatus === "approved"
+                    ? activeChipColor("approved")
+                    : chipClass(false)
+                }`}
               >
                 Approved
               </Link>
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "pending" })}
-                className={`${statusPill("submitted")} ${chipClass(
-                  activeStatus === "pending",
-                )}`}
+                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+                  activeStatus === "pending"
+                    ? activeChipColor("pending")
+                    : chipClass(false)
+                }`}
               >
                 Pending
               </Link>
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "revision" })}
-                className={`${statusPill("revision_requested")} ${chipClass(
-                  activeStatus === "revision",
-                )}`}
+                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+                  activeStatus === "revision"
+                    ? activeChipColor("revision")
+                    : chipClass(false)
+                }`}
               >
                 Revision
               </Link>
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "draft" })}
-                className={`${statusPill("draft")} ${chipClass(
-                  activeStatus === "draft",
-                )}`}
+                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+                  activeStatus === "draft"
+                    ? activeChipColor("draft")
+                    : chipClass(false)
+                }`}
               >
                 Draft
               </Link>
