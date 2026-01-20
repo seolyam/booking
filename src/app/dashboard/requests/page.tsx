@@ -50,7 +50,7 @@ function statusPill(status: string) {
     return `${base} bg-orange-100 text-orange-700`;
   if (status === "rejected") return `${base} bg-red-100 text-red-700`;
   if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
-  return `${base} bg-amber-100 text-amber-700`;
+  return `${base} bg-blue-100 text-blue-700`;
 }
 
 type StatusFilter = "all" | "approved" | "pending" | "revision" | "draft";
@@ -223,7 +223,7 @@ export default async function RequestsPage({
                 href={buildRequestsHref({ q: qRaw ?? "", status: "pending" })}
                 className={
                   activeStatus === "pending"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 ring-2 ring-amber-400"
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 ring-2 ring-blue-400"
                     : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
                 }
               >

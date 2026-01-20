@@ -74,7 +74,7 @@ export default function RequesterDashboard({
         : s === "Verified"
           ? "bg-green-50 text-green-600 ring-1 ring-green-100"
           : s === "Pending"
-            ? "bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100"
+            ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
             : s === "Revision"
               ? "bg-orange-50 text-orange-600 ring-1 ring-orange-100"
               : "bg-red-50 text-red-600 ring-1 ring-red-100";

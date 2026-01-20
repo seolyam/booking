@@ -44,7 +44,7 @@ export default function ApproverApprovalsList({
       s === "Approved"
         ? "bg-green-50 text-green-600 ring-1 ring-green-100"
         : s === "Pending"
-          ? "bg-orange-50 text-orange-600 ring-1 ring-orange-100"
+          ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
           : "bg-gray-100 text-gray-500 ring-1 ring-gray-200";
 
     return (
@@ -62,7 +62,7 @@ export default function ApproverApprovalsList({
           ? status === "Approved"
             ? "bg-green-50 text-green-600 border-green-200 ring-2 ring-green-400"
             : status === "Pending"
-              ? "bg-orange-50 text-orange-600 border-orange-200 ring-2 ring-orange-400"
+              ? "bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-400"
               : "bg-gray-100 text-gray-600 border-gray-200 ring-2 ring-gray-400"
           : "bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
       }`}

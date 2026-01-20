@@ -43,7 +43,7 @@ function statusPill(status: string) {
   if (status === "rejected") return `${base} bg-red-100 text-red-700`;
   if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
   // submitted / verified / verified_by_reviewer -> pending-ish
-  return `${base} bg-amber-100 text-amber-700`;
+  return `${base} bg-blue-100 text-blue-700`;
 }
 
 function typePill(type: "capex" | "opex") {
@@ -257,7 +257,7 @@ export default async function BudgetIndexPage({
                 href={buildBudgetListHref({ q: qRaw ?? "", status: "pending" })}
                 className={
                   activeStatus === "pending"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 ring-2 ring-amber-400"
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 ring-2 ring-blue-400"
                     : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
                 }
               >
