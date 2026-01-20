@@ -77,7 +77,7 @@ function statusMeta(status: string): {
   if (status === "verified") {
     return {
       label: "Verified",
-      cls: "bg-blue-100 text-blue-700",
+      cls: "bg-green-100 text-green-700",
       icon: <CheckCircle2 className="h-4 w-4" />,
     };
   }
