@@ -52,23 +52,6 @@ function statusPill(status: string) {
   return `${base} bg-amber-100 text-amber-700`;
 }
 
-function chipClass(active: boolean) {
-  return active
-    ? "ring-2 cursor-default"
-    : "bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer";
-}
-
-function activeChipColor(filterType: string) {
-  if (filterType === "approved")
-    return "bg-green-100 text-green-700 ring-green-400";
-  if (filterType === "revision")
-    return "bg-orange-100 text-orange-700 ring-orange-400";
-  if (filterType === "pending")
-    return "bg-amber-100 text-amber-700 ring-amber-400";
-  if (filterType === "draft") return "bg-gray-200 text-gray-700 ring-gray-400";
-  return "bg-blue-100 text-blue-700 ring-blue-400";
-}
-
 type StatusFilter = "all" | "approved" | "pending" | "revision" | "draft";
 
 function getStatusFilterFromSearchParam(
@@ -227,41 +210,41 @@ export default async function RequestsPage({
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "approved" })}
-                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+                className={
                   activeStatus === "approved"
-                    ? activeChipColor("approved")
-                    : chipClass(false)
-                }`}
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-green-100 text-green-700 ring-2 ring-green-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Approved
               </Link>
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "pending" })}
-                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+                className={
                   activeStatus === "pending"
-                    ? activeChipColor("pending")
-                    : chipClass(false)
-                }`}
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 ring-2 ring-amber-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Pending
               </Link>
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "revision" })}
-                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+                className={
                   activeStatus === "revision"
-                    ? activeChipColor("revision")
-                    : chipClass(false)
-                }`}
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-orange-100 text-orange-700 ring-2 ring-orange-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Revision
               </Link>
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "draft" })}
-                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+                className={
                   activeStatus === "draft"
-                    ? activeChipColor("draft")
-                    : chipClass(false)
-                }`}
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-200 text-gray-700 ring-2 ring-gray-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Draft
               </Link>

@@ -181,7 +181,7 @@ export default async function ReviewerReviewQueuePage({
             Budget Review
           </div>
           <div className="text-sm text-gray-500">
-            All budgets in the review pipeline
+            Review and verify budget details before forwarding to approver{" "}
           </div>
         </div>
         <Link

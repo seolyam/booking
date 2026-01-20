@@ -201,17 +201,14 @@ export default async function BudgetIndexPage({
       })
     : allBudgets;
 
-  const chipClass = (isActive: boolean) =>
-    isActive
-      ? "ring-2 ring-[#358334]/40"
-      : "hover:opacity-90 transition-opacity";
-
   return (
     <div className="-m-8 p-6 md:p-8">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">List of Requests</h1>
-          <div className="text-sm text-gray-500 mt-1">Requester Dashboard</div>
+          <div className="text-sm text-gray-500 mt-1">
+            History of all requests
+          </div>
         </div>
         <button
           type="button"
@@ -248,17 +245,21 @@ export default async function BudgetIndexPage({
                   q: qRaw ?? "",
                   status: "approved",
                 })}
-                className={`${statusPill("approved")} ${chipClass(
-                  activeStatus === "approved",
-                )}`}
+                className={
+                  activeStatus === "approved"
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-green-100 text-green-700 ring-2 ring-green-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Approved
               </Link>
               <Link
                 href={buildBudgetListHref({ q: qRaw ?? "", status: "pending" })}
-                className={`${statusPill("submitted")} ${chipClass(
-                  activeStatus === "pending",
-                )}`}
+                className={
+                  activeStatus === "pending"
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 ring-2 ring-amber-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Pending
               </Link>
@@ -267,9 +268,11 @@ export default async function BudgetIndexPage({
                   q: qRaw ?? "",
                   status: "revision",
                 })}
-                className={`${statusPill("revision_requested")} ${chipClass(
-                  activeStatus === "revision",
-                )}`}
+                className={
+                  activeStatus === "revision"
+                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-orange-100 text-orange-700 ring-2 ring-orange-400"
+                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                }
               >
                 Revision
               </Link>
