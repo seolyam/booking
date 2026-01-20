@@ -344,7 +344,9 @@ export default async function BudgetIndexPage({
                     <tr
                       key={b.id}
                       className={`border-t border-black/10 ${
-                        b.status === "rejected" ? "opacity-60 bg-gray-50/30" : ""
+                        b.status === "rejected"
+                          ? "opacity-60 bg-gray-50/30"
+                          : ""
                       }`}
                     >
                       <td className="py-5 pl-6 pr-4 text-gray-900 font-medium whitespace-nowrap">
