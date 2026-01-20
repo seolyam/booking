@@ -250,6 +250,8 @@ export async function reviewBudget(
   revalidatePath("/dashboard/reviewer");
   revalidatePath("/dashboard/budget");
   revalidatePath("/dashboard/requests");
+  revalidatePath("/dashboard/approver/approvals");
+  revalidatePath(`/dashboard/approver/approvals/${budgetId}`);
 
   return { message: "Review action recorded" };
 }
@@ -319,6 +321,7 @@ async function saveChecklistState(
 
 export async function verifyBudget(formData: FormData): Promise<void> {
   const budgetId = formData.get("budgetId") as string;
+  const comment = (formData.get("comment") as string | null) ?? "";
   const checklistStateStr = formData.get("checklistState") as string;
   const checklistItemsStr = formData.get("checklistItems") as string;
 
@@ -343,7 +346,7 @@ export async function verifyBudget(formData: FormData): Promise<void> {
     );
   }
 
-  await reviewBudget(budgetId, "verify", "");
+  await reviewBudget(budgetId, "verify", comment.trim());
 }
 
 export async function requestRevision(formData: FormData): Promise<void> {
