@@ -16,7 +16,7 @@ export type ReviewerDashboardRow = {
   projectSub: string;
   type: "CapEx" | "OpEx";
   amount: string;
-  statusLabel: "Reviewed" | "Pending";
+  statusLabel: "Reviewed" | "Pending" | "Revision" | "Rejected" | "Verified";
   dateLabel: string;
   actionLabel: "View" | "Review";
   actionHref: string;
