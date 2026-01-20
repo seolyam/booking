@@ -145,7 +145,11 @@ export default function ReviewerDashboard({
   return (
     <div className="space-y-10">
       {showStats && (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+        <>
+          <div className="text-2xl font-bold text-gray-900">
+            Budgets to Review
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
           {statCard(
             <CheckCircle2 className="h-6 w-6 text-green-500" />,
             stats.reviewedToday,
@@ -174,17 +178,12 @@ export default function ReviewerDashboard({
             "bg-orange-50",
             "/dashboard/reviewer/review?status=revision",
           )}
-        </div>
+          </div>
+        </>
       )}
 
       <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="text-xl font-bold text-gray-900">
-              Budgets to Review
-            </div>
-          </div>
-
           {(activeFilter !== undefined || searchQuery !== undefined) && (
             <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center">
               <form
@@ -287,15 +286,6 @@ export default function ReviewerDashboard({
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div className="px-8 py-6 border-t border-gray-50 flex justify-end">
-          <Link
-            href="/dashboard/reviewer/review"
-            className="text-sm font-bold text-gray-900 hover:text-[#358334] transition-colors flex items-center gap-1 underline"
-          >
-            View all
-          </Link>
         </div>
       </div>
     </div>

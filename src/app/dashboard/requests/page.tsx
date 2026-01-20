@@ -275,7 +275,7 @@ export default async function RequestsPage({
           <table className="w-full min-w-245 table-fixed text-sm">
             <colgroup>
               <col style={{ width: 140 }} />
-              <col style={{ width: 360 }} />
+              <col style={{ width: 240 }} />
               <col style={{ width: 90 }} />
               <col style={{ width: 140 }} />
               <col style={{ width: 140 }} />
@@ -324,7 +324,7 @@ export default async function RequestsPage({
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="font-medium text-gray-900 line-clamp-1">
+                        <div className="font-medium text-gray-900 line-clamp-2 leading-snug">
                           {projectName}
                         </div>
                       </td>
