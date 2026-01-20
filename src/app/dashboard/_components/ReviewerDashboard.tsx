@@ -83,7 +83,9 @@ export default function ReviewerDashboard({
     const cls =
       s === "Reviewed"
         ? "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200"
-        : "bg-gray-50 text-gray-700 ring-1 ring-gray-200";
+        : s === "Pending"
+          ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+          : "bg-gray-50 text-gray-700 ring-1 ring-gray-200";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
@@ -102,10 +104,10 @@ export default function ReviewerDashboard({
       "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium transition-all";
     const colorClass = isActive
       ? filter === "pending"
-        ? "bg-gray-100 text-gray-700 ring-2 ring-gray-400"
+        ? "bg-blue-100 text-blue-700 ring-2 ring-blue-400"
         : filter === "reviewed"
           ? "bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400"
-          : "bg-blue-100 text-blue-700 ring-2 ring-blue-400"
+          : "bg-gray-100 text-gray-700 ring-2 ring-gray-400"
       : "bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400";
 
     return (
