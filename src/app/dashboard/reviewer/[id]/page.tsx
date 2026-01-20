@@ -237,21 +237,12 @@ export default async function ReviewBudgetDetailPage({
     approved: "Approved",
   };
 
-  const statusColorMap: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-800",
-    submitted: "bg-gray-100 text-gray-800",
-    verified: "bg-green-100 text-green-700",
-    verified_by_reviewer: "bg-yellow-100 text-yellow-800",
-    revision_requested: "bg-orange-100 text-orange-800",
-    rejected: "bg-red-100 text-red-800",
-    approved: "bg-green-100 text-green-800",
-  };
-
   const typeLabel = budget.budget_type === "capex" ? "CapEx" : "OpEx";
 
   const statusCardClass = (() => {
     const s = budget.status;
-    if (s === "submitted") return "bg-yellow-50 text-yellow-600 border-yellow-100";
+    if (s === "submitted")
+      return "bg-yellow-50 text-yellow-600 border-yellow-100";
     if (s === "verified" || s === "approved")
       return "bg-green-50 text-green-600 border-green-100";
     if (s === "revision_requested")
@@ -427,8 +418,7 @@ export default async function ReviewBudgetDetailPage({
                   {formatDate(
                     budget.end_date ??
                       new Date(
-                        budget.created_at.getTime() +
-                          365 * 24 * 60 * 60 * 1000,
+                        budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000,
                       ),
                   )}
                 </span>
@@ -474,7 +464,7 @@ export default async function ReviewBudgetDetailPage({
                 </h2>
               </div>
               <p className="text-sm text-gray-600 font-medium italic leading-relaxed">
-                "{budget.variance_explanation}"
+                &quot;{budget.variance_explanation}&quot;
               </p>
             </div>
           )}

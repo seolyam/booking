@@ -126,7 +126,7 @@ export default function ReviewDecisionModal({
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
             <div>
               <div className="font-medium text-green-800">Verify & Forward</div>
               <div className="text-sm text-green-600">
@@ -147,7 +147,7 @@ export default function ReviewDecisionModal({
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
             <div>
               <div className="font-medium text-orange-800">
                 Request Revision
@@ -170,7 +170,7 @@ export default function ReviewDecisionModal({
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
             <div>
               <div className="font-medium text-red-800">Reject</div>
               <div className="text-sm text-red-600">
@@ -251,13 +251,13 @@ export default function ReviewDecisionModal({
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start gap-3">
                 {selectedAction === "verify" && (
-                  <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="h-6 w-6 text-green-600 shrink-0 mt-0.5" />
                 )}
                 {selectedAction === "request_revision" && (
-                  <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-6 w-6 text-orange-600 shrink-0 mt-0.5" />
                 )}
                 {selectedAction === "reject" && (
-                  <XCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                  <XCircle className="h-6 w-6 text-red-600 shrink-0 mt-0.5" />
                 )}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
