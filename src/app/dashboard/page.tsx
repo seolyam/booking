@@ -5,6 +5,7 @@ import { desc, eq, inArray, and, gte, sql } from "drizzle-orm";
 import RequesterDashboard from "./_components/RequesterDashboard";
 import ReviewerDashboard from "./_components/ReviewerDashboard";
 import ApproverDashboard, { type ApproverDashboardRow } from "./_components/ApproverDashboard";
+import SuperadminDashboard from "./_components/SuperadminDashboard";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { budgets, budgetItems, users, auditLogs } from "@/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,57 +56,291 @@ export default async function DashboardPage() {
     redirect("/dashboard/reviewer");
   }
 
-  // If not requester, keep the old generic page minimal for now.
+  // If superadmin, show unified dashboard with all role features
   if (appUser.role === "superadmin") {
-    const pendingCount = await db.query.users.findMany({
+    // Fetch requester data (all budgets as superadmin)
+    const allBudgets = await db.query.budgets.findMany({
+      orderBy: [desc(budgets.created_at)],
+      limit: 50,
+    });
+
+    const requesterBudgetIds = allBudgets.map((b) => b.id);
+    const requesterItems =
+      requesterBudgetIds.length === 0
+        ? []
+        : await db
+          .select({
+            budget_id: budgetItems.budget_id,
+            description: budgetItems.description,
+          })
+          .from(budgetItems)
+          .where(inArray(budgetItems.budget_id, requesterBudgetIds));
+
+    const firstItemByBudgetId = new Map<string, string>();
+    for (const it of requesterItems) {
+      if (!firstItemByBudgetId.has(it.budget_id)) {
+        firstItemByBudgetId.set(it.budget_id, it.description);
+      }
+    }
+
+    const requesterNonDraft = allBudgets.filter((b) => b.status !== "draft");
+    const requesterTotalSubmitted = requesterNonDraft.length;
+    const requesterPendingReview = allBudgets.filter(
+      (b) =>
+        b.status === "submitted" ||
+        b.status === "verified" ||
+        b.status === "verified_by_reviewer"
+    ).length;
+    const requesterApproved = allBudgets.filter(
+      (b) => b.status === "approved"
+    ).length;
+    const requesterNeedsRevision = allBudgets.filter(
+      (b) => b.status === "revision_requested"
+    ).length;
+
+    const requesterRows = allBudgets.slice(0, 4).map((b) => {
+      const type =
+        b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
+      const statusLabel =
+        b.status === "approved"
+          ? ("Approved" as const)
+          : b.status === "revision_requested"
+            ? ("Revision" as const)
+            : b.status === "rejected"
+              ? ("Rejected" as const)
+              : ("Pending" as const);
+
+      const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
+
+      return {
+        budgetId: b.id,
+        displayId: `BUD-${b.budget_number}`,
+        projectName,
+        projectSub: "",
+        type,
+        amount: formatPhp(b.total_amount),
+        statusLabel,
+        dateLabel: formatDateShort(b.created_at),
+        actionLabel: "View" as const,
+        actionHref: `/dashboard/requests/${b.id}`,
+      };
+    });
+
+    // Fetch reviewer data (budgets needing review)
+    const reviewerBudgets = await db.query.budgets.findMany({
+      where: inArray(budgets.status, [
+        "submitted",
+        "verified_by_reviewer",
+        "revision_requested",
+      ]),
+      orderBy: [desc(budgets.created_at)],
+      limit: 50,
+    });
+
+    const reviewerBudgetIds = reviewerBudgets.map((b) => b.id);
+    const reviewerItems =
+      reviewerBudgetIds.length === 0
+        ? []
+        : await db
+          .select({
+            budget_id: budgetItems.budget_id,
+            description: budgetItems.description,
+          })
+          .from(budgetItems)
+          .where(inArray(budgetItems.budget_id, reviewerBudgetIds));
+
+    const reviewerFirstItemByBudgetId = new Map<string, string>();
+    for (const it of reviewerItems) {
+      if (!reviewerFirstItemByBudgetId.has(it.budget_id)) {
+        reviewerFirstItemByBudgetId.set(it.budget_id, it.description);
+      }
+    }
+
+    const reviewerTotalSubmitted = reviewerBudgets.length;
+    const reviewerPendingReview = reviewerBudgets.filter(
+      (b) =>
+        b.status === "submitted" ||
+        b.status === "verified_by_reviewer" ||
+        b.status === "revision_requested"
+    ).length;
+    const reviewerApproved = 0;
+
+    const reviewerBudgetsWithDept = await db
+      .select({
+        id: budgets.id,
+        budget_number: budgets.budget_number,
+        budget_type: budgets.budget_type,
+        total_amount: budgets.total_amount,
+        status: budgets.status,
+        created_at: budgets.created_at,
+        department: users.department,
+      })
+      .from(budgets)
+      .leftJoin(users, eq(budgets.user_id, users.id))
+      .where(
+        inArray(budgets.status, [
+          "submitted",
+          "verified_by_reviewer",
+          "revision_requested",
+        ])
+      )
+      .orderBy(desc(budgets.created_at))
+      .limit(4);
+
+    const reviewerRows = reviewerBudgetsWithDept.map((b) => {
+      const type =
+        b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
+      const statusLabel = "Pending" as const;
+      const projectName =
+        reviewerFirstItemByBudgetId.get(b.id) ?? "Budget Request";
+
+      return {
+        budgetId: b.id,
+        displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
+        projectName,
+        projectSub: b.department ?? "",
+        type,
+        amount: formatPhp(b.total_amount),
+        statusLabel,
+        dateLabel: formatDateShort(b.created_at),
+        actionLabel: "View" as const,
+        actionHref: `/dashboard/reviewer/${b.id}`,
+      };
+    });
+
+    // Fetch approver data
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const totalApprovedResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(budgets)
+      .where(eq(budgets.status, "approved"));
+    const approverTotalApproved = Number(totalApprovedResult[0]?.count ?? 0);
+
+    const awaitingApprovalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(budgets)
+      .where(inArray(budgets.status, ["verified", "verified_by_reviewer"]));
+    const approverAwaitingApproval = Number(awaitingApprovalResult[0]?.count ?? 0);
+
+    const approvedThisMonthResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(budgets)
+      .where(
+        and(
+          eq(budgets.status, "approved"),
+          gte(budgets.updated_at, startOfMonth)
+        )
+      );
+    const approverApprovedThisMonth = Number(
+      approvedThisMonthResult[0]?.count ?? 0
+    );
+
+    const rejectedResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(budgets)
+      .where(eq(budgets.status, "rejected"));
+    const approverRejected = Number(rejectedResult[0]?.count ?? 0);
+
+    const approverRecentProposals = await db
+      .select({
+        id: budgets.id,
+        budget_number: budgets.budget_number,
+        budget_type: budgets.budget_type,
+        total_amount: budgets.total_amount,
+        status: budgets.status,
+        created_at: budgets.created_at,
+        department: users.department,
+      })
+      .from(budgets)
+      .leftJoin(users, eq(budgets.user_id, users.id))
+      .where(
+        inArray(budgets.status, [
+          "approved",
+          "verified",
+          "verified_by_reviewer",
+          "rejected",
+        ])
+      )
+      .orderBy(desc(budgets.created_at))
+      .limit(4);
+
+    const approverBudgetIds = approverRecentProposals.map((b) => b.id);
+    const approverItems =
+      approverBudgetIds.length === 0
+        ? []
+        : await db
+          .select({
+            budget_id: budgetItems.budget_id,
+            description: budgetItems.description,
+          })
+          .from(budgetItems)
+          .where(inArray(budgetItems.budget_id, approverBudgetIds));
+
+    const approverFirstItemByBudgetId = new Map<string, string>();
+    for (const it of approverItems) {
+      if (!approverFirstItemByBudgetId.has(it.budget_id)) {
+        approverFirstItemByBudgetId.set(it.budget_id, it.description);
+      }
+    }
+
+    const approverRows: ApproverDashboardRow[] = approverRecentProposals.map(
+      (b) => {
+        const type =
+          b.budget_type === "capex"
+            ? ("CapEx" as const)
+            : ("OpEx" as const);
+        const statusLabel =
+          b.status === "approved"
+            ? ("Approved" as const)
+            : b.status === "rejected"
+              ? ("Rejected" as const)
+              : ("Pending" as const);
+
+        return {
+          budgetId: b.id,
+          displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
+          projectName: approverFirstItemByBudgetId.get(b.id) ?? "Budget Request",
+          projectSub: b.department ?? "",
+          type,
+          amount: formatPhp(b.total_amount),
+          statusLabel,
+          dateLabel: formatDateShort(b.created_at),
+        };
+      }
+    );
+
+    // Fetch pending users
+    const pendingUserCount = await db.query.users.findMany({
       where: eq(users.approval_status, "pending"),
     });
 
     return (
-      <div className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                User Approvals
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-gray-600">
-                Review and approve pending user applications
-              </p>
-              {pendingCount.length > 0 && (
-                <p className="text-2xl font-bold text-green-600">
-                  {pendingCount.length} pending
-                </p>
-              )}
-              <Link href="/dashboard/admin/approvals">
-                <Button className="bg-[#358334] hover:bg-[#2F5E3D]">
-                  View Applications
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                System Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-gray-600">
-                Configure system-wide settings and policies
-              </p>
-              <Button variant="outline" disabled>
-                Coming soon
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <SuperadminDashboard
+        requesterStats={{
+          totalSubmitted: requesterTotalSubmitted,
+          pendingReview: requesterPendingReview,
+          approved: requesterApproved,
+          needsRevision: requesterNeedsRevision,
+        }}
+        requesterRows={requesterRows}
+        reviewerStats={{
+          totalSubmitted: reviewerTotalSubmitted,
+          pendingReview: reviewerPendingReview,
+          approved: reviewerApproved,
+        }}
+        reviewerRows={reviewerRows}
+        approverStats={{
+          totalApproved: approverTotalApproved,
+          awaitingApproval: approverAwaitingApproval,
+          approvedThisMonth: approverApprovedThisMonth,
+          rejected: approverRejected,
+        }}
+        approverRows={approverRows}
+        pendingUserCount={pendingUserCount.length}
+      />
     );
   }
 
