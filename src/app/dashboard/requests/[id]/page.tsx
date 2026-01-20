@@ -131,20 +131,35 @@ function computeSteps(status: string): WorkflowStep[] {
     { key: "final", label: "Final" },
   ];
 
+  // Map status to progression index; rejected/revision stop at review
   const activeIndex = (() => {
     if (status === "draft") return 0;
     if (status === "submitted") return 1;
-    if (status === "revision_requested" || status === "verified_by_reviewer")
+    if (
+      status === "revision_requested" ||
+      status === "verified_by_reviewer" ||
+      status === "rejected"
+    )
       return 2;
     if (status === "verified") return 3;
-    if (status === "approved" || status === "rejected") return 4;
+    if (status === "approved") return 4;
     return 0;
   })();
+
+  // Adjust labels for terminal review outcomes
+  if (status === "revision_requested") {
+    steps[2] = { ...steps[2], label: "Revision" };
+  } else if (status === "rejected") {
+    steps[2] = { ...steps[2], label: "Rejected" };
+  }
 
   return steps.map((s, idx) => {
     if (idx < activeIndex) return { ...s, state: "done" as const };
     if (idx === activeIndex) {
-      const isTerminal = status === "approved" || status === "rejected";
+      const isTerminal =
+        status === "approved" ||
+        status === "rejected" ||
+        status === "revision_requested";
       return {
         ...s,
         state: isTerminal ? ("done" as const) : ("current" as const),
