@@ -7,6 +7,7 @@ import {
   auditLogs,
   users,
   reviewChecklists,
+  budgetMilestones,
 } from "@/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
@@ -104,7 +105,34 @@ export async function createBudgetDraft(
   }
 }
 
-// Helper to calculate total from items (if passed) or just update status
+export async function addBudgetMilestone(
+  prevState: unknown,
+  formData: FormData,
+) {
+  const user = await getUser();
+  if (!user) return { message: "Unauthorized" };
+
+  const budgetId = formData.get("budgetId") as string;
+  const description = formData.get("description") as string;
+  const targetQuarter = formData.get("targetQuarter") as string | null;
+
+  if (!budgetId || !description) {
+    return { message: "Budget ID and description are required" };
+  }
+
+  try {
+    await db.insert(budgetMilestones).values({
+      budget_id: budgetId,
+      description,
+      target_quarter: targetQuarter,
+    });
+
+    return { message: "Milestone added" };
+  } catch (e) {
+    console.error(e);
+    return { message: "Failed to add milestone" };
+  }
+}
 
 export async function submitBudget(
   budgetId: string,

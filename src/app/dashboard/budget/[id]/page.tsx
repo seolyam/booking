@@ -2,7 +2,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
+import {
+  auditLogs,
+  budgetItems,
+  budgets,
+  users,
+  budgetMilestones,
+} from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
 import WorkflowProgress, {
@@ -208,6 +214,11 @@ export default async function BudgetDetailPage({
   const items = await db.query.budgetItems.findMany({
     where: eq(budgetItems.budget_id, budget.id),
     orderBy: [desc(budgetItems.total_cost)],
+  });
+
+  const milestones = await db.query.budgetMilestones.findMany({
+    where: eq(budgetMilestones.budget_id, budget.id),
+    orderBy: [asc(budgetMilestones.created_at)],
   });
 
   const logs = await db.query.auditLogs.findMany({
@@ -435,16 +446,21 @@ export default async function BudgetDetailPage({
               <div className="text-sm font-semibold text-gray-900">
                 Milestones:
               </div>
-              {milestoneLines.length === 0 ? (
+              {milestones.length === 0 ? (
                 <div className="mt-2 text-sm text-gray-600">
-                  No milestones yet.
+                  No milestones set.
                 </div>
               ) : (
                 <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                  {milestoneLines.map((m) => (
-                    <li key={m} className="flex items-center gap-2">
+                  {milestones.map((m) => (
+                    <li key={m.id} className="flex items-center gap-2">
                       <span aria-hidden="true">•</span>
-                      <span>{m}</span>
+                      <span>{m.description}</span>
+                      {m.target_quarter && (
+                        <span className="text-xs text-gray-500">
+                          ({m.target_quarter})
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import {
   addBudgetItem,
+  addBudgetMilestone,
   createBudgetDraft,
   submitBudget,
 } from "@/actions/budget";
@@ -152,6 +153,23 @@ export default function CreateBudgetPage() {
         if (itemRes?.message && itemRes.message !== "Item added") {
           setError(itemRes.message);
           return;
+        }
+      }
+
+      // Save milestones
+      for (const milestoneDesc of milestones) {
+        const milestoneFd = new FormData();
+        milestoneFd.set("budgetId", budgetId);
+        milestoneFd.set("description", milestoneDesc.trim());
+        milestoneFd.set("targetQuarter", "Q1"); // Default quarter
+
+        const milestoneRes = await addBudgetMilestone(null, milestoneFd);
+        if (
+          milestoneRes?.message &&
+          milestoneRes.message !== "Milestone added"
+        ) {
+          console.error("Failed to add milestone:", milestoneRes.message);
+          // Continue even if milestone fails
         }
       }
 
