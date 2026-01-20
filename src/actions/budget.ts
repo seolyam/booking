@@ -857,7 +857,7 @@ export async function resubmitBudget(
     }
 
     // Update status to submitted and update variance explanation if provided
-    const updateData: { status: string; variance_explanation?: string; updated_at: Date } = {
+    const updateData: { status: "submitted"; variance_explanation?: string; updated_at: Date } = {
       status: "submitted",
       updated_at: new Date(),
     };
