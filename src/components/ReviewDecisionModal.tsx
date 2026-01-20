@@ -122,14 +122,20 @@ export default function ReviewDecisionModal({
           className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${
             selectedAction === "verify"
               ? "border-green-500 bg-green-50"
-              : "border-gray-200 hover:border-green-300"
+              : "border-gray-200 hover:border-gray-300"
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+            <CheckCircle className={`h-5 w-5 shrink-0 mt-0.5 ${
+              selectedAction === "verify" ? "text-green-600" : "text-gray-400"
+            }`} />
             <div>
-              <div className="font-medium text-green-800">Verify & Forward</div>
-              <div className="text-sm text-green-600">
+              <div className={`font-medium ${
+                selectedAction === "verify" ? "text-green-800" : "text-gray-700"
+              }`}>Verify & Forward</div>
+              <div className={`text-sm ${
+                selectedAction === "verify" ? "text-green-600" : "text-gray-500"
+              }`}>
                 Approve and send to approver
               </div>
             </div>
@@ -143,16 +149,22 @@ export default function ReviewDecisionModal({
           className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${
             selectedAction === "request_revision"
               ? "border-orange-500 bg-orange-50"
-              : "border-gray-200 hover:border-orange-300"
+              : "border-gray-200 hover:border-gray-300"
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+            <AlertTriangle className={`h-5 w-5 shrink-0 mt-0.5 ${
+              selectedAction === "request_revision" ? "text-orange-600" : "text-gray-400"
+            }`} />
             <div>
-              <div className="font-medium text-orange-800">
+              <div className={`font-medium ${
+                selectedAction === "request_revision" ? "text-orange-800" : "text-gray-700"
+              }`}>
                 Request Revision
               </div>
-              <div className="text-sm text-orange-600">
+              <div className={`text-sm ${
+                selectedAction === "request_revision" ? "text-orange-600" : "text-gray-500"
+              }`}>
                 Send back for changes
               </div>
             </div>
@@ -166,14 +178,20 @@ export default function ReviewDecisionModal({
           className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${
             selectedAction === "reject"
               ? "border-red-500 bg-red-50"
-              : "border-gray-200 hover:border-red-300"
+              : "border-gray-200 hover:border-gray-300"
           } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+            <XCircle className={`h-5 w-5 shrink-0 mt-0.5 ${
+              selectedAction === "reject" ? "text-red-600" : "text-gray-400"
+            }`} />
             <div>
-              <div className="font-medium text-red-800">Reject</div>
-              <div className="text-sm text-red-600">
+              <div className={`font-medium ${
+                selectedAction === "reject" ? "text-red-800" : "text-gray-700"
+              }`}>Reject</div>
+              <div className={`text-sm ${
+                selectedAction === "reject" ? "text-red-600" : "text-gray-500"
+              }`}>
                 Deny this budget request
               </div>
             </div>
