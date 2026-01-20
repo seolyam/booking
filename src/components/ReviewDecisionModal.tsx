@@ -227,21 +227,9 @@ export default function ReviewDecisionModal({
           (isCommentRequired && !comment.trim()) ||
           !isReviewable
         }
-        className={`w-full ${
-          selectedAction === "verify"
-            ? "bg-green-600 hover:bg-green-700"
-            : selectedAction === "reject"
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-orange-600 hover:bg-orange-700"
-        }`}
+        className="w-full bg-blue-600 hover:bg-blue-700"
       >
-        {isSubmitting
-          ? "Processing..."
-          : selectedAction === "verify"
-            ? "Verify & Forward"
-            : selectedAction === "request_revision"
-              ? "Request Revision"
-              : "Reject"}
+        {isSubmitting ? "Processing..." : "Submit"}
       </Button>
 
       {/* Confirmation Modal */}
