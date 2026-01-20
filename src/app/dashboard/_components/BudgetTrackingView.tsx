@@ -52,7 +52,7 @@ interface AuditLog {
   description: string;
   actor: string;
   date: string;
-  comment?: string;
+  comment?: string | null;
 }
 
 interface BudgetTrackingViewProps {
