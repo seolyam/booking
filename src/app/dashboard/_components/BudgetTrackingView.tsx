@@ -162,9 +162,21 @@ export default function BudgetTrackingView({
       let lineColor = "bg-gray-200";
 
       if (isDone) {
-        icon = <Check className="w-4 h-4" />;
-        color = "bg-green-100 text-green-600 border-green-500";
-        lineColor = "bg-green-500";
+        // Check if we're looking at a step before a revision/rejected status
+        // If the current status is revision or rejected, don't color previous steps green past submitted
+        if (
+          (status === "revision_requested" || status === "rejected") &&
+          idx >= 2
+        ) {
+          // Steps at or after review should not be green if revision/rejected
+          icon = null;
+          color = "bg-gray-50 text-gray-400 border-gray-300";
+          lineColor = "bg-gray-200";
+        } else {
+          icon = <Check className="w-4 h-4" />;
+          color = "bg-green-100 text-green-600 border-green-500";
+          lineColor = "bg-green-500";
+        }
       } else if (isCurrent) {
         if (status === "revision_requested") {
           icon = <AlertCircle className="w-4 h-4" />;

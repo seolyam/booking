@@ -17,6 +17,7 @@ export type WorkflowEvent = {
   description: string;
   actorName?: string | null;
   note?: string | null;
+  action?: string; // Action type for color determination
 };
 
 function classNames(...parts: Array<string | false | null | undefined>) {
@@ -191,14 +192,22 @@ export default function WorkflowProgress({
               ) : (
                 <div className="relative">
                   <div
-                    className="absolute left-4 top-2 bottom-2 w-0.5 bg-[#358334]"
+                    className="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-200"
                     aria-hidden="true"
                   />
                   <div className="space-y-4">
-                    {events.map((e) => (
+                    {events.map((e) => {
+                      // Determine dot color based on action
+                      const getDotColor = () => {
+                        if (e.action === "request_revision") return "bg-orange-500";
+                        if (e.action === "reject") return "bg-red-500";
+                        return "bg-[#358334]";
+                      };
+                      
+                      return (
                       <div key={e.id} className="relative pl-10">
                         <div
-                          className="absolute left-2.75 top-6 h-4 w-4 rounded-full bg-[#358334] ring-4 ring-white"
+                          className={`absolute left-2.75 top-6 h-4 w-4 rounded-full ${getDotColor()} ring-4 ring-white`}
                           aria-hidden="true"
                         />
 
@@ -226,7 +235,7 @@ export default function WorkflowProgress({
                           </div>
                         </div>
                       </div>
-                    ))}
+                    )})}
                   </div>
                 </div>
               )}

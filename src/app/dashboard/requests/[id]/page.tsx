@@ -146,10 +146,11 @@ function computeSteps(status: string): WorkflowStep[] {
     return 0;
   })();
 
-  // Adjust labels for terminal review outcomes
-  if (status === "revision_requested") {
+  // Adjust labels ONLY when currently at terminal review outcomes
+  // Once workflow moves past (e.g., to verified/approved), revert to "Reviewed"
+  if (status === "revision_requested" && activeIndex === 2) {
     steps[2] = { ...steps[2], label: "Revision" };
-  } else if (status === "rejected") {
+  } else if (status === "rejected" && activeIndex === 2) {
     steps[2] = { ...steps[2], label: "Rejected" };
   }
 
@@ -246,6 +247,7 @@ export default async function RequestViewPage({
     description: auditDescription(l.action),
     actorName: actorNameById.get(l.actor_id) ?? null,
     note: l.comment,
+    action: l.action, // Include action for color determination
   }));
 
   const createdAt = formatDateShort(budget.created_at);
