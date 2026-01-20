@@ -9,14 +9,9 @@ import {
   budgetMilestones,
   users,
   reviewChecklists,
-  auditLogs,
 } from "@/db/schema";
 import { eq, and, inArray, asc } from "drizzle-orm";
 import ReviewPageClient from "./ReviewPageClient";
-import { budgets, budgetItems, users, reviewChecklists, auditLogs } from "@/db/schema";
-import { eq, and, inArray, desc } from "drizzle-orm";
-import ReviewDecisionModal from "@/components/ReviewDecisionModal";
-import ReviewChecklist from "@/components/ReviewChecklist";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import { Calendar, AlertCircle, ChevronLeft, Bell, Clock } from "lucide-react";
 
@@ -120,33 +115,6 @@ export default async function ReviewBudgetDetailPage({
     orderBy: [asc(budgetMilestones.created_at)],
   });
 
-  // Get audit logs for this budget
-  const logs = await db
-    .select({
-      id: auditLogs.id,
-      action: auditLogs.action,
-      timestamp: auditLogs.timestamp,
-      comment: auditLogs.comment,
-      actor_id: auditLogs.actor_id,
-    })
-    .from(auditLogs)
-    .where(eq(auditLogs.budget_id, budget.id));
-
-  // Get actor names for audit logs
-  const actorIds = [...new Set(logs.map((l) => l.actor_id))];
-  const actorsData =
-    actorIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: users.id,
-            full_name: users.full_name,
-          })
-          .from(users)
-          .where(inArray(users.id, actorIds));
-
-  const actorMap = new Map(actorsData.map((a) => [a.id, a.full_name]));
-
   // Get review checklist for this reviewer
   let checklist: (typeof reviewChecklists.$inferSelect)[] = [];
   try {
@@ -177,7 +145,6 @@ export default async function ReviewBudgetDetailPage({
   const checklistMap = new Map(
     checklist.map((c) => [c.item_key, c.is_checked]),
   );
-  const checklistMap = new Map(checklist.map((c) => [c.item_key, c.is_checked]));
 
   // Fetch similar approved budgets for comparison
   const similarBudgets = await db
@@ -282,101 +249,53 @@ export default async function ReviewBudgetDetailPage({
 
   const typeLabel = budget.budget_type === "capex" ? "CapEx" : "OpEx";
 
+  const statusCardClass = (() => {
+    const s = budget.status;
+    if (s === "submitted") return "bg-yellow-50 text-yellow-600 border-yellow-100";
+    if (s === "verified" || s === "approved")
+      return "bg-green-50 text-green-600 border-green-100";
+    if (s === "revision_requested")
+      return "bg-orange-50 text-orange-600 border-orange-100";
+    if (s === "rejected") return "bg-red-50 text-red-600 border-red-100";
+    return "bg-gray-50 text-gray-600 border-gray-100";
+  })();
+
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/reviewer"
-            className="text-gray-500 hover:text-gray-700"
-          >
-            ←
-          </Link>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {items[0]?.description || "Review Budget Request"}
-              </h1>
-              <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-xs font-semibold">
-                {typeLabel}
-              </span>
-            </div>
-            <p className="text-sm text-gray-500 mt-1">
-              PROJ-{budget.id.slice(0, 8).toUpperCase()} -{" "}
-              {requester?.department || ""}
-            </p>
         <div className="space-y-1">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard/reviewer" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <Link
+              href="/dashboard/reviewer"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
               <ChevronLeft className="w-6 h-6 text-gray-900" />
             </Link>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight">Review Budget Request</h1>
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight">
+              Review Budget Request
+            </h1>
           </div>
-          <p className="text-gray-500 font-medium ml-12">Review and verify budget details before forwarding to approver</p>
+          <p className="text-gray-500 font-medium ml-12">
+            Review and verify budget details before forwarding to approver
+          </p>
         </div>
-        <div
-          className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-            statusColorMap[budget.status] || "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {statusLabelMap[budget.status] || budget.status}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="col-span-2 space-y-8">
-          {/* Budget Overview (Transparent/Light Background) */}
-          <div className="bg-gray-50/50 rounded-2xl p-8 border border-transparent">
-            <div className="grid grid-cols-2 gap-y-8 gap-x-12">
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-400">Requester</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {requester?.full_name || requester?.email || "Unknown"}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-400">
-                  Total amount
-                </p>
-                <p className="text-2xl font-black text-gray-900">
-                  {formatPhp(budget.total_amount)}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-400">Submitted</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {formatDate(budget.created_at)}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-400">Timeline</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {formatDate(budget.start_date ?? budget.created_at)} to{" "}
-                  {formatDate(
-                    budget.end_date ??
-                      new Date(
-                        budget.created_at.getTime() +
-                          365 * 24 * 60 * 60 * 1000,
-                      ),
-                  )}
         <button className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
           <Bell className="w-5 h-5 text-gray-900" />
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        {/* Main Content Area */}
+        {/* Main Content */}
         <div className="lg:col-span-8 space-y-10">
-
           {/* Project Info Card */}
           <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
-            {/* Status Pill */}
-            <div className="absolute top-10 right-10 flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full border border-yellow-100">
-              <Clock className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm font-bold text-yellow-600">
-                {statusLabelMap[budget.status] || "Pending"}
+            <div
+              className={`absolute top-10 right-10 flex items-center gap-2 px-4 py-2 rounded-full border ${statusCardClass}`}
+            >
+              <Clock className="w-4 h-4" />
+              <span className="text-sm font-bold">
+                {statusLabelMap[budget.status] || budget.status}
               </span>
             </div>
 
@@ -384,34 +303,56 @@ export default async function ReviewBudgetDetailPage({
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <h2 className="text-3xl font-black text-gray-900 leading-tight">
-                    {items[0]?.description || "Substation Transformer Upgrade"}
+                    {items[0]?.description || "Budget Request"}
                   </h2>
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
                     {typeLabel}
                   </span>
                 </div>
                 <p className="text-gray-400 font-bold text-sm tracking-wide">
-                  PROJ-{budget.id.slice(0, 8).toUpperCase()} - {requester?.department || "Infrastructure Department"}
+                  PROJ-{budget.id.slice(0, 8).toUpperCase()} -{" "}
+                  {requester?.department || ""}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-y-10 gap-x-12">
                 <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Requester</p>
-                  <p className="text-xl font-bold text-gray-900">{requester?.full_name || requester?.email || "John Doe"}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Total amount</p>
-                  <p className="text-3xl font-black text-gray-900">{formatPhp(budget.total_amount)}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Submitted</p>
-                  <p className="text-xl font-bold text-gray-900">{formatDate(budget.created_at)}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Timeline</p>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Requester
+                  </p>
                   <p className="text-xl font-bold text-gray-900">
-                    {budget.start_date ? formatDate(budget.start_date) : formatDate(budget.created_at)} to {budget.end_date ? formatDate(budget.end_date) : formatDate(new Date(budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000))}
+                    {requester?.full_name || requester?.email || "Unknown"}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Total amount
+                  </p>
+                  <p className="text-3xl font-black text-gray-900">
+                    {formatPhp(budget.total_amount)}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Submitted
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {formatDate(budget.created_at)}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Timeline
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {formatDate(budget.start_date ?? budget.created_at)} to{" "}
+                    {formatDate(
+                      budget.end_date ??
+                        new Date(
+                          budget.created_at.getTime() +
+                            365 * 24 * 60 * 60 * 1000,
+                        ),
+                    )}
                   </p>
                 </div>
               </div>
@@ -424,13 +365,10 @@ export default async function ReviewBudgetDetailPage({
               <span className="text-lg font-bold text-gray-900">
                 ₱ Cost Breakdown
               </span>
-          <div className="bg-white rounded-[2rem] p-10 border border-gray-100 shadow-sm space-y-8">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-black text-gray-900">₱ Cost Breakdown</span>
             </div>
 
             {items.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {items.map((item) => (
                   <div
                     key={item.id}
@@ -455,24 +393,11 @@ export default async function ReviewBudgetDetailPage({
                     <span className="font-black ml-1">
                       {formatPhp(budget.total_amount)}
                     </span>
-                  <div key={item.id} className="p-6 bg-gray-50/50 rounded-2xl flex justify-between items-center border border-gray-100/50">
-                    <div className="space-y-1">
-                      <p className="text-lg font-bold text-gray-900">{item.description}</p>
-                      <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">Equipment | Qty: {item.quantity}</p>
-                    </div>
-                    <p className="text-lg font-black text-gray-900">{formatPhp(item.total_cost)}</p>
-                  </div>
-                ))}
-                <div className="flex justify-end pt-6 border-t border-gray-100">
-                  <p className="text-2xl font-bold text-gray-900">
-                    Total: <span className="font-black ml-2 text-3xl">{formatPhp(budget.total_amount)}</span>
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="text-gray-400 text-lg font-medium italic p-10 text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-200">
-                No budget items found.
-              </div>
+              <div className="text-gray-500 text-sm italic">No items found</div>
             )}
           </div>
 
@@ -506,21 +431,6 @@ export default async function ReviewBudgetDetailPage({
                           365 * 24 * 60 * 60 * 1000,
                       ),
                   )}
-          <div className="bg-white rounded-[2rem] p-10 border border-gray-100 shadow-sm space-y-8">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-6 h-6 text-gray-900" />
-              <h2 className="text-2xl font-black text-gray-900">Project timeline & milestones</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex justify-between items-center p-5 bg-gray-50/50 rounded-2xl border border-gray-100/50">
-                <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Start Date</span>
-                <span className="text-lg font-bold text-gray-900">{budget.start_date ? formatDate(budget.start_date) : formatDate(budget.created_at)}</span>
-              </div>
-              <div className="flex justify-between items-center p-5 bg-gray-50/50 rounded-2xl border border-gray-100/50">
-                <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">End Date</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {budget.end_date ? formatDate(budget.end_date) : formatDate(new Date(budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000))}
                 </span>
               </div>
             </div>
@@ -551,22 +461,6 @@ export default async function ReviewBudgetDetailPage({
                   ))}
                 </ul>
               )}
-            <div className="p-8 bg-gray-50/30 rounded-[1.5rem] border border-gray-100/50">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Milestones:</p>
-              <ul className="space-y-4">
-                <li className="flex items-center gap-3 text-gray-700 font-bold">
-                  <div className="w-2 h-2 rounded-full bg-gray-300" />
-                  Planned Procurement - Q1
-                </li>
-                <li className="flex items-center gap-3 text-gray-700 font-bold">
-                  <div className="w-2 h-2 rounded-full bg-gray-300" />
-                  Installation - Q2
-                </li>
-                <li className="flex items-center gap-3 text-gray-700 font-bold">
-                  <div className="w-2 h-2 rounded-full bg-gray-300" />
-                  Testing & Commissioning - Q3
-                </li>
-              </ul>
             </div>
           </div>
 
@@ -578,13 +472,9 @@ export default async function ReviewBudgetDetailPage({
                 <h2 className="text-lg font-bold text-gray-900">
                   Variance Explanation
                 </h2>
-            <div className="bg-white rounded-[2rem] p-10 border border-gray-100 shadow-sm space-y-8">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-6 h-6 text-gray-900" />
-                <h2 className="text-2xl font-black text-gray-900">Variance Explanation</h2>
               </div>
-              <p className="text-lg text-gray-700 font-medium leading-relaxed italic border-l-4 border-gray-100 pl-6 py-2">
-                &ldquo;{budget.variance_explanation}&rdquo;
+              <p className="text-sm text-gray-600 font-medium italic leading-relaxed">
+                "{budget.variance_explanation}"
               </p>
             </div>
           )}
@@ -596,13 +486,13 @@ export default async function ReviewBudgetDetailPage({
             historicalMin={historicalMin}
             historicalMax={historicalMax}
             similarProjects={comparisonData}
-            departmentName={requester?.department || "Infrastructure"}
+            departmentName={requester?.department || "Unknown"}
             budgetType={typeLabel}
           />
         </div>
 
-        {/* Right Sidebar - Review Decision Panel */}
-        <div className="col-span-1">
+        {/* Right Sidebar */}
+        <div className="lg:col-span-4">
           <ReviewPageClient
             budgetId={budget.id}
             budgetStatus={budget.status}
@@ -617,46 +507,6 @@ export default async function ReviewBudgetDetailPage({
               budget_policies: checklistMap.get("budget_policies") || false,
             }}
           />
-        <div className="lg:col-span-4 lg:sticky lg:top-10 space-y-8">
-          <ReviewChecklist
-            budgetId={budget.id}
-            items={[
-              {
-                key: "documented_costs",
-                label: "All costs are documented",
-                defaultChecked:
-                  checklistMap.get("documented_costs") || false,
-              },
-              {
-                key: "reasonable_costs",
-                label: "Unit Costs are reasonable",
-                defaultChecked: checklistMap.get("reasonable_costs") || false,
-              },
-              {
-                key: "realistic_timeline",
-                label: "Timeline is realistic",
-                defaultChecked: checklistMap.get("realistic_timeline") || false,
-              },
-              {
-                key: "variance_clear",
-                label: "Variance explanation is clear",
-                defaultChecked: checklistMap.get("variance_clear") || false,
-              },
-              {
-                key: "departmental_goals",
-                label: "Aligns with departmental goals",
-                defaultChecked:
-                  checklistMap.get("departmental_goals") || false,
-              },
-              {
-                key: "budget_policies",
-                label: "Complies with budget policies",
-                defaultChecked: checklistMap.get("budget_policies") || false,
-              },
-            ]}
-          />
-
-          <ReviewDecisionModal budgetId={budget.id} budgetStatus={budget.status} />
         </div>
       </div>
     </div>
