@@ -45,6 +45,7 @@ function statusPill(status: string) {
   const base =
     "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
   if (status === "approved") return `${base} bg-green-100 text-green-700`;
+  if (status === "verified") return `${base} bg-green-100 text-green-700`;
   if (status === "revision_requested")
     return `${base} bg-orange-100 text-orange-700`;
   if (status === "rejected") return `${base} bg-red-100 text-red-700`;
@@ -342,12 +343,21 @@ export default async function RequestsPage({
                         {formatDateShort(new Date(b.created_at))}
                       </td>
                       <td className="py-4 px-3 pr-6 text-right">
-                        <Link
-                          href={`/dashboard/requests/${b.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors"
-                        >
-                          View
-                        </Link>
+                        {b.status === "revision_requested" ? (
+                          <Link
+                            href={`/dashboard/budget/edit/${b.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-200 transition-colors"
+                          >
+                            Edit
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/dashboard/requests/${b.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+                          >
+                            View
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   );
