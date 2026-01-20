@@ -314,7 +314,9 @@ export default async function RequestsPage({
                   return (
                     <tr
                       key={b.id}
-                      className="border-t border-black/5 hover:bg-gray-50/50"
+                      className={`border-t border-black/5 hover:bg-gray-50/50 ${
+                        b.status === "rejected" ? "opacity-60 bg-gray-50/30" : ""
+                      }`}
                     >
                       <td className="py-4 pl-6 pr-4">
                         <div className="font-medium text-gray-900">
