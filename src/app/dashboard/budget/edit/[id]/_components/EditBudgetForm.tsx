@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Trash2 } from "lucide-react";
+import { Bell, Trash2, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -43,13 +43,20 @@ type BudgetMilestone = {
   description: string;
 };
 
+type ReviewerComment = {
+  comment: string;
+  reviewerName: string;
+  date: Date;
+} | null;
+
 type Props = {
   budget: Budget;
   items: BudgetItem[];
   milestones: BudgetMilestone[];
+  reviewerComment?: ReviewerComment;
 };
 
-export default function EditBudgetForm({ budget, items: initialItems, milestones: initialMilestones }: Props) {
+export default function EditBudgetForm({ budget, items: initialItems, milestones: initialMilestones, reviewerComment }: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -292,6 +299,42 @@ export default function EditBudgetForm({ budget, items: initialItems, milestones
         </div>
         <Bell className="h-6 w-6 text-gray-400" />
       </div>
+
+      {/* Reviewer Comment Box */}
+      {reviewerComment && (
+        <div className="mb-8 rounded-xl border-2 border-orange-200 bg-orange-50 p-6">
+          <div className="flex items-start gap-4">
+            <div className="shrink-0">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-orange-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-orange-800">
+                  Revision Requested by Reviewer
+                </h3>
+                <span className="text-xs text-orange-600 font-medium">
+                  {new Date(reviewerComment.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "2-digit",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+              <p className="text-sm text-orange-700 mb-3">
+                <span className="font-medium">{reviewerComment.reviewerName}</span> has requested changes to your budget request:
+              </p>
+              <div className="bg-white rounded-lg border border-orange-200 p-4">
+                <p className="text-gray-800 whitespace-pre-wrap">{reviewerComment.comment}</p>
+              </div>
+              <p className="text-xs text-orange-600 mt-3 italic">
+                Please address the above feedback and resubmit your budget request.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
