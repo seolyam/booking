@@ -156,13 +156,10 @@ function computeSteps(status: string): WorkflowStep[] {
   return steps.map((s, idx) => {
     if (idx < activeIndex) return { ...s, state: "done" as const };
     if (idx === activeIndex) {
-      const isTerminal =
-        status === "approved" ||
-        status === "rejected" ||
-        status === "revision_requested";
       return {
         ...s,
-        state: isTerminal ? ("done" as const) : ("current" as const),
+        state: "current" as const,
+        statusType: status as string, // Pass status for color determination
       };
     }
     return { ...s, state: "todo" as const };

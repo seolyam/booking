@@ -7,6 +7,7 @@ export type WorkflowStep = {
   key: string;
   label: string;
   state: "done" | "current" | "todo";
+  statusType?: string; // Optional status for color differentiation
 };
 
 export type WorkflowEvent = {
@@ -22,23 +23,61 @@ function classNames(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-function StepDot({ state }: { state: WorkflowStep["state"] }) {
+function StepDot({
+  state,
+  statusType,
+}: {
+  state: WorkflowStep["state"];
+  statusType?: string;
+}) {
   const isDone = state === "done";
   const isCurrent = state === "current";
+
+  // Determine colors based on state and statusType
+  let borderColor = "";
+  let bgColor = "";
+  let iconColor = "";
+
+  if (isDone) {
+    // Completed steps are green
+    borderColor = "border-[#358334]";
+    bgColor = "bg-[#D7F7D6]";
+    iconColor = "text-[#358334]";
+  } else if (isCurrent) {
+    // Current step: check status for special colors
+    if (statusType === "revision_requested") {
+      borderColor = "border-orange-500";
+      bgColor = "bg-orange-50";
+      iconColor = "text-orange-600";
+    } else if (statusType === "rejected") {
+      borderColor = "border-red-500";
+      bgColor = "bg-red-50";
+      iconColor = "text-red-600";
+    } else {
+      // Normal current step (in progress)
+      borderColor = "border-[#358334]";
+      bgColor = "bg-[#D7F7D6]";
+      iconColor = "text-[#358334]";
+    }
+  } else {
+    // Todo steps are gray
+    borderColor = "border-black/15";
+    bgColor = "bg-white";
+    iconColor = "text-gray-400";
+  }
 
   return (
     <div
       className={classNames(
         "flex h-10 w-10 items-center justify-center rounded-full border",
-        isDone || isCurrent
-          ? "border-[#358334] bg-[#D7F7D6]"
-          : "border-black/15 bg-white"
+        borderColor,
+        bgColor
       )}
       aria-hidden="true"
     >
-      {isDone ? <Check className="h-5 w-5 text-[#358334]" /> : null}
+      {isDone ? <Check className={`h-5 w-5 ${iconColor}`} /> : null}
       {isCurrent && !isDone ? (
-        <div className="h-2.5 w-2.5 rounded-full bg-[#358334]" />
+        <div className={`h-2.5 w-2.5 rounded-full ${iconColor.replace("text-", "bg-")}`} />
       ) : null}
     </div>
   );
@@ -95,15 +134,21 @@ export default function WorkflowProgress({
                 <div
                   className={classNames(
                     "absolute left-[-50%] top-5 hidden h-0.5 w-full sm:block",
-                    steps[idx - 1]?.state === "done" || s.state !== "todo"
+                    steps[idx - 1]?.state === "done"
                       ? "bg-[#358334]"
-                      : "bg-black/10"
+                      : s.state === "current" && s.statusType === "revision_requested"
+                        ? "bg-orange-500"
+                        : s.state === "current" && s.statusType === "rejected"
+                          ? "bg-red-500"
+                          : s.state !== "todo"
+                            ? "bg-[#358334]"
+                            : "bg-black/10"
                   )}
                   aria-hidden="true"
                 />
               ) : null}
               <div className="flex flex-col items-center gap-2">
-                <StepDot state={s.state} />
+                <StepDot state={s.state} statusType={s.statusType} />
                 <div className="text-xs font-medium text-gray-700">
                   {s.label}
                 </div>
