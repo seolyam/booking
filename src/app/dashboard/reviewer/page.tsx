@@ -142,7 +142,14 @@ export default async function ReviewerDashboardPage() {
     const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
     const projectSub = b.department ?? "";
 
-    const actionLabel = b.status === "submitted" ? "Review" : "View";
+    const isPendingDecision =
+      b.status === "submitted" || b.status === "verified_by_reviewer";
+
+    const actionLabel = isPendingDecision ? "Review" : "View";
+
+    const actionHref = isPendingDecision
+      ? `/dashboard/reviewer/${b.id}`
+      : `/dashboard/reviewer/${b.id}/tracking`;
 
     return {
       budgetId: b.id,
@@ -154,7 +161,7 @@ export default async function ReviewerDashboardPage() {
       statusLabel,
       dateLabel: formatDateShort(b.created_at),
       actionLabel,
-      actionHref: `/dashboard/budget/${b.id}`,
+      actionHref,
     };
   });
 

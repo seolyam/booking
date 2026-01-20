@@ -16,7 +16,7 @@ export type ReviewerDashboardRow = {
   projectSub: string;
   type: "CapEx" | "OpEx";
   amount: string;
-  statusLabel: "Reviewed" | "Pending" | "Revision";
+  statusLabel: "Reviewed" | "Pending" | "Revision" | "Rejected" | "Verified";
   dateLabel: string;
   actionLabel: "View" | "Review";
   actionHref: string;
@@ -41,7 +41,7 @@ export default function ReviewerDashboard({
     value: number,
     label: string,
     iconBg: string,
-    href: string
+    href: string,
   ) => (
     <Link
       href={href}
@@ -52,8 +52,12 @@ export default function ReviewerDashboard({
       >
         {icon}
       </div>
-      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">{value}</div>
-      <div className="mt-1 text-sm font-semibold text-gray-500 uppercase tracking-wide">{label}</div>
+      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">
+        {value}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-gray-500 uppercase tracking-wide">
+        {label}
+      </div>
     </Link>
   );
 
@@ -63,7 +67,9 @@ export default function ReviewerDashboard({
         ? "bg-blue-100 text-blue-600"
         : "bg-purple-100 text-purple-600";
     return (
-      <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${cls}`}>
+      <span
+        className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${cls}`}
+      >
         {type}
       </span>
     );
@@ -72,10 +78,14 @@ export default function ReviewerDashboard({
   const statusPill = (s: ReviewerDashboardRow["statusLabel"]) => {
     const cls =
       s === "Reviewed"
-        ? "bg-green-50 text-green-600 ring-1 ring-green-100"
+        ? "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200"
         : s === "Pending"
-          ? "bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100"
-          : "bg-orange-50 text-orange-600 ring-1 ring-orange-100";
+          ? "bg-gray-50 text-gray-700 ring-1 ring-gray-200"
+          : s === "Revision"
+            ? "bg-orange-50 text-orange-600 ring-1 ring-orange-200"
+            : s === "Rejected"
+              ? "bg-red-50 text-red-600 ring-1 ring-red-200"
+              : "bg-blue-50 text-blue-600 ring-1 ring-blue-200";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
@@ -91,7 +101,7 @@ export default function ReviewerDashboard({
     if (r.actionLabel === "Review") {
       return (
         <Link
-          href={`/dashboard/reviewer/${r.budgetId}`}
+          href={r.actionHref}
           className={`${base} bg-orange-500 text-white hover:bg-orange-600 hover:shadow-orange-200`}
         >
           Review <Eye className="h-3.5 w-3.5" />
@@ -101,7 +111,7 @@ export default function ReviewerDashboard({
 
     return (
       <Link
-        href={`/dashboard/reviewer/${r.budgetId}/tracking`}
+        href={r.actionHref}
         className={`${base} bg-gray-700 text-white hover:bg-gray-800`}
       >
         View <Eye className="h-3.5 w-3.5" />
@@ -118,28 +128,28 @@ export default function ReviewerDashboard({
             stats.reviewedToday,
             "Reviewed today",
             "bg-green-50",
-            "/dashboard/reviewer/review?status=reviewed"
+            "/dashboard/reviewer/review?status=reviewed",
           )}
           {statCard(
             <Clock className="h-6 w-6 text-yellow-500" />,
             stats.pendingReview,
             "Pending review",
             "bg-yellow-50",
-            "/dashboard/reviewer/review?status=pending"
+            "/dashboard/reviewer/review?status=pending",
           )}
           {statCard(
             <TrendingUp className="h-6 w-6 text-blue-500" />,
             stats.awaitingApproval,
             "Awaiting Approval",
             "bg-blue-50",
-            "/dashboard/reviewer/review?status=verified"
+            "/dashboard/reviewer/review?status=verified",
           )}
           {statCard(
             <AlertCircle className="h-6 w-6 text-orange-400" />,
             stats.needsRevision,
             "Needs revision",
             "bg-orange-50",
-            "/dashboard/reviewer/review?status=revision"
+            "/dashboard/reviewer/review?status=revision",
           )}
         </div>
       )}
@@ -166,7 +176,10 @@ export default function ReviewerDashboard({
               <tbody className="divide-y divide-gray-50">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-gray-400 font-medium">
+                    <td
+                      colSpan={7}
+                      className="py-12 text-center text-gray-400 font-medium"
+                    >
                       No budgets to review right now.
                     </td>
                   </tr>
@@ -188,10 +201,16 @@ export default function ReviewerDashboard({
                         </div>
                       </td>
                       <td className="py-5 pr-4">{typePill(r.type)}</td>
-                      <td className="py-5 pr-4 text-gray-900 font-bold">{r.amount}</td>
+                      <td className="py-5 pr-4 text-gray-900 font-bold">
+                        {r.amount}
+                      </td>
                       <td className="py-5 pr-4">{statusPill(r.statusLabel)}</td>
-                      <td className="py-5 pr-4 text-gray-400 font-bold text-xs">{r.dateLabel}</td>
-                      <td className="py-5 pr-0 text-right">{actionButton(r)}</td>
+                      <td className="py-5 pr-4 text-gray-400 font-bold text-xs">
+                        {r.dateLabel}
+                      </td>
+                      <td className="py-5 pr-0 text-right">
+                        {actionButton(r)}
+                      </td>
                     </tr>
                   ))
                 )}

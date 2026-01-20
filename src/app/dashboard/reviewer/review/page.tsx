@@ -102,7 +102,14 @@ export default async function ReviewerReviewQueuePage() {
       return "Pending" as const;
     })();
 
-    const actionLabel = b.status === "submitted" ? "Review" : "View";
+    const isPendingDecision =
+      b.status === "submitted" || b.status === "verified_by_reviewer";
+
+    const actionLabel = isPendingDecision ? "Review" : "View";
+
+    const actionHref = isPendingDecision
+      ? `/dashboard/reviewer/${b.id}`
+      : `/dashboard/reviewer/${b.id}/tracking`;
 
     return {
       budgetId: b.id,
@@ -114,7 +121,7 @@ export default async function ReviewerReviewQueuePage() {
       statusLabel,
       dateLabel: formatDateShort(b.created_at),
       actionLabel,
-      actionHref: `/dashboard/budget/${b.id}`,
+      actionHref,
     };
   });
 
