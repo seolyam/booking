@@ -488,16 +488,14 @@ export default function BudgetTrackingView({
                           </span>
                         </div>
 
-                        {log.comment && (
-                          <div className="pt-2 border-t border-gray-200/50">
-                            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">
-                              Comment:
-                            </p>
-                            <p className="text-sm text-[#1E293B] font-medium bg-white p-3 rounded-lg border border-gray-100">
-                              {log.comment}
-                            </p>
-                          </div>
-                        )}
+                        <div className="pt-3 border-t border-gray-200/50">
+                          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">
+                            Comment:
+                          </p>
+                          <p className="text-sm text-[#1E293B] font-medium bg-white p-3 rounded-lg border border-gray-100">
+                            {log.comment && log.comment.trim() ? log.comment : <span className="text-gray-400 italic">No comment provided</span>}
+                          </p>
+                        </div>
 
                         <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider pt-1">
                           by {log.actor}
