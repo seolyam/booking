@@ -95,7 +95,7 @@ export default function BudgetTrackingView({
       case "verified":
         return {
           label: "Verified",
-          color: "bg-blue-50 text-blue-600 border-blue-100",
+          color: "bg-green-50 text-green-600 border-green-100",
           icon: <Check className="w-4 h-4" />,
         };
       case "verified_by_reviewer":
