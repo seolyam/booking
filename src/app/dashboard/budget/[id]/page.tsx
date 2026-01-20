@@ -480,6 +480,82 @@ export default async function BudgetDetailPage({
           ) : null}
         </div>
       </div>
+
+      {/* Complete Timeline with Comments */}
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">
+          Complete Timeline
+        </h3>
+
+        <div className="relative pl-8 space-y-6">
+          {/* Vertical Line */}
+          <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-200" />
+
+          {events.length > 0 ? (
+            events
+              .slice()
+              .reverse()
+              .map((event) => {
+                const isRevision = event.action === "request_revision";
+                const isRejected =
+                  event.action === "reject" || event.action === "rejected";
+                let dotColor = "bg-green-500";
+                if (isRevision) dotColor = "bg-orange-500";
+                if (isRejected) dotColor = "bg-red-500";
+
+                return (
+                  <div key={event.id} className="relative">
+                    {/* Step Dot */}
+                    <div
+                      className={`absolute -left-5 top-1.5 w-2.5 h-2.5 rounded-full ${dotColor} ring-4 ring-white z-10`}
+                    />
+
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {event.title}
+                          </p>
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            {event.description}
+                          </p>
+                        </div>
+                        <span className="text-xs font-medium text-gray-900 bg-white px-2.5 py-1 rounded-md border border-gray-100 whitespace-nowrap ml-4">
+                          {event.at}
+                        </span>
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-200">
+                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1.5">
+                          Comment:
+                        </p>
+                        <p className="text-sm text-gray-700 bg-white p-3 rounded-lg border border-gray-100">
+                          {event.note && event.note.trim() ? (
+                            event.note
+                          ) : (
+                            <span className="text-gray-400 italic">
+                              No comment provided
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      {event.actorName && (
+                        <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                          by {event.actorName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+          ) : (
+            <p className="text-gray-500 italic text-center py-8">
+              No audit logs found
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

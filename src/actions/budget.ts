@@ -326,7 +326,10 @@ export async function verifyBudget(formData: FormData): Promise<void> {
   if (!user) throw new Error("Unauthorized");
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser || appUser.role !== "reviewer") {
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
     throw new Error("Only reviewers can verify budgets");
   }
 
@@ -352,7 +355,10 @@ export async function requestRevision(formData: FormData): Promise<void> {
   if (!user) throw new Error("Unauthorized");
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser || appUser.role !== "reviewer") {
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
     throw new Error("Only reviewers can request revisions");
   }
 
@@ -379,7 +385,10 @@ export async function rejectBudget(formData: FormData): Promise<void> {
   if (!user) throw new Error("Unauthorized");
 
   const appUser = await ensureAppUser(user.id);
-  if (!appUser || appUser.role !== "reviewer") {
+  if (
+    !appUser ||
+    (appUser.role !== "reviewer" && appUser.role !== "superadmin")
+  ) {
     throw new Error("Only reviewers can reject budgets");
   }
 
@@ -847,10 +856,20 @@ export async function resubmitBudget(
       return { message: "Budget is not in revision status" };
     }
 
-    // Update status to submitted
+    // Update status to submitted and update variance explanation if provided
+    const updateData: { status: "submitted"; variance_explanation?: string; updated_at: Date } = {
+      status: "submitted",
+      updated_at: new Date(),
+    };
+
+    // Update variance explanation if a new one is provided
+    if (varianceExplanation && varianceExplanation.trim()) {
+      updateData.variance_explanation = varianceExplanation.trim();
+    }
+
     await db
       .update(budgets)
-      .set({ status: "submitted" })
+      .set(updateData)
       .where(eq(budgets.id, budgetId));
 
     // Log the resubmission
