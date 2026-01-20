@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
-import { budgets, budgetItems, users, auditLogs } from "@/db/schema";
+import { budgets, budgetItems, users, auditLogs, reviewChecklists } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { Calendar, AlertCircle, ChevronLeft, Bell } from "lucide-react";
+import { Calendar, AlertCircle, ChevronLeft, Bell, CheckCircle2 } from "lucide-react";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import ReviewerAssessmentCard from "../../../_components/ReviewerAssessmentCard";
 import ApprovalDecisionPanel from "../../../_components/ApprovalDecisionPanel";
+import QuickStatsCard from "../../../_components/QuickStatsCard";
+import ReviewChecklist from "@/components/ReviewChecklist";
 
 function formatPhp(amount: string | number) {
     const n = typeof amount === "string" ? Number(amount) : amount;
@@ -135,6 +137,28 @@ export default async function ApproverReviewDetailPage({
         };
     }
 
+    // Get review checklist for this budget (from the most recent reviewer who verified it)
+    const reviewerId = reviewerLogs[0]?.actor_id;
+    let checklist: typeof reviewChecklists.$inferSelect[] = [];
+
+    try {
+        if (reviewerId) {
+            checklist = await db
+                .select()
+                .from(reviewChecklists)
+                .where(
+                    and(
+                        eq(reviewChecklists.budget_id, budget.id),
+                        eq(reviewChecklists.reviewer_id, reviewerId)
+                    )
+                );
+        }
+    } catch (err) {
+        console.error("Error fetching review checklist:", err);
+    }
+
+    const checklistMap = new Map(checklist.map((c) => [c.item_key, c.is_checked]));
+
     // Comparison Data (Mocked similarly to reviewer side for consistency)
     const historicalAverage = 275000;
     const historicalMin = 170500;
@@ -145,6 +169,14 @@ export default async function ApproverReviewDetailPage({
     ];
 
     const typeLabel = budget.budget_type === "capex" ? "CapEx" : "OpEx";
+
+    // Quick Stats Calculations
+    const projectDuration = budget.start_date && budget.end_date
+        ? `${Math.ceil((budget.end_date.getTime() - budget.start_date.getTime()) / (1000 * 60 * 60 * 24 * 30.44))} Months`
+        : "12 Months";
+    const averageItemsCost = items.length > 0
+        ? Number(budget.total_amount) / items.length
+        : 0;
 
     return (
         <div className="max-w-7xl mx-auto space-y-10 pb-20">
@@ -212,6 +244,36 @@ export default async function ApproverReviewDetailPage({
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Cost Breakdown */}
+                    <div className="bg-white rounded-[2rem] p-10 border border-gray-100 shadow-sm space-y-8">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl font-black text-gray-900">₱ Cost Breakdown</span>
+                        </div>
+
+                        {items.length > 0 ? (
+                            <div className="space-y-4">
+                                {items.map((item) => (
+                                    <div key={item.id} className="p-6 bg-gray-50/50 rounded-2xl flex justify-between items-center border border-gray-100/50">
+                                        <div className="space-y-1">
+                                            <p className="text-lg font-bold text-gray-900">{item.description}</p>
+                                            <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">Equipment | Qty: {item.quantity}</p>
+                                        </div>
+                                        <p className="text-lg font-black text-gray-900">{formatPhp(item.total_cost)}</p>
+                                    </div>
+                                ))}
+                                <div className="flex justify-end pt-6 border-t border-gray-100">
+                                    <p className="text-2xl font-bold text-gray-900">
+                                        Total: <span className="font-black ml-2 text-3xl">{formatPhp(budget.total_amount)}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-gray-400 text-lg font-medium italic p-10 text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-200">
+                                No budget items found.
+                            </div>
+                        )}
                     </div>
 
                     {/* Project Timeline & Milestones */}
@@ -285,8 +347,42 @@ export default async function ApproverReviewDetailPage({
                     />
                 </div>
 
-                {/* Sidebar Decision Panel */}
-                <div className="lg:col-span-4 lg:sticky lg:top-10">
+                {/* Sidebar Decision Panel & Stats */}
+                <div className="lg:col-span-4 lg:sticky lg:top-10 space-y-8">
+                    {/* Quick Stats */}
+                    <QuickStatsCard
+                        projectDuration={projectDuration}
+                        costItems={items.length}
+                        averageItemsCost={formatPhp(averageItemsCost)}
+                    />
+
+                    {/* Review Checklist */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-6">
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="w-6 h-6 text-gray-900" />
+                            <h2 className="text-xl font-bold text-gray-900">Review Checklist</h2>
+                        </div>
+                        <div className="space-y-4">
+                            {[
+                                { key: "documented_costs", label: "All costs are documented" },
+                                { key: "reasonable_costs", label: "Unit Costs are reasonable" },
+                                { key: "realistic_timeline", label: "Timeline is realistic" },
+                                { key: "variance_clear", label: "Variance explanation is clear" },
+                                { key: "departmental_goals", label: "Aligns with departmental goals" },
+                                { key: "budget_policies", label: "Complies with budget policies" },
+                            ].map((item) => (
+                                <div key={item.key} className="flex items-center gap-3 group">
+                                    <div className={`p-1 rounded-md ${checklistMap.get(item.key) ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                                        <CheckCircle2 className="w-4 h-4" />
+                                    </div>
+                                    <span className={`text-sm font-bold ${checklistMap.get(item.key) ? 'text-gray-900' : 'text-gray-400'}`}>
+                                        {item.label}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     <ApprovalDecisionPanel
                         budgetId={budget.id}
                         budgetStatus={budget.status}
