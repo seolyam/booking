@@ -85,7 +85,13 @@ export default function ReviewerDashboard({
         ? "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200"
         : s === "Pending"
           ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-          : "bg-gray-50 text-gray-700 ring-1 ring-gray-200";
+          : s === "Verified"
+            ? "bg-green-50 text-green-700 ring-1 ring-green-200"
+            : s === "Revision"
+              ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200"
+              : s === "Rejected"
+                ? "bg-red-50 text-red-700 ring-1 ring-red-200"
+                : "bg-gray-50 text-gray-700 ring-1 ring-gray-200";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
@@ -150,34 +156,34 @@ export default function ReviewerDashboard({
             Budgets to Review
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-          {statCard(
-            <CheckCircle2 className="h-6 w-6 text-green-500" />,
-            stats.reviewedToday,
-            "Reviewed today",
-            "bg-green-50",
-            "/dashboard/reviewer/review?status=reviewed",
-          )}
-          {statCard(
-            <Clock className="h-6 w-6 text-yellow-500" />,
-            stats.pendingReview,
-            "Pending review",
-            "bg-yellow-50",
-            "/dashboard/reviewer/review?status=pending",
-          )}
-          {statCard(
-            <TrendingUp className="h-6 w-6 text-blue-500" />,
-            stats.awaitingApproval,
-            "Awaiting Approval",
-            "bg-blue-50",
-            "/dashboard/reviewer/review?status=verified",
-          )}
-          {statCard(
-            <AlertCircle className="h-6 w-6 text-orange-400" />,
-            stats.needsRevision,
-            "Needs revision",
-            "bg-orange-50",
-            "/dashboard/reviewer/review?status=revision",
-          )}
+            {statCard(
+              <CheckCircle2 className="h-6 w-6 text-green-500" />,
+              stats.reviewedToday,
+              "Reviewed today",
+              "bg-green-50",
+              "/dashboard/reviewer/review?status=reviewed",
+            )}
+            {statCard(
+              <Clock className="h-6 w-6 text-yellow-500" />,
+              stats.pendingReview,
+              "Pending review",
+              "bg-yellow-50",
+              "/dashboard/reviewer/review?status=pending",
+            )}
+            {statCard(
+              <TrendingUp className="h-6 w-6 text-blue-500" />,
+              stats.awaitingApproval,
+              "Awaiting Approval",
+              "bg-blue-50",
+              "/dashboard/reviewer/review?status=verified",
+            )}
+            {statCard(
+              <AlertCircle className="h-6 w-6 text-orange-400" />,
+              stats.needsRevision,
+              "Needs revision",
+              "bg-orange-50",
+              "/dashboard/reviewer/review?status=revision",
+            )}
           </div>
         </>
       )}
@@ -255,7 +261,9 @@ export default function ReviewerDashboard({
                     <tr
                       key={r.budgetId}
                       className={`group hover:bg-gray-50/50 transition-colors ${
-                        r.statusLabel === "Rejected" ? "opacity-60 bg-gray-50/30" : ""
+                        r.statusLabel === "Rejected"
+                          ? "opacity-60 bg-gray-50/30"
+                          : ""
                       }`}
                     >
                       <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
