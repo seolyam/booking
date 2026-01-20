@@ -345,7 +345,9 @@ export default async function RequestViewPage({
 
         {(budget.start_date || budget.end_date) && (
           <div className="mt-4 rounded-xl bg-blue-50 p-4">
-            <div className="text-sm font-semibold text-gray-900 mb-2">📅 Timeline</div>
+            <div className="text-sm font-semibold text-gray-900 mb-2">
+              📅 Timeline
+            </div>
             <div className="grid grid-cols-2 gap-4">
               {budget.start_date && (
                 <div>
