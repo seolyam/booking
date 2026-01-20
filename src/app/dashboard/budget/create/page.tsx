@@ -28,7 +28,7 @@ export default function CreateBudgetPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState([
-    { category: "", description: "", quantity: 1, unitCost: 0 },
+    { category: "", description: "", quantity: 1, unitCost: "" },
   ]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -48,7 +48,7 @@ export default function CreateBudgetPage() {
   const addItem = () => {
     setItems([
       ...items,
-      { category: "", description: "", quantity: 1, unitCost: 0 },
+      { category: "", description: "", quantity: 1, unitCost: "" },
     ]);
   };
 
@@ -74,7 +74,7 @@ export default function CreateBudgetPage() {
   };
 
   const totalBudget = items.reduce(
-    (sum, item) => sum + item.quantity * item.unitCost,
+    (sum, item) => sum + item.quantity * (parseFloat(item.unitCost as string) || 0),
     0
   );
 
@@ -100,7 +100,7 @@ export default function CreateBudgetPage() {
     }
 
     const hasAnyValidItem = items.some(
-      (it) => it.description.trim() && it.quantity > 0 && it.unitCost > 0
+      (it) => it.description.trim() && it.quantity > 0 && parseFloat(it.unitCost as string) > 0
     );
     if (!hasAnyValidItem) {
       setError(
@@ -125,7 +125,7 @@ export default function CreateBudgetPage() {
 
       for (const item of items) {
         const desc = item.description.trim();
-        if (!desc || item.quantity <= 0 || item.unitCost <= 0) continue;
+        if (!desc || item.quantity <= 0 || parseFloat(item.unitCost as string) <= 0) continue;
 
         const itemFd = new FormData();
         itemFd.set("budgetId", budgetId);
@@ -378,7 +378,7 @@ export default function CreateBudgetPage() {
                           updateItem(
                             index,
                             "unitCost",
-                            parseFloat(e.target.value) || 0
+                            e.target.value
                           )
                         }
                         className="border-gray-300 w-24"
@@ -386,7 +386,7 @@ export default function CreateBudgetPage() {
                     </td>
                     <td className="px-4 py-3">
                       <Input
-                        value={`₱ ${(item.quantity * item.unitCost).toFixed(
+                        value={`₱ ${(item.quantity * (parseFloat(item.unitCost as string) || 0)).toFixed(
                           2
                         )}`}
                         disabled
