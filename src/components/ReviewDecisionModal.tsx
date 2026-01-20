@@ -20,7 +20,9 @@ export default function ReviewDecisionModal({
   budgetStatus = "submitted",
 }: ReviewDecisionModalProps) {
   const router = useRouter();
-  const [selectedAction, setSelectedAction] = useState<ReviewAction | null>(null);
+  const [selectedAction, setSelectedAction] = useState<ReviewAction | null>(
+    null,
+  );
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -35,7 +37,10 @@ export default function ReviewDecisionModal({
       const formData = new FormData();
       formData.append("budgetId", budgetId);
 
-      if (selectedAction === "request_revision" || selectedAction === "reject") {
+      if (
+        selectedAction === "request_revision" ||
+        selectedAction === "reject"
+      ) {
         if (!comment.trim()) {
           setErrorMessage("Comment is required for this action");
           setIsSubmitting(false);
@@ -66,7 +71,10 @@ export default function ReviewDecisionModal({
     selectedAction === "request_revision" || selectedAction === "reject";
 
   // Don't show the component if the budget is not in a reviewable status
-  const isReviewable = budgetStatus === "submitted" || budgetStatus === "revision_requested";
+  const isReviewable =
+    budgetStatus === "submitted" ||
+    budgetStatus === "revision_requested" ||
+    budgetStatus === "verified_by_reviewer";
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -97,7 +105,9 @@ export default function ReviewDecisionModal({
             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div>
               <div className="font-medium text-green-800">Verify & Forward</div>
-              <div className="text-sm text-green-600">Approve and send to approver</div>
+              <div className="text-sm text-green-600">
+                Approve and send to approver
+              </div>
             </div>
           </div>
         </button>
@@ -115,8 +125,12 @@ export default function ReviewDecisionModal({
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
             <div>
-              <div className="font-medium text-orange-800">Request Revision</div>
-              <div className="text-sm text-orange-600">Send back for changes</div>
+              <div className="font-medium text-orange-800">
+                Request Revision
+              </div>
+              <div className="text-sm text-orange-600">
+                Send back for changes
+              </div>
             </div>
           </div>
         </button>
@@ -135,7 +149,9 @@ export default function ReviewDecisionModal({
             <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <div className="font-medium text-red-800">Reject</div>
-              <div className="text-sm text-red-600">Deny this budget request</div>
+              <div className="text-sm text-red-600">
+                Deny this budget request
+              </div>
             </div>
           </div>
         </button>
@@ -148,7 +164,8 @@ export default function ReviewDecisionModal({
             htmlFor="comment"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            Comment {isCommentRequired && <span className="text-red-500">*</span>}
+            Comment{" "}
+            {isCommentRequired && <span className="text-red-500">*</span>}
           </Label>
           <Textarea
             id="comment"
@@ -163,7 +180,9 @@ export default function ReviewDecisionModal({
             rows={3}
           />
           {isCommentRequired && comment.trim().length === 0 && (
-            <p className="text-red-500 text-sm mt-1">Comment is required for this action</p>
+            <p className="text-red-500 text-sm mt-1">
+              Comment is required for this action
+            </p>
           )}
         </div>
       )}
@@ -188,11 +207,17 @@ export default function ReviewDecisionModal({
           selectedAction === "verify"
             ? "bg-green-600 hover:bg-green-700"
             : selectedAction === "reject"
-            ? "bg-red-600 hover:bg-red-700"
-            : "bg-orange-600 hover:bg-orange-700"
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-orange-600 hover:bg-orange-700"
         }`}
       >
-        {isSubmitting ? "Processing..." : selectedAction === "verify" ? "Verify & Forward" : selectedAction === "request_revision" ? "Request Revision" : "Reject"}
+        {isSubmitting
+          ? "Processing..."
+          : selectedAction === "verify"
+            ? "Verify & Forward"
+            : selectedAction === "request_revision"
+              ? "Request Revision"
+              : "Reject"}
       </Button>
     </div>
   );
