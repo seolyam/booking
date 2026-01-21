@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabaseEnv } from "./env";
+import { cache } from "react";
 
 export async function createSupabaseServerClient() {
   const { url, anonKey } = getSupabaseEnv();
@@ -25,3 +26,12 @@ export async function createSupabaseServerClient() {
     },
   });
 }
+
+// Cached version to avoid multiple auth calls within the same request
+// This is request-scoped via React's cache()
+export const getAuthUser = cache(async () => {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return null;
+  return data.user;
+});
