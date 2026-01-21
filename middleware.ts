@@ -3,6 +3,19 @@ import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv } from "./src/lib/supabase/env";
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip middleware for static files, API routes that don't need auth, and public assets
+  // This significantly reduces response time for these resources
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api/health") ||
+    pathname.includes(".") || // Static files like .ico, .png, .css, .js
+    pathname === "/favicon.ico"
+  ) {
+    return NextResponse.next();
+  }
+
   let url: string;
   let anonKey: string;
   try {
@@ -24,8 +37,16 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
+        for (const { name, value } of cookiesToSet) {
+          response.cookies.set({
+            name,
+            value,
+            path: "/",
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            httpOnly: true,
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+          });
         }
       },
     },
@@ -38,5 +59,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // More restrictive matcher - only run on pages that need auth
+  matcher: ["/dashboard/:path*", "/login", "/auth/:path*", "/"],
 };

@@ -38,6 +38,14 @@ async function ensureAppUser(authedUserId: string) {
   return appUser;
 }
 
+// Helper to invalidate dashboard caches after mutations
+function invalidateDashboardCaches() {
+  // Revalidate all main dashboard paths
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/requests");
+  revalidatePath("/dashboard/budget");
+}
+
 const VARIANCE_THRESHOLD = 50000;
 
 // Schema for Draft Creation
@@ -189,6 +197,7 @@ export async function submitBudget(
     new_status: "submitted",
   });
 
+  invalidateDashboardCaches();
   revalidatePath("/dashboard/budget");
   return { message: "Budget submitted successfully" };
 }
@@ -246,6 +255,7 @@ export async function reviewBudget(
     comment,
   });
 
+  invalidateDashboardCaches();
   revalidatePath("/dashboard/reviewer/review");
   revalidatePath("/dashboard/reviewer");
   revalidatePath("/dashboard/budget");

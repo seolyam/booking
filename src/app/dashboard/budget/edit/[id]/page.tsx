@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import {
@@ -11,24 +11,49 @@ import {
 import { eq, and, desc } from "drizzle-orm";
 import EditBudgetForm from "./_components/EditBudgetForm";
 
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
+
 export default async function EditBudgetPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
-  if (!data.user) {
+  if (!user) {
     redirect("/login");
   }
 
   const { id } = await params;
 
-  // Fetch the budget
-  const budget = await db.query.budgets.findFirst({
-    where: and(eq(budgets.id, id), eq(budgets.user_id, data.user.id)),
-  });
+  // Try to parse as budget_number first (numeric or BUD-XXX format)
+  let budgetNum: number | null = null;
+  if (id.startsWith("BUD-")) {
+    budgetNum = parseInt(id.slice(4), 10);
+  } else {
+    const parsed = parseInt(id, 10);
+    if (!isNaN(parsed)) {
+      budgetNum = parsed;
+    }
+  }
+
+  // Fetch the budget by budget_number if we have one, otherwise by UUID for backward compatibility
+  let budget;
+  if (budgetNum !== null) {
+    const result = await db
+      .select()
+      .from(budgets)
+      .where(
+        and(eq(budgets.budget_number, budgetNum), eq(budgets.user_id, user.id)),
+      )
+      .limit(1);
+    budget = result[0];
+  } else {
+    budget = await db.query.budgets.findFirst({
+      where: and(eq(budgets.id, id), eq(budgets.user_id, user.id)),
+    });
+  }
 
   if (!budget) {
     redirect("/dashboard/requests");
@@ -36,17 +61,20 @@ export default async function EditBudgetPage({
 
   // Only allow editing if status is revision_requested
   if (budget.status !== "revision_requested") {
-    redirect(`/dashboard/requests/${id}`);
+    const redirectId = budgetNum
+      ? `BUD-${String(budgetNum).padStart(3, "0")}`
+      : id;
+    redirect(`/dashboard/requests/${redirectId}`);
   }
 
   // Fetch budget items
   const items = await db.query.budgetItems.findMany({
-    where: eq(budgetItems.budget_id, id),
+    where: eq(budgetItems.budget_id, budget.id),
   });
 
   // Fetch milestones
   const milestones = await db.query.budgetMilestones.findMany({
-    where: eq(budgetMilestones.budget_id, id),
+    where: eq(budgetMilestones.budget_id, budget.id),
   });
 
   // Fetch the latest revision request comment from the reviewer
@@ -59,7 +87,7 @@ export default async function EditBudgetPage({
     .from(auditLogs)
     .where(
       and(
-        eq(auditLogs.budget_id, id),
+        eq(auditLogs.budget_id, budget.id),
         eq(auditLogs.action, "request_revision"),
       ),
     )

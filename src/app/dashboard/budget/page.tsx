@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
@@ -6,6 +6,9 @@ import { budgets, budgetItems, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { Bell, Eye, Search } from "lucide-react";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -96,10 +99,7 @@ export default async function BudgetIndexPage({
   const q = (qRaw ?? "").trim().toLowerCase();
   const activeStatus = getStatusFilterFromSearchParam(statusRaw);
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
@@ -378,7 +378,7 @@ export default async function BudgetIndexPage({
                       </td>
                       <td className="py-5 pl-3 pr-6 text-right whitespace-nowrap">
                         <Link
-                          href={`/dashboard/budget/${b.id}`}
+                          href={`/dashboard/budget/BUD-${String(b.budget_number).padStart(3, "0")}`}
                           className="inline-flex items-center gap-2 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300"
                         >
                           View

@@ -1,10 +1,13 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
 import { desc, eq, inArray, and } from "drizzle-orm";
 import { Bell, Search, Eye } from "lucide-react";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -100,10 +103,7 @@ export default async function RequestsPage({
   const q = (qRaw ?? "").trim().toLowerCase();
   const activeStatus = getStatusFilterFromSearchParam(statusRaw);
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
@@ -349,7 +349,7 @@ export default async function RequestsPage({
                       <td className="py-4 px-3 pr-6 text-right whitespace-nowrap">
                         {b.status === "revision_requested" ? (
                           <Link
-                            href={`/dashboard/budget/edit/${b.id}`}
+                            href={`/dashboard/budget/edit/BUD-${String(b.budget_number).padStart(3, "0")}`}
                             className="inline-flex items-center gap-1.5 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-200 transition-colors"
                           >
                             Edit

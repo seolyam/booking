@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Eye, Check } from "lucide-react";
+import { Search, Eye } from "lucide-react";
 import { useState } from "react";
 import type { ApproverDashboardRow } from "./ApproverDashboard";
 
 export default function ApproverApprovalsList({
   initialRows,
-  activeStatus = "Approved",
+  activeStatus = "Pending",
 }: {
   initialRows: ApproverDashboardRow[];
   activeStatus?: ApproverDashboardRow["statusLabel"];
@@ -163,14 +163,14 @@ export default function ApproverApprovalsList({
                       <td className="py-5 pr-0 text-center">
                         {r.statusLabel === "Pending" ? (
                           <Link
-                            href={`/dashboard/approver/approvals/${r.budgetId}`}
+                            href={`/dashboard/approver/approvals/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 transition-colors shadow-sm"
                           >
-                            Approve <Check className="h-3.5 w-3.5" />
+                            View <Eye className="h-3.5 w-3.5" />
                           </Link>
                         ) : (
                           <Link
-                            href={`/dashboard/budget/${r.budgetId}`}
+                            href={`/dashboard/budget/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-gray-200/80 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-300/80 transition-colors"
                           >
                             View <Eye className="h-3.5 w-3.5" />

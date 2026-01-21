@@ -29,7 +29,7 @@ export default function CreateBudgetPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState([
-    { category: "", description: "", quantity: 1, unitCost: "" },
+    { category: "", description: "", quantity: "", unitCost: "" },
   ]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -50,7 +50,7 @@ export default function CreateBudgetPage() {
   const addItem = () => {
     setItems([
       ...items,
-      { category: "", description: "", quantity: 1, unitCost: "" },
+      { category: "", description: "", quantity: "", unitCost: "" },
     ]);
   };
 
@@ -82,7 +82,9 @@ export default function CreateBudgetPage() {
 
   const totalBudget = items.reduce(
     (sum, item) =>
-      sum + item.quantity * (parseFloat(item.unitCost as string) || 0),
+      sum +
+      (parseInt(item.quantity as string) || 0) *
+        (parseFloat(item.unitCost as string) || 0),
     0,
   );
 
@@ -110,8 +112,8 @@ export default function CreateBudgetPage() {
     const hasAnyValidItem = items.some(
       (it) =>
         it.description.trim() &&
-        it.quantity > 0 &&
-        parseFloat(it.unitCost as string) > 0,
+        Number(it.quantity) > 0 &&
+        parseFloat(String(it.unitCost)) > 0,
     );
     if (!hasAnyValidItem) {
       setError(
@@ -140,8 +142,8 @@ export default function CreateBudgetPage() {
         const desc = item.description.trim();
         if (
           !desc ||
-          item.quantity <= 0 ||
-          parseFloat(item.unitCost as string) <= 0
+          Number(item.quantity) <= 0 ||
+          parseFloat(String(item.unitCost)) <= 0
         )
           continue;
 
@@ -328,7 +330,7 @@ export default function CreateBudgetPage() {
         </div>
 
         {/* Cost Items Table */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-gray-200 rounded-lg">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -369,7 +371,7 @@ export default function CreateBudgetPage() {
                         <SelectTrigger className="border-gray-300">
                           <SelectValue placeholder="Select Category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" sideOffset={5}>
                           {categories.map((cat) => (
                             <SelectItem key={cat} value={cat}>
                               {cat}
@@ -392,13 +394,10 @@ export default function CreateBudgetPage() {
                       <Input
                         type="number"
                         min="1"
+                        placeholder="0"
                         value={item.quantity}
                         onChange={(e) =>
-                          updateItem(
-                            index,
-                            "quantity",
-                            parseInt(e.target.value) || 1,
-                          )
+                          updateItem(index, "quantity", e.target.value)
                         }
                         className="border-gray-300 w-20"
                       />
@@ -418,11 +417,14 @@ export default function CreateBudgetPage() {
                     <td className="px-4 py-3">
                       <Input
                         value={`₱ ${(
-                          item.quantity *
+                          (parseInt(item.quantity as string) || 0) *
                           (parseFloat(item.unitCost as string) || 0)
-                        ).toFixed(2)}`}
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`}
                         disabled
-                        className="bg-gray-50 border-gray-300 text-gray-700 w-28"
+                        className="bg-gray-50 border-gray-300 text-gray-700 w-40"
                       />
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -448,7 +450,11 @@ export default function CreateBudgetPage() {
           <div className="text-right">
             <div className="text-sm text-gray-600">Total Budget:</div>
             <div className="text-2xl font-bold text-gray-900">
-              ₱{totalBudget.toFixed(2)}
+              ₱
+              {totalBudget.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
           </div>
         </div>
@@ -461,12 +467,21 @@ export default function CreateBudgetPage() {
 
         <div className="grid grid-cols-2 gap-6 mb-6">
           <div>
-            <Label
-              htmlFor="startDate"
-              className="text-gray-700 font-medium mb-2 block"
-            >
-              Start Date <span className="text-red-500">*</span>
-            </Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="startDate" className="text-gray-700 font-medium">
+                Start Date <span className="text-red-500">*</span>
+              </Label>
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date().toISOString().split("T")[0];
+                  setStartDate(today);
+                }}
+                className="text-xs text-green-600 hover:text-green-700 font-medium hover:underline"
+              >
+                Set day today
+              </button>
+            </div>
             <Input
               id="startDate"
               type="date"
