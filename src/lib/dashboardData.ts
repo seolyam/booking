@@ -15,10 +15,11 @@ export function formatPhp(amount: string) {
 }
 
 // Helper to format short date
-export function formatDateShort(d: Date) {
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
+export function formatDateShort(d: Date | string) {
+  const date = typeof d === "string" ? new Date(d) : d;
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const yy = String(date.getFullYear()).slice(-2);
   return `${month}-${day}-${yy}`;
 }
 
