@@ -43,12 +43,14 @@ export async function approveUser(userId: string): Promise<void> {
     })
     .where(eq(users.id, userId));
 
+  // Revalidate dashboard paths to reflect user approval
   revalidatePath("/dashboard/admin/approvals");
+  revalidatePath("/dashboard");
 }
 
 export async function rejectUser(
   userId: string,
-  reason: string
+  reason: string,
 ): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const {
@@ -77,11 +79,13 @@ export async function rejectUser(
     })
     .where(eq(users.id, userId));
 
+  // Revalidate dashboard paths to reflect user rejection
   revalidatePath("/dashboard/admin/approvals");
+  revalidatePath("/dashboard");
 }
 
 export async function getSignedIdUrl(
-  storagePath: string
+  storagePath: string,
 ): Promise<string | null> {
   try {
     const adminClient = createSupabaseAdminClient();
