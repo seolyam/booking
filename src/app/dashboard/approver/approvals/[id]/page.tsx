@@ -423,6 +423,13 @@ export default async function ApproverReviewDetailPage({
             </div>
           </div>
 
+          {/* Quick Stats */}
+          <QuickStatsCard
+            projectDuration={projectDuration}
+            costItems={items.length}
+            averageItemsCost={formatPhp(averageItemsCost)}
+          />
+
           {/* Variance Explanation */}
           {budget.variance_explanation && (
             <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
@@ -463,13 +470,6 @@ export default async function ApproverReviewDetailPage({
 
         {/* Sidebar Decision Panel & Stats */}
         <div className="lg:col-span-4 lg:sticky lg:top-10 space-y-8">
-          {/* Quick Stats */}
-          <QuickStatsCard
-            projectDuration={projectDuration}
-            costItems={items.length}
-            averageItemsCost={formatPhp(averageItemsCost)}
-          />
-
           {/* Review Checklist */}
           <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-6">
             <div className="flex items-center gap-3">
