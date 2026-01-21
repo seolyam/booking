@@ -349,7 +349,7 @@ export default async function RequestsPage({
                       <td className="py-4 px-3 pr-6 text-right whitespace-nowrap">
                         {b.status === "revision_requested" ? (
                           <Link
-                            href={`/dashboard/budget/edit/${b.id}`}
+                            href={`/dashboard/budget/edit/BUD-${String(b.budget_number).padStart(3, "0")}`}
                             className="inline-flex items-center gap-1.5 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-200 transition-colors"
                           >
                             Edit

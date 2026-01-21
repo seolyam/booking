@@ -378,7 +378,7 @@ export default async function BudgetIndexPage({
                       </td>
                       <td className="py-5 pl-3 pr-6 text-right whitespace-nowrap">
                         <Link
-                          href={`/dashboard/budget/${b.id}`}
+                          href={`/dashboard/budget/BUD-${String(b.budget_number).padStart(3, "0")}`}
                           className="inline-flex items-center gap-2 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300"
                         >
                           View
