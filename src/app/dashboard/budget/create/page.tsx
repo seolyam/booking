@@ -112,8 +112,8 @@ export default function CreateBudgetPage() {
     const hasAnyValidItem = items.some(
       (it) =>
         it.description.trim() &&
-        it.quantity > 0 &&
-        parseFloat(it.unitCost as string) > 0,
+        Number(it.quantity) > 0 &&
+        parseFloat(String(it.unitCost)) > 0,
     );
     if (!hasAnyValidItem) {
       setError(
@@ -142,8 +142,8 @@ export default function CreateBudgetPage() {
         const desc = item.description.trim();
         if (
           !desc ||
-          item.quantity <= 0 ||
-          parseFloat(item.unitCost as string) <= 0
+          Number(item.quantity) <= 0 ||
+          parseFloat(String(item.unitCost)) <= 0
         )
           continue;
 

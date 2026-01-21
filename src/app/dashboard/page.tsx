@@ -150,6 +150,7 @@ export default async function DashboardPage() {
 
         return {
           budgetId: b.id,
+          budgetNumber: b.budget_number,
           displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
           projectName:
             approverFirstItemByBudgetId.get(b.id) ?? "Budget Request",
@@ -211,6 +212,7 @@ export default async function DashboardPage() {
 
       return {
         budgetId: b.id,
+        budgetNumber: b.budget_number,
         displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
         projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
         projectSub: b.department ?? "",

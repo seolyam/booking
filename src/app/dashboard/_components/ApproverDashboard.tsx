@@ -12,6 +12,7 @@ import {
 
 export type ApproverDashboardRow = {
   budgetId: string;
+  budgetNumber: number;
   displayId: string;
   projectName: string;
   projectSub: string;
@@ -118,7 +119,7 @@ export default function ApproverDashboard({
         )}
       </div>
 
-      <div className="rounded-[2rem] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-8">
           <div className="text-xl font-bold text-gray-900 mb-8">
             Recent budget proposals
