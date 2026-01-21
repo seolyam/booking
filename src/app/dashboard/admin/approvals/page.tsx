@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { users } from "@/db/schema";
@@ -10,11 +10,11 @@ import { Check, X, Eye } from "lucide-react";
 import IdCardImage from "@/components/ui/id-card-image";
 import Link from "next/link";
 
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
+
 export default async function AdminApprovalsPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect("/login");
@@ -31,7 +31,7 @@ export default async function AdminApprovalsPage() {
   const pendingUsers = await db.query.users.findMany({
     where: or(
       eq(users.approval_status, "pending"),
-      eq(users.approval_status, "rejected")
+      eq(users.approval_status, "rejected"),
     ),
     orderBy: (users, { desc }) => [desc(users.created_at)],
   });

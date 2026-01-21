@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
@@ -9,6 +9,9 @@ import { desc, eq, inArray, and } from "drizzle-orm";
 import ReviewerDashboard, {
   type ReviewerDashboardRow,
 } from "../../_components/ReviewerDashboard";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -55,10 +58,7 @@ export default async function ReviewerReviewQueuePage({
   const q = (qRaw ?? "").trim().toLowerCase();
   const activeStatus = getStatusFilterFromSearchParam(statusRaw);
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 

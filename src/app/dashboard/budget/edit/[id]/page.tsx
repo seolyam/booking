@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import {
@@ -11,15 +11,17 @@ import {
 import { eq, and, desc } from "drizzle-orm";
 import EditBudgetForm from "./_components/EditBudgetForm";
 
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
+
 export default async function EditBudgetPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
-  if (!data.user) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -27,7 +29,7 @@ export default async function EditBudgetPage({
 
   // Fetch the budget
   const budget = await db.query.budgets.findFirst({
-    where: and(eq(budgets.id, id), eq(budgets.user_id, data.user.id)),
+    where: and(eq(budgets.id, id), eq(budgets.user_id, user.id)),
   });
 
   if (!budget) {

@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
@@ -6,6 +6,9 @@ import { budgets, budgetItems, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { Bell, Eye, Search } from "lucide-react";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -96,10 +99,7 @@ export default async function BudgetIndexPage({
   const q = (qRaw ?? "").trim().toLowerCase();
   const activeStatus = getStatusFilterFromSearchParam(statusRaw);
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
