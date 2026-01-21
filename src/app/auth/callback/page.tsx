@@ -4,9 +4,23 @@ import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 
 export const dynamic = "force-dynamic";
 
-export default async function CallbackPage() {
+export default async function CallbackPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
   const supabase = await createSupabaseServerClient();
+  const { code } = await searchParams;
 
+  // Exchange code for session if present (OAuth callback)
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      redirect("/login?error=auth_callback_failed");
+    }
+  }
+
+  // Get the session after exchange or refresh
   const {
     data: { session },
   } = await supabase.auth.getSession();
