@@ -29,7 +29,7 @@ export default function CreateBudgetPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState([
-    { category: "", description: "", quantity: 1, unitCost: "" },
+    { category: "", description: "", quantity: "", unitCost: "" },
   ]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -50,7 +50,7 @@ export default function CreateBudgetPage() {
   const addItem = () => {
     setItems([
       ...items,
-      { category: "", description: "", quantity: 1, unitCost: "" },
+      { category: "", description: "", quantity: "", unitCost: "" },
     ]);
   };
 
@@ -82,7 +82,9 @@ export default function CreateBudgetPage() {
 
   const totalBudget = items.reduce(
     (sum, item) =>
-      sum + item.quantity * (parseFloat(item.unitCost as string) || 0),
+      sum +
+      (parseInt(item.quantity as string) || 0) *
+        (parseFloat(item.unitCost as string) || 0),
     0,
   );
 
@@ -392,13 +394,10 @@ export default function CreateBudgetPage() {
                       <Input
                         type="number"
                         min="1"
+                        placeholder="0"
                         value={item.quantity}
                         onChange={(e) =>
-                          updateItem(
-                            index,
-                            "quantity",
-                            parseInt(e.target.value) || 1,
-                          )
+                          updateItem(index, "quantity", e.target.value)
                         }
                         className="border-gray-300 w-20"
                       />
@@ -418,7 +417,7 @@ export default function CreateBudgetPage() {
                     <td className="px-4 py-3">
                       <Input
                         value={`₱ ${(
-                          item.quantity *
+                          (parseInt(item.quantity as string) || 0) *
                           (parseFloat(item.unitCost as string) || 0)
                         ).toFixed(2)}`}
                         disabled
