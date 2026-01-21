@@ -132,9 +132,6 @@ export default async function AdminApprovalsPage() {
                     </p>
                     {u.id_document_path ? (
                       <div className="space-y-2">
-                        <p className="text-xs text-gray-400 mb-3">
-                          📁 {u.id_document_path}
-                        </p>
                         <a
                           href={idDocumentUrl}
                           target="_blank"

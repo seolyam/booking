@@ -427,7 +427,7 @@ export default function EditBudgetForm({
         </div>
 
         {/* Cost Items Table */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-gray-200 rounded-lg">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -469,7 +469,7 @@ export default function EditBudgetForm({
                         <SelectTrigger className="border-gray-300">
                           <SelectValue placeholder="Select Category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" sideOffset={5}>
                           {categories.map((cat) => (
                             <SelectItem key={cat} value={cat}>
                               {cat}
@@ -524,9 +524,12 @@ export default function EditBudgetForm({
                         value={`₱ ${(
                           item.quantity *
                           (parseFloat(item.unitCost as string) || 0)
-                        ).toFixed(2)}`}
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`}
                         disabled
-                        className="bg-gray-50 border-gray-300 text-gray-700 w-28"
+                        className="bg-gray-50 border-gray-300 text-gray-700 w-40"
                       />
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -557,7 +560,7 @@ export default function EditBudgetForm({
                         <SelectTrigger className="border-gray-300">
                           <SelectValue placeholder="Select Category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" sideOffset={5}>
                           {categories.map((cat) => (
                             <SelectItem key={cat} value={cat}>
                               {cat}
@@ -608,9 +611,12 @@ export default function EditBudgetForm({
                         value={`₱ ${(
                           item.quantity *
                           (parseFloat(item.unitCost as string) || 0)
-                        ).toFixed(2)}`}
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`}
                         disabled
-                        className="bg-gray-50 border-gray-300 text-gray-700 w-28"
+                        className="bg-gray-50 border-gray-300 text-gray-700 w-40"
                       />
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -634,7 +640,11 @@ export default function EditBudgetForm({
           <div className="text-right">
             <div className="text-sm text-gray-600">Total Budget:</div>
             <div className="text-2xl font-bold text-gray-900">
-              ₱{totalBudget.toFixed(2)}
+              ₱
+              {totalBudget.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
           </div>
         </div>
@@ -648,12 +658,21 @@ export default function EditBudgetForm({
 
         <div className="grid grid-cols-2 gap-6 mb-6">
           <div>
-            <Label
-              htmlFor="startDate"
-              className="text-gray-700 font-medium mb-2 block"
-            >
-              Start Date
-            </Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="startDate" className="text-gray-700 font-medium">
+                Start Date
+              </Label>
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date().toISOString().split("T")[0];
+                  setStartDate(today);
+                }}
+                className="text-xs text-green-600 hover:text-green-700 font-medium hover:underline"
+              >
+                Today
+              </button>
+            </div>
             <Input
               id="startDate"
               type="date"
