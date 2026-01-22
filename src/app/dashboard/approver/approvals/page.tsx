@@ -2,8 +2,8 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
-import { budgets, budgetItems, users } from "@/db/schema";
-import { desc, inArray, eq } from "drizzle-orm";
+import { auditLogs, budgets, budgetItems, users } from "@/db/schema";
+import { desc, inArray, eq, and } from "drizzle-orm";
 import ApproverApprovalsList from "../../_components/ApproverApprovalsList";
 import type { ApproverDashboardRow } from "../../_components/ApproverDashboard";
 
@@ -25,6 +25,10 @@ function formatDateShort(d: Date) {
   const day = String(d.getDate()).padStart(2, "0");
   const yy = String(d.getFullYear()).slice(-2);
   return `${month}-${day}-${yy}`;
+}
+
+function toIsoOrNull(d: Date | null) {
+  return d ? d.toISOString() : null;
 }
 
 export default async function ApproverApprovalsPage() {
@@ -68,6 +72,30 @@ export default async function ApproverApprovalsPage() {
     .orderBy(desc(budgets.created_at));
 
   const budgetIds = allRelevantProposals.map((b) => b.id);
+
+  const approvalLogs =
+    budgetIds.length === 0
+      ? []
+      : await db
+          .select({
+            budget_id: auditLogs.budget_id,
+            timestamp: auditLogs.timestamp,
+          })
+          .from(auditLogs)
+          .where(
+            and(
+              inArray(auditLogs.budget_id, budgetIds),
+              eq(auditLogs.action, "approve"),
+            ),
+          )
+          .orderBy(desc(auditLogs.timestamp));
+
+  const approvedAtByBudgetId = new Map<string, Date>();
+  for (const l of approvalLogs) {
+    if (!approvedAtByBudgetId.has(l.budget_id)) {
+      approvedAtByBudgetId.set(l.budget_id, l.timestamp);
+    }
+  }
   const items =
     budgetIds.length === 0
       ? []
@@ -106,6 +134,10 @@ export default async function ApproverApprovalsPage() {
       amount: formatPhp(b.total_amount),
       statusLabel,
       dateLabel: formatDateShort(b.created_at),
+      approvedAt: toIsoOrNull(approvedAtByBudgetId.get(b.id) ?? null),
+      approvedDateLabel: approvedAtByBudgetId.get(b.id)
+        ? formatDateShort(approvedAtByBudgetId.get(b.id)!)
+        : undefined,
     };
   });
 
