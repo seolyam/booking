@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
-import { desc, eq, inArray, and } from "drizzle-orm";
+import { desc, eq, inArray, and, ne } from "drizzle-orm";
 import { Bell, Search, Eye } from "lucide-react";
 
 // Force dynamic rendering - requires auth and DB access
@@ -125,7 +125,7 @@ export default async function RequestsPage({
   const myBudgets = await db.query.budgets.findMany({
     where: statusWhere
       ? and(eq(budgets.user_id, user.id), statusWhere)
-      : eq(budgets.user_id, user.id),
+      : and(eq(budgets.user_id, user.id), ne(budgets.status, "draft")),
     orderBy: [desc(budgets.created_at)],
     limit: 200,
   });
