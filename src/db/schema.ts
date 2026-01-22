@@ -128,6 +128,7 @@ export const budgets = pgTable(
       .references(() => users.id)
       .notNull(), // requester
     project_id: uuid("project_id").references(() => projects.id), // Optional link to project
+    title: text("title"),
     budget_number: bigint("budget_number", { mode: "number" })
       .default(sql`nextval('public.budget_number_seq')`)
       .notNull(),
