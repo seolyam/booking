@@ -53,6 +53,7 @@ const VARIANCE_THRESHOLD = 50000;
 const CreateBudgetSchema = z.object({
   budgetType: z.enum(["capex", "opex"]),
   fiscalYear: z.number().int().min(2025).max(2030),
+  projectId: z.string().uuid().optional().nullable(),
 });
 
 export async function createBudgetDraft(
@@ -76,8 +77,14 @@ export async function createBudgetDraft(
   const fiscalYear = parseInt(formData.get("fiscalYear") as string);
   const startDateStr = formData.get("startDate") as string | null;
   const endDateStr = formData.get("endDate") as string | null;
+  const projectIdStr = formData.get("projectId") as string | null;
+  const projectId = projectIdStr && projectIdStr !== "" ? projectIdStr : null;
 
-  const validated = CreateBudgetSchema.safeParse({ budgetType, fiscalYear });
+  const validated = CreateBudgetSchema.safeParse({
+    budgetType,
+    fiscalYear,
+    projectId,
+  });
 
   if (!validated.success) {
     return {
@@ -91,6 +98,7 @@ export async function createBudgetDraft(
       .insert(budgets)
       .values({
         user_id: user.id,
+        project_id: validated.data.projectId ?? null,
         budget_type: validated.data.budgetType,
         fiscal_year: validated.data.fiscalYear,
         status: "draft",
