@@ -8,8 +8,9 @@ import {
   timestamp,
   pgEnum,
   boolean,
+  index,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 
 // Enums
 export const departmentEnum = pgEnum("department", [
@@ -50,7 +51,53 @@ export const budgetStatusEnum = pgEnum("budget_status", [
   "rejected",
 ]);
 
+// Category type enum for budget categories
+export const budgetCategoryTypeEnum = pgEnum("budget_category_type", [
+  "CAPEX",
+  "OPEX",
+  "BOTH",
+]);
+
 // Tables
+
+// Projects table - groups budget requests
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    project_code: text("project_code").notNull().unique(),
+    name: text("name").notNull(),
+    department: text("department").notNull(),
+    description: text("description"),
+    created_by: uuid("created_by").references(() => users.id),
+    is_active: boolean("is_active").default(true).notNull(),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_projects_project_code").on(table.project_code),
+    index("idx_projects_department").on(table.department),
+    index("idx_projects_created_by").on(table.created_by),
+  ],
+);
+
+// Budget categories with allowed type
+export const budgetCategories = pgTable("budget_categories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  allowed_type: budgetCategoryTypeEnum("allowed_type")
+    .notNull()
+    .default("BOTH"),
+  is_active: boolean("is_active").default(true).notNull(),
+  created_at: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey(), // Links to Supabase Auth User ID
@@ -73,27 +120,36 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const budgets = pgTable("budgets", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  user_id: uuid("user_id")
-    .references(() => users.id)
-    .notNull(), // requester
-  budget_number: bigint("budget_number", { mode: "number" })
-    .default(sql`nextval('public.budget_number_seq')`)
-    .notNull(),
-  budget_type: budgetTypeEnum("budget_type").notNull(),
-  fiscal_year: integer("fiscal_year").notNull(),
-  status: budgetStatusEnum("status").default("draft").notNull(),
-  total_amount: decimal("total_amount", { precision: 15, scale: 2 })
-    .notNull()
-    .default("0"),
-  variance_explanation: text("variance_explanation"), // Nullable
-  roi_analysis: text("roi_analysis"), // Nullable, only for approver. Text or JSON. Instructions say text/json. Let's use text for simplicity or jsonb if structured. "text/json, nullable" -> logic says text is easier for "Hidden Details".
-  start_date: timestamp("start_date"),
-  end_date: timestamp("end_date"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
+export const budgets = pgTable(
+  "budgets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .references(() => users.id)
+      .notNull(), // requester
+    project_id: uuid("project_id").references(() => projects.id), // Optional link to project
+    budget_number: bigint("budget_number", { mode: "number" })
+      .default(sql`nextval('public.budget_number_seq')`)
+      .notNull(),
+    custom_id: text("custom_id"), // CAP-XXXX or OPX-XXXX format
+    budget_type: budgetTypeEnum("budget_type").notNull(),
+    fiscal_year: integer("fiscal_year").notNull(),
+    status: budgetStatusEnum("status").default("draft").notNull(),
+    total_amount: decimal("total_amount", { precision: 15, scale: 2 })
+      .notNull()
+      .default("0"),
+    variance_explanation: text("variance_explanation"), // Nullable
+    roi_analysis: text("roi_analysis"), // Nullable, only for approver. Text or JSON. Instructions say text/json. Let's use text for simplicity or jsonb if structured. "text/json, nullable" -> logic says text is easier for "Hidden Details".
+    start_date: timestamp("start_date"),
+    end_date: timestamp("end_date"),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+    updated_at: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_budgets_project_id").on(table.project_id),
+    index("idx_budgets_custom_id").on(table.custom_id),
+  ],
+);
 
 export const budgetItems = pgTable("budget_items", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -146,3 +202,65 @@ export const reviewChecklists = pgTable("review_checklists", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ============================================================================
+// Relations
+// ============================================================================
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [projects.created_by],
+    references: [users.id],
+  }),
+  budgets: many(budgets),
+}));
+
+export const budgetsRelations = relations(budgets, ({ one, many }) => ({
+  user: one(users, {
+    fields: [budgets.user_id],
+    references: [users.id],
+  }),
+  project: one(projects, {
+    fields: [budgets.project_id],
+    references: [projects.id],
+  }),
+  items: many(budgetItems),
+  milestones: many(budgetMilestones),
+  auditLogs: many(auditLogs),
+}));
+
+export const budgetItemsRelations = relations(budgetItems, ({ one }) => ({
+  budget: one(budgets, {
+    fields: [budgetItems.budget_id],
+    references: [budgets.id],
+  }),
+}));
+
+export const budgetMilestonesRelations = relations(
+  budgetMilestones,
+  ({ one }) => ({
+    budget: one(budgets, {
+      fields: [budgetMilestones.budget_id],
+      references: [budgets.id],
+    }),
+  }),
+);
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  budget: one(budgets, {
+    fields: [auditLogs.budget_id],
+    references: [budgets.id],
+  }),
+  actor: one(users, {
+    fields: [auditLogs.actor_id],
+    references: [users.id],
+  }),
+}));
+
+// Type exports for convenience
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
+export type Budget = typeof budgets.$inferSelect;
+export type NewBudget = typeof budgets.$inferInsert;
+export type BudgetCategory = typeof budgetCategories.$inferSelect;
+export type BudgetItem = typeof budgetItems.$inferSelect;
