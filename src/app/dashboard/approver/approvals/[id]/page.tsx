@@ -51,7 +51,13 @@ export default async function ApproverReviewDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+
+  const budgetNumber = Number.parseInt(rawId.replace(/^BUD-/, ""), 10);
+
+  if (!Number.isFinite(budgetNumber)) {
+    redirect("/dashboard/approver/approvals");
+  }
 
   const user = await getAuthUser();
 
@@ -82,9 +88,10 @@ export default async function ApproverReviewDetailPage({
       user_id: budgets.user_id,
       start_date: budgets.start_date,
       end_date: budgets.end_date,
+      budget_number: budgets.budget_number,
     })
     .from(budgets)
-    .where(eq(budgets.id, id))
+    .where(eq(budgets.budget_number, budgetNumber))
     .limit(1);
 
   if (!budgetData || budgetData.length === 0) {
