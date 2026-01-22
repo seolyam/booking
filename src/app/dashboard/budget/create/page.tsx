@@ -43,6 +43,25 @@ type BudgetCategory = {
   allowed_type: "CAPEX" | "OPEX" | "BOTH";
 };
 
+type CostItem = {
+  id: string;
+  category: string;
+  description: string;
+  quantity: string;
+  unitCost: string;
+};
+
+const createEmptyItem = (): CostItem => ({
+  id:
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  category: "",
+  description: "",
+  quantity: "",
+  unitCost: "",
+});
+
 export default function CreateBudgetPage() {
   const router = useRouter();
 
@@ -69,9 +88,7 @@ export default function CreateBudgetPage() {
   // Form State
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [items, setItems] = useState([
-    { category: "", description: "", quantity: "", unitCost: "" },
-  ]);
+  const [items, setItems] = useState<CostItem[]>([createEmptyItem()]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [milestone, setMilestone] = useState("");
@@ -167,20 +184,17 @@ export default function CreateBudgetPage() {
   }, [projects, selectedProjectId]);
 
   const addItem = () => {
-    setItems([
-      ...items,
-      { category: "", description: "", quantity: "", unitCost: "" },
-    ]);
+    setItems([...items, createEmptyItem()]);
   };
 
-  const removeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index));
+  const removeItem = (id: string) => {
+    setItems(items.filter((item) => item.id !== id));
   };
 
-  const updateItem = (index: number, field: string, value: string | number) => {
-    const updated = [...items];
-    updated[index] = { ...updated[index], [field]: value };
-    setItems(updated);
+  const updateItem = (id: string, field: keyof CostItem, value: string) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    );
   };
 
   const addMilestone = () => {
@@ -749,16 +763,16 @@ export default function CreateBudgetPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, index) => (
+                {items.map((item) => (
                   <tr
-                    key={index}
+                    key={item.id}
                     className="border-b border-gray-200 hover:bg-gray-50"
                   >
                     <td className="px-4 py-3">
                       <Select
                         value={item.category}
                         onValueChange={(val) =>
-                          updateItem(index, "category", val)
+                          updateItem(item.id, "category", val)
                         }
                         disabled={!budgetType || isLoadingCategories}
                       >
@@ -798,7 +812,7 @@ export default function CreateBudgetPage() {
                         placeholder="Item Description"
                         value={item.description}
                         onChange={(e) =>
-                          updateItem(index, "description", e.target.value)
+                          updateItem(item.id, "description", e.target.value)
                         }
                         className="border-gray-300"
                       />
@@ -814,7 +828,7 @@ export default function CreateBudgetPage() {
                         onKeyDown={preventNonNumericKeys}
                         onChange={(e) => {
                           const v = sanitizeInteger(e.target.value);
-                          updateItem(index, "quantity", v);
+                          updateItem(item.id, "quantity", v);
                         }}
                         className="border-gray-300 w-20"
                       />
@@ -830,7 +844,7 @@ export default function CreateBudgetPage() {
                         onKeyDown={preventNonNumericKeys}
                         onChange={(e) => {
                           const v = sanitizeCurrency(e.target.value);
-                          updateItem(index, "unitCost", v);
+                          updateItem(item.id, "unitCost", v);
                         }}
                         className="border-gray-300 w-28"
                       />
@@ -852,7 +866,7 @@ export default function CreateBudgetPage() {
                       {items.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => removeItem(index)}
+                          onClick={() => removeItem(item.id)}
                           className="text-red-500 hover:text-red-700 inline-flex"
                         >
                           <Trash2 className="h-4 w-4" />
