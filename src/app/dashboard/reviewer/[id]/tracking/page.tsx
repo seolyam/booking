@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
@@ -9,8 +9,11 @@ import {
   budgetMilestones,
   auditLogs,
 } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, asc } from "drizzle-orm";
 import BudgetTrackingView from "@/app/dashboard/_components/BudgetTrackingView";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function deriveDisplayName(fullName?: string | null, email?: string | null) {
   if (fullName && fullName.trim()) return fullName.trim();
@@ -49,10 +52,7 @@ export default async function BudgetTrackingPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
@@ -87,12 +87,21 @@ export default async function BudgetTrackingPage({
     .where(eq(budgetItems.budget_id, id));
 
   // Fetch milestones
-  let milestones: any[] = [];
+  let milestones: Array<{
+    id: string;
+    description: string;
+    target_quarter: string | null;
+  }> = [];
   try {
     milestones = await db
-      .select()
+      .select({
+        id: budgetMilestones.id,
+        description: budgetMilestones.description,
+        target_quarter: budgetMilestones.target_quarter,
+      })
       .from(budgetMilestones)
-      .where(eq(budgetMilestones.budget_id, id));
+      .where(eq(budgetMilestones.budget_id, id))
+      .orderBy(asc(budgetMilestones.created_at));
   } catch (e) {
     console.error("Milestones table fetch error:", e);
   }
@@ -137,6 +146,13 @@ export default async function BudgetTrackingPage({
 
   const req = requesterResult[0];
 
+  // Debug: log requester data
+  console.log("[Budget Tracking] Requester data:", {
+    full_name: req?.full_name,
+    email: req?.email,
+    hasFullName: !!(req?.full_name && req.full_name.trim()),
+  });
+
   const viewData = {
     id: budget.id,
     displayId: budget.id.slice(0, 8).toUpperCase(), // Simplified display ID
@@ -144,7 +160,10 @@ export default async function BudgetTrackingPage({
     projectSub: req?.department || "Infrastructure Department",
     type: budget.budget_type === "capex" ? "CapEx" : "OpEx",
     totalAmount: formatPhp(budget.total_amount),
-    requester: deriveDisplayName(req?.full_name, req?.email),
+    requester:
+      req?.full_name && req.full_name.trim()
+        ? req.full_name.trim()
+        : deriveDisplayName(undefined, req?.email),
     createdDate: formatDate(budget.created_at),
     updatedDate: formatDate(budget.updated_at),
     status: budget.status,
@@ -176,11 +195,7 @@ export default async function BudgetTrackingPage({
         total_cost: it.total_cost,
         quarter: it.quarter,
       }))}
-      milestones={milestones.map((m) => ({
-        id: m.id,
-        description: m.description,
-        target_quarter: m.target_quarter,
-      }))}
+      milestones={milestones}
       auditHistory={auditHistory}
       backHref="/dashboard/reviewer"
     />

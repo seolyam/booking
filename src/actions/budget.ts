@@ -38,6 +38,14 @@ async function ensureAppUser(authedUserId: string) {
   return appUser;
 }
 
+// Helper to invalidate dashboard caches after mutations
+function invalidateDashboardCaches() {
+  // Revalidate all main dashboard paths
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/requests");
+  revalidatePath("/dashboard/budget");
+}
+
 const VARIANCE_THRESHOLD = 50000;
 
 // Schema for Draft Creation
@@ -189,6 +197,7 @@ export async function submitBudget(
     new_status: "submitted",
   });
 
+  invalidateDashboardCaches();
   revalidatePath("/dashboard/budget");
   return { message: "Budget submitted successfully" };
 }
@@ -246,10 +255,13 @@ export async function reviewBudget(
     comment,
   });
 
+  invalidateDashboardCaches();
   revalidatePath("/dashboard/reviewer/review");
   revalidatePath("/dashboard/reviewer");
   revalidatePath("/dashboard/budget");
   revalidatePath("/dashboard/requests");
+  revalidatePath("/dashboard/approver/approvals");
+  revalidatePath(`/dashboard/approver/approvals/${budgetId}`);
 
   return { message: "Review action recorded" };
 }
@@ -319,6 +331,7 @@ async function saveChecklistState(
 
 export async function verifyBudget(formData: FormData): Promise<void> {
   const budgetId = formData.get("budgetId") as string;
+  const comment = (formData.get("comment") as string | null) ?? "";
   const checklistStateStr = formData.get("checklistState") as string;
   const checklistItemsStr = formData.get("checklistItems") as string;
 
@@ -343,7 +356,7 @@ export async function verifyBudget(formData: FormData): Promise<void> {
     );
   }
 
-  await reviewBudget(budgetId, "verify", "");
+  await reviewBudget(budgetId, "verify", comment.trim());
 }
 
 export async function requestRevision(formData: FormData): Promise<void> {

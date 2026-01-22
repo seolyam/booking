@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
@@ -6,6 +6,9 @@ import { budgets, budgetItems, users } from "@/db/schema";
 import { desc, inArray, eq } from "drizzle-orm";
 import ApproverApprovalsList from "../../_components/ApproverApprovalsList";
 import type { ApproverDashboardRow } from "../../_components/ApproverDashboard";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -25,10 +28,7 @@ function formatDateShort(d: Date) {
 }
 
 export default async function ApproverApprovalsPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
@@ -58,7 +58,12 @@ export default async function ApproverApprovalsPage() {
     .from(budgets)
     .leftJoin(users, eq(budgets.user_id, users.id))
     .where(
-      inArray(budgets.status, ["approved", "verified", "verified_by_reviewer", "rejected"])
+      inArray(budgets.status, [
+        "approved",
+        "verified",
+        "verified_by_reviewer",
+        "rejected",
+      ]),
     )
     .orderBy(desc(budgets.created_at));
 
@@ -67,12 +72,12 @@ export default async function ApproverApprovalsPage() {
     budgetIds.length === 0
       ? []
       : await db
-        .select({
-          budget_id: budgetItems.budget_id,
-          description: budgetItems.description,
-        })
-        .from(budgetItems)
-        .where(inArray(budgetItems.budget_id, budgetIds));
+          .select({
+            budget_id: budgetItems.budget_id,
+            description: budgetItems.description,
+          })
+          .from(budgetItems)
+          .where(inArray(budgetItems.budget_id, budgetIds));
 
   const firstItemByBudgetId = new Map<string, string>();
   for (const it of items) {
@@ -82,14 +87,19 @@ export default async function ApproverApprovalsPage() {
   }
 
   const rows: ApproverDashboardRow[] = allRelevantProposals.map((b) => {
-    const type = b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
+    const type =
+      b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
     const statusLabel =
-      b.status === "approved" ? "Approved" as const :
-        b.status === "rejected" ? "Rejected" as const : "Pending" as const;
+      b.status === "approved"
+        ? ("Approved" as const)
+        : b.status === "rejected"
+          ? ("Rejected" as const)
+          : ("Pending" as const);
 
     return {
       budgetId: b.id,
-      displayId: `BUD-${String(b.budget_number).padStart(3, '0')}`,
+      budgetNumber: b.budget_number,
+      displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
       projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
       projectSub: b.department ?? "",
       type,
@@ -99,7 +109,5 @@ export default async function ApproverApprovalsPage() {
     };
   });
 
-  return (
-    <ApproverApprovalsList initialRows={rows} />
-  );
+  return <ApproverApprovalsList initialRows={rows} />;
 }

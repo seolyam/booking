@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { auditLogs, budgets, budgetItems, users } from "@/db/schema";
@@ -7,6 +7,9 @@ import ReviewerDashboard, {
   type ReviewerDashboardRow,
 } from "../_components/ReviewerDashboard";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -26,11 +29,7 @@ function formatDateShort(d: Date) {
 }
 
 export default async function ReviewerDashboardPage() {
-  const supabase = await createSupabaseServerClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect("/login");

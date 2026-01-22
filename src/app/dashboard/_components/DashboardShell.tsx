@@ -41,11 +41,11 @@ type PanelKey = "sidebar" | "main";
 
 const DEFAULT_LAYOUT: ShellLayout = {
   mode: "floating",
-  sidebarWidth: 260,
+  sidebarWidth: 220,
   sidebarSide: "left",
   floating: {
-    sidebar: { x: 0, y: 0, width: 260, height: 720, z: 2 },
-    main: { x: 280, y: 0, width: 760, height: 720, z: 1 },
+    sidebar: { x: 0, y: 0, width: 220, height: 720, z: 2 },
+    main: { x: 236, y: 0, width: 804, height: 720, z: 1 },
   },
 };
 
@@ -79,7 +79,7 @@ function readLayoutFromStorage(): ShellLayout {
 
     const coercePanel = (
       p: Partial<Panel> | undefined,
-      fallback: Panel
+      fallback: Panel,
     ): Panel => {
       const x = Number(p?.x);
       const y = Number(p?.y);
@@ -105,7 +105,7 @@ function readLayoutFromStorage(): ShellLayout {
       floating: {
         sidebar: coercePanel(
           floating?.sidebar,
-          DEFAULT_LAYOUT.floating.sidebar
+          DEFAULT_LAYOUT.floating.sidebar,
         ),
         main: coercePanel(floating?.main, DEFAULT_LAYOUT.floating.main),
       },
@@ -119,7 +119,7 @@ function clampPanelToContainer(
   panel: Panel,
   containerWidth: number,
   containerHeight: number,
-  minWidth: number
+  minWidth: number,
 ) {
   const width = clampNumber(panel.width, minWidth, containerWidth);
   const height = clampNumber(panel.height, PANEL_MIN_HEIGHT, containerHeight);
@@ -158,6 +158,46 @@ export default function DashboardShell({
     setHasHydratedLayout(true);
   }, []);
 
+  // Auto-tile panels on first load for consistent wide layout
+  React.useEffect(() => {
+    if (!hasHydratedLayout || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+
+    if (containerWidth > 0 && containerHeight > 0) {
+      const gap = 16;
+      const sidebarWidth = clampNumber(
+        220,
+        SIDEBAR_MIN_WIDTH,
+        Math.min(SIDEBAR_MAX_WIDTH, containerWidth - MAIN_MIN_WIDTH - gap),
+      );
+      const nextZ = nextZRef.current++;
+      setLayout((prev) => ({
+        ...prev,
+        floating: {
+          sidebar: {
+            x: 0,
+            y: 0,
+            width: sidebarWidth,
+            height: containerHeight,
+            z: nextZ + 1,
+          },
+          main: {
+            x: sidebarWidth + gap,
+            y: 0,
+            width: Math.max(
+              MAIN_MIN_WIDTH,
+              containerWidth - sidebarWidth - gap,
+            ),
+            height: containerHeight,
+            z: nextZ,
+          },
+        },
+      }));
+    }
+  }, [hasHydratedLayout]);
+
   const persistTimerRef = React.useRef<number | null>(null);
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -172,7 +212,7 @@ export default function DashboardShell({
             sidebarSide,
             mode,
             floating,
-          } satisfies ShellLayout)
+          } satisfies ShellLayout),
         );
       } catch {
         // ignore write failures (private mode, etc.)
@@ -210,35 +250,36 @@ export default function DashboardShell({
 
       setContainerSize({ width: containerWidth, height: containerHeight });
 
+      // Recalculate tiled layout on resize so panels remain full width/height
+      const gap = 16;
       setLayout((prev) => {
-        const sidebarNext = clampPanelToContainer(
-          prev.floating.sidebar,
-          containerWidth,
-          containerHeight,
-          SIDEBAR_MIN_WIDTH
-        );
-        const mainNext = clampPanelToContainer(
-          prev.floating.main,
-          containerWidth,
-          containerHeight,
-          MAIN_MIN_WIDTH
+        const sidebarWidth = clampNumber(
+          prev.sidebarWidth,
+          SIDEBAR_MIN_WIDTH,
+          Math.min(SIDEBAR_MAX_WIDTH, containerWidth - MAIN_MIN_WIDTH - gap),
         );
 
-        const sidebarUnchanged =
-          sidebarNext.x === prev.floating.sidebar.x &&
-          sidebarNext.y === prev.floating.sidebar.y &&
-          sidebarNext.width === prev.floating.sidebar.width &&
-          sidebarNext.height === prev.floating.sidebar.height;
+        const nextFloating = {
+          sidebar: {
+            x: 0,
+            y: 0,
+            width: sidebarWidth,
+            height: containerHeight,
+            z: prev.floating.sidebar.z,
+          },
+          main: {
+            x: sidebarWidth + gap,
+            y: 0,
+            width: Math.max(
+              MAIN_MIN_WIDTH,
+              containerWidth - sidebarWidth - gap,
+            ),
+            height: containerHeight,
+            z: prev.floating.main.z,
+          },
+        } satisfies ShellLayout["floating"];
 
-        const mainUnchanged =
-          mainNext.x === prev.floating.main.x &&
-          mainNext.y === prev.floating.main.y &&
-          mainNext.width === prev.floating.main.width &&
-          mainNext.height === prev.floating.main.height;
-
-        if (sidebarUnchanged && mainUnchanged) return prev;
-
-        return { ...prev, floating: { sidebar: sidebarNext, main: mainNext } };
+        return { ...prev, sidebarWidth, floating: nextFloating };
       });
     };
 
@@ -258,7 +299,7 @@ export default function DashboardShell({
     const onResize = () => {
       if (!isDesktopViewport()) {
         setLayout((prev) =>
-          prev.mode === "floating" ? { ...prev, mode: "split" } : prev
+          prev.mode === "floating" ? { ...prev, mode: "split" } : prev,
         );
       }
     };
@@ -297,7 +338,7 @@ export default function DashboardShell({
   };
 
   const onDividerPointerUpOrCancel = (
-    e: React.PointerEvent<HTMLDivElement>
+    e: React.PointerEvent<HTMLDivElement>,
   ) => {
     const dragState = dragStateRef.current;
     if (!dragState) return;
@@ -316,7 +357,7 @@ export default function DashboardShell({
       sidebarWidth: clampNumber(
         prev.sidebarWidth + delta,
         SIDEBAR_MIN_WIDTH,
-        SIDEBAR_MAX_WIDTH
+        SIDEBAR_MAX_WIDTH,
       ),
     }));
   };
@@ -335,7 +376,7 @@ export default function DashboardShell({
   const startFloatingDrag = (
     e: React.PointerEvent<HTMLDivElement>,
     panel: PanelKey,
-    action: "move" | "resize"
+    action: "move" | "resize",
   ) => {
     if (e.button !== 0) return;
     if (!containerRef.current) return;
@@ -384,7 +425,7 @@ export default function DashboardShell({
           },
           containerWidth,
           containerHeight,
-          minWidth
+          minWidth,
         );
         return {
           ...prev,
@@ -403,7 +444,7 @@ export default function DashboardShell({
       const height = clampNumber(
         start.height + dy,
         PANEL_MIN_HEIGHT,
-        Math.min(PANEL_MAX_HEIGHT, containerHeight)
+        Math.min(PANEL_MAX_HEIGHT, containerHeight),
       );
       const resized: Panel = clampPanelToContainer(
         {
@@ -414,7 +455,7 @@ export default function DashboardShell({
         },
         containerWidth,
         containerHeight,
-        minWidth
+        minWidth,
       );
 
       return {
@@ -530,7 +571,7 @@ export default function DashboardShell({
     const sidebarWidth = clampNumber(
       300,
       SIDEBAR_MIN_WIDTH,
-      Math.min(SIDEBAR_MAX_WIDTH, containerWidth - MAIN_MIN_WIDTH - gap)
+      Math.min(SIDEBAR_MAX_WIDTH, containerWidth - MAIN_MIN_WIDTH - gap),
     );
     const nextZ = nextZRef.current++;
     setLayout((prev) => ({
@@ -703,7 +744,7 @@ export default function DashboardShell({
                           onSidebarMenuAction(() =>
                             isMaximized("sidebar")
                               ? restorePanel("sidebar")
-                              : maximizePanel("sidebar")
+                              : maximizePanel("sidebar"),
                           )
                         }
                       >
@@ -850,88 +891,88 @@ export default function DashboardShell({
               <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col">
                 <div className="p-6 shrink-0">
                   <div className="relative flex items-center gap-3">
-                      <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
-                        {profile.initials}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold text-gray-900 truncate">
-                          {profile.fullName}
-                        </div>
-                        <div className="text-xs text-gray-500 truncate">
-                          {profile.departmentLine
-                            ? `${roleLabel(role)} • ${profile.departmentLine}`
-                            : roleLabel(role)}
-                        </div>
-                      </div>
-
-                      <div className="ml-auto flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
-                          aria-label={
-                            sidebarSide === "left"
-                              ? "Dock sidebar to the right"
-                              : "Dock sidebar to the left"
-                          }
-                          title={
-                            sidebarSide === "left"
-                              ? "Dock sidebar to the right"
-                              : "Dock sidebar to the left"
-                          }
-                          onClick={() =>
-                            setLayout((prev) => ({
-                              ...prev,
-                              sidebarSide:
-                                prev.sidebarSide === "left" ? "right" : "left",
-                            }))
-                          }
-                        >
-                          <ArrowLeftRight className="h-4 w-4" />
-                        </button>
-
-                        <button
-                          ref={sidebarMenuButtonRef}
-                          type="button"
-                          className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 hover:bg-black/5"
-                          aria-label="Layout options"
-                          aria-haspopup="menu"
-                          aria-expanded={sidebarMenuOpen}
-                          onClick={() => setSidebarMenuOpen((v) => !v)}
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                      </div>
-
-                      {sidebarMenuOpen && (
-                        <div
-                          ref={sidebarMenuRef}
-                          role="menu"
-                          className="absolute right-0 top-13 z-50 w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/10 p-1"
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            role="menuitem"
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
-                            onClick={() => onSidebarMenuAction(toggleMode)}
-                          >
-                            <ArrowLeftRight className="h-4 w-4 text-gray-600" />
-                            Switch to Float
-                          </button>
-
-                          <button
-                            type="button"
-                            role="menuitem"
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
-                            onClick={() => onSidebarMenuAction(resetLayout)}
-                          >
-                            <RotateCcw className="h-4 w-4 text-gray-600" />
-                            Reset layout
-                          </button>
-                        </div>
-                      )}
+                    <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
+                      {profile.initials}
                     </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {profile.fullName}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {profile.departmentLine
+                          ? `${roleLabel(role)} • ${profile.departmentLine}`
+                          : roleLabel(role)}
+                      </div>
+                    </div>
+
+                    <div className="ml-auto flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
+                        aria-label={
+                          sidebarSide === "left"
+                            ? "Dock sidebar to the right"
+                            : "Dock sidebar to the left"
+                        }
+                        title={
+                          sidebarSide === "left"
+                            ? "Dock sidebar to the right"
+                            : "Dock sidebar to the left"
+                        }
+                        onClick={() =>
+                          setLayout((prev) => ({
+                            ...prev,
+                            sidebarSide:
+                              prev.sidebarSide === "left" ? "right" : "left",
+                          }))
+                        }
+                      >
+                        <ArrowLeftRight className="h-4 w-4" />
+                      </button>
+
+                      <button
+                        ref={sidebarMenuButtonRef}
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 hover:bg-black/5"
+                        aria-label="Layout options"
+                        aria-haspopup="menu"
+                        aria-expanded={sidebarMenuOpen}
+                        onClick={() => setSidebarMenuOpen((v) => !v)}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {sidebarMenuOpen && (
+                      <div
+                        ref={sidebarMenuRef}
+                        role="menu"
+                        className="absolute right-0 top-13 z-50 w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/10 p-1"
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                          onClick={() => onSidebarMenuAction(toggleMode)}
+                        >
+                          <ArrowLeftRight className="h-4 w-4 text-gray-600" />
+                          Switch to Float
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                          onClick={() => onSidebarMenuAction(resetLayout)}
+                        >
+                          <RotateCcw className="h-4 w-4 text-gray-600" />
+                          Reset layout
+                        </button>
+                      </div>
+                    )}
                   </div>
+                </div>
 
                 <div className="flex-1 min-h-0 overflow-auto">
                   <nav className="px-4 pb-4 space-y-4">

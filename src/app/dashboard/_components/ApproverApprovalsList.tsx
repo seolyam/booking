@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Eye, Check } from "lucide-react";
+import { Search, Eye } from "lucide-react";
 import { useState } from "react";
 import type { ApproverDashboardRow } from "./ApproverDashboard";
 
 export default function ApproverApprovalsList({
   initialRows,
-  activeStatus = "Approved",
+  activeStatus = "Pending",
 }: {
   initialRows: ApproverDashboardRow[];
   activeStatus?: ApproverDashboardRow["statusLabel"];
@@ -45,7 +45,9 @@ export default function ApproverApprovalsList({
         ? "bg-green-50 text-green-600 ring-1 ring-green-100"
         : s === "Pending"
           ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-          : "bg-gray-100 text-gray-500 ring-1 ring-gray-200";
+          : s === "Rejected"
+            ? "bg-red-50 text-red-600 ring-1 ring-red-100"
+            : "bg-gray-100 text-gray-500 ring-1 ring-gray-200";
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
@@ -63,7 +65,9 @@ export default function ApproverApprovalsList({
             ? "bg-green-50 text-green-600 border-green-200 ring-2 ring-green-400"
             : status === "Pending"
               ? "bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-400"
-              : "bg-gray-100 text-gray-600 border-gray-200 ring-2 ring-gray-400"
+              : status === "Rejected"
+                ? "bg-red-50 text-red-600 border-red-200 ring-2 ring-red-400"
+                : "bg-gray-100 text-gray-600 border-gray-200 ring-2 ring-gray-400"
           : "bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
       }`}
     >
@@ -159,14 +163,14 @@ export default function ApproverApprovalsList({
                       <td className="py-5 pr-0 text-center">
                         {r.statusLabel === "Pending" ? (
                           <Link
-                            href={`/dashboard/approver/approvals/${r.budgetId}`}
+                            href={`/dashboard/approver/approvals/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 transition-colors shadow-sm"
                           >
-                            Approve <Check className="h-3.5 w-3.5" />
+                            View <Eye className="h-3.5 w-3.5" />
                           </Link>
                         ) : (
                           <Link
-                            href={`/dashboard/budget/${r.budgetId}`}
+                            href={`/dashboard/budget/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-gray-200/80 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-300/80 transition-colors"
                           >
                             View <Eye className="h-3.5 w-3.5" />

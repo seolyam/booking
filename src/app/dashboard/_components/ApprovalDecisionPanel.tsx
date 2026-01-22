@@ -6,14 +6,14 @@ import { finalizeBudget } from "@/actions/budget";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, Info, XCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 
 interface ApprovalDecisionPanelProps {
   budgetId: string;
   budgetStatus: string;
 }
 
-type ApprovalAction = "approve" | "request_info" | "reject";
+type ApprovalAction = "approve" | "reject";
 
 export default function ApprovalDecisionPanel({
   budgetId,
@@ -34,16 +34,7 @@ export default function ApprovalDecisionPanel({
     setErrorMessage("");
 
     try {
-      // For now, finalizeBudget only supports 'approve' and 'reject'
-      // We might need to handle 'request_info' specifically or extend finalizeBudget
-      const actionToSubmit =
-        selectedAction === "request_info" ? "reject" : selectedAction; // fallback if not updated
-
-      const result = await finalizeBudget(
-        budgetId,
-        actionToSubmit as "approve" | "reject",
-        comment,
-      );
+      const result = await finalizeBudget(budgetId, selectedAction, comment);
 
       if (result && "message" in result && result.message.includes("Failed")) {
         setErrorMessage(result.message);
@@ -95,29 +86,6 @@ export default function ApprovalDecisionPanel({
               <div className="font-bold text-gray-900">Approve</div>
               <div className="text-xs text-gray-500 font-medium">
                 Grant final approval
-              </div>
-            </div>
-          </div>
-        </button>
-
-        {/* Request Info Option */}
-        <button
-          onClick={() => setSelectedAction("request_info")}
-          disabled={!isReviewable}
-          className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-            selectedAction === "request_info"
-              ? "border-orange-400 bg-orange-50/30"
-              : "border-gray-100 hover:border-orange-200"
-          } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          <div className="flex items-start gap-3">
-            <Info
-              className={`h-5 w-5 mt-0.5 ${selectedAction === "request_info" ? "text-orange-500" : "text-gray-400"}`}
-            />
-            <div>
-              <div className="font-bold text-gray-900">Request info</div>
-              <div className="text-xs text-gray-500 font-medium">
-                Send to reviewer
               </div>
             </div>
           </div>

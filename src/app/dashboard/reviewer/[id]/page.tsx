@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
@@ -14,6 +14,9 @@ import { eq, and, inArray, asc } from "drizzle-orm";
 import ReviewPageClient from "./ReviewPageClient";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import { Calendar, AlertCircle, ChevronLeft, Bell, Clock } from "lucide-react";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function formatPhp(amount: string | number) {
   const n = typeof amount === "string" ? Number(amount) : amount;
@@ -52,10 +55,7 @@ export default async function ReviewBudgetDetailPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
@@ -348,13 +348,18 @@ export default async function ReviewBudgetDetailPage({
                     Timeline
                   </p>
                   <p className="text-xl font-bold text-gray-900">
-                    {formatDate(budget.start_date ?? budget.created_at)} to{" "}
-                    {formatDate(
-                      budget.end_date ??
-                        new Date(
-                          budget.created_at.getTime() +
-                            365 * 24 * 60 * 60 * 1000,
-                        ),
+                    {budget.start_date || budget.end_date ? (
+                      <>
+                        {budget.start_date
+                          ? formatDate(budget.start_date)
+                          : "Not set"}{" "}
+                        to{" "}
+                        {budget.end_date
+                          ? formatDate(budget.end_date)
+                          : "Not set"}
+                      </>
+                    ) : (
+                      "No timeline set."
                     )}
                   </p>
                 </div>
@@ -419,7 +424,9 @@ export default async function ReviewBudgetDetailPage({
                   Start Date
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {formatDate(budget.start_date ?? budget.created_at)}
+                  {budget.start_date
+                    ? formatDate(budget.start_date)
+                    : "Not set"}
                 </span>
               </div>
               <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
@@ -427,12 +434,7 @@ export default async function ReviewBudgetDetailPage({
                   End Date
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {formatDate(
-                    budget.end_date ??
-                      new Date(
-                        budget.created_at.getTime() + 365 * 24 * 60 * 60 * 1000,
-                      ),
-                  )}
+                  {budget.end_date ? formatDate(budget.end_date) : "Not set"}
                 </span>
               </div>
             </div>

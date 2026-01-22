@@ -56,11 +56,9 @@ export default function ReviewDecisionModal({
       const formData = new FormData();
       formData.append("budgetId", budgetId);
 
-      if (
-        selectedAction === "request_revision" ||
-        selectedAction === "reject"
-      ) {
-        formData.append("comment", comment);
+      const trimmedComment = comment.trim();
+      if (trimmedComment) {
+        formData.append("comment", trimmedComment);
       }
 
       // Add checklist state

@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
@@ -15,6 +15,9 @@ import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
 } from "../../requests/[id]/_components/WorkflowProgress";
+
+// Force dynamic rendering - requires auth and DB access
+export const dynamic = "force-dynamic";
 
 function formatPhp(amount: string) {
   const n = Number(amount);
@@ -188,18 +191,42 @@ export default async function BudgetDetailPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Try to parse as budget_number first (numeric or BUD-XXX format)
+  let budgetNum: number | null = null;
+  if (id.startsWith("BUD-")) {
+    budgetNum = parseInt(id.slice(4), 10);
+  } else {
+    const parsed = parseInt(id, 10);
+    if (!isNaN(parsed)) {
+      budgetNum = parsed;
+    }
+  }
+
+  // Fetch budget by budget_number if we have one, otherwise by UUID for backward compatibility
+  let budget;
+  if (budgetNum !== null) {
+    const result = await db
+      .select()
+      .from(budgets)
+      .where(eq(budgets.budget_number, budgetNum))
+      .limit(1);
+    budget = result[0];
+  } else {
+    const result = await db
+      .select()
+      .from(budgets)
+      .where(eq(budgets.id, id))
+      .limit(1);
+    budget = result[0];
+  }
+
+  if (!budget) {
+    return notFound();
+  }
+
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
-
-  const budget = await db.query.budgets.findFirst({
-    where: eq(budgets.id, id),
-  });
-
-  if (!budget) notFound();
 
   const [requester] = await db
     .select({

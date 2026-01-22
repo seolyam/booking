@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { departmentEnum, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 
 const FALLBACK_DEPARTMENT = "Finance" as const;
 
@@ -11,7 +12,7 @@ function asNonEmptyString(value: unknown): string | null {
 }
 
 function getDepartmentFromMetadata(
-  metadata: Record<string, unknown> | null | undefined
+  metadata: Record<string, unknown> | null | undefined,
 ): string {
   // The DB enum is strict; only accept exact matches. Otherwise fall back.
   const department = asNonEmptyString(metadata?.department);
@@ -22,7 +23,7 @@ function getDepartmentFromMetadata(
 }
 
 function getRoleFromMetadata(
-  metadata: Record<string, unknown> | null | undefined
+  metadata: Record<string, unknown> | null | undefined,
 ): "requester" | "reviewer" | "approver" | "superadmin" {
   const role = asNonEmptyString(metadata?.requestedRole);
   if (
@@ -45,14 +46,28 @@ export type AppUser = {
   requestedRole: "requester" | "reviewer" | "approver" | "superadmin";
 };
 
+// Cached lookup for existing users - reduces DB calls on navigation
+const getCachedAppUser = unstable_cache(
+  async (userId: string) => {
+    const existing = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    return existing;
+  },
+  ["app-user"],
+  {
+    revalidate: 60, // Cache for 60 seconds
+    tags: ["app-user"],
+  },
+);
+
 export async function getOrCreateAppUserFromAuthUser(authUser: {
   id: string;
   email: string | null;
   user_metadata?: Record<string, unknown> | null;
 }): Promise<AppUser> {
-  const existing = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
-  });
+  // Use cached lookup first
+  const existing = await getCachedAppUser(authUser.id);
 
   if (existing) {
     return {
