@@ -8,6 +8,7 @@ import {
   budgets,
   users,
   budgetMilestones,
+  projects,
 } from "@/db/schema";
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -198,6 +199,9 @@ export default async function RequestViewPage({
   // Requester view: only allow viewing your own requests.
   const budget = await db.query.budgets.findFirst({
     where: sql`${budgets.id} = ${id} and ${budgets.user_id} = ${user.id}`,
+    with: {
+      project: true,
+    },
   });
 
   if (!budget) notFound();
@@ -244,9 +248,13 @@ export default async function RequestViewPage({
     actorRows.map((a) => [a.id, a.full_name || a.email]),
   );
 
-  const projectName = items[0]?.description ?? "Budget Request";
+  // Display title as "Project Name - Budget Request Name"
+  const projectDisplayName = budget.project?.name || "No Project";
+  const budgetRequestName =
+    budget.title || items[0]?.description || "Budget Request";
+  const displayTitle = `${projectDisplayName} - ${budgetRequestName}`;
   const projectSub =
-    `BUD-${budget.budget_number} • ${requester?.department ?? ""}`.trim();
+    `${budget.custom_id || `BUD-${budget.budget_number}`} • ${requester?.department ?? ""}`.trim();
 
   const status = statusMeta(budget.status);
   const steps = computeSteps(budget.status);
@@ -321,13 +329,21 @@ export default async function RequestViewPage({
           <div className="min-w-0">
             <div className="flex items-center gap-3">
               <div className="text-lg font-semibold text-gray-900 truncate">
-                {projectName}
+                {displayTitle}
               </div>
               <span className={typePill(budget.budget_type)}>
                 {budget.budget_type === "capex" ? "CapEx" : "OpEx"}
               </span>
             </div>
             <div className="mt-1 text-xs text-gray-500">{projectSub}</div>
+            {budget.project && (
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <span className="text-gray-500">Project:</span>
+                <span className="font-medium text-gray-700">
+                  {budget.project.project_code} - {budget.project.name}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
