@@ -198,6 +198,39 @@ export default function CreateBudgetPage() {
     setMilestones(milestones.filter((_, i) => i !== index));
   };
 
+  // Sanitize integer-only input (allows empty string while typing)
+  const sanitizeInteger = (val: string) => {
+    const cleaned = val.replace(/\D/g, "");
+    return cleaned;
+  };
+
+  // Sanitize currency/decimal input with up to 2 decimals (allows empty string)
+  const sanitizeCurrency = (val: string) => {
+    // Remove invalid chars, keep digits and first dot
+    let cleaned = val.replace(/[^\d.]/g, "");
+    const firstDot = cleaned.indexOf(".");
+    if (firstDot !== -1) {
+      // Keep only first dot
+      cleaned =
+        cleaned.slice(0, firstDot + 1) +
+        cleaned.slice(firstDot + 1).replace(/\./g, "");
+      // Limit to 2 decimal places
+      const [intPart, decPart] = cleaned.split(".");
+      cleaned = intPart + "." + (decPart ?? "").slice(0, 2);
+      // Handle leading zeros like ".5" -> "0.5"
+      if (cleaned.startsWith(".")) cleaned = "0" + cleaned;
+    }
+    return cleaned;
+  };
+
+  const preventNonNumericKeys: React.KeyboardEventHandler<HTMLInputElement> = (
+    e,
+  ) => {
+    if (["e", "E", "+", "-"].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const totalBudget = items.reduce(
     (sum, item) =>
       sum +
@@ -742,25 +775,33 @@ export default function CreateBudgetPage() {
                     </td>
                     <td className="px-4 py-3">
                       <Input
-                        type="number"
-                        min="1"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        min={1}
                         placeholder="0"
                         value={item.quantity}
-                        onChange={(e) =>
-                          updateItem(index, "quantity", e.target.value)
-                        }
+                        onKeyDown={preventNonNumericKeys}
+                        onChange={(e) => {
+                          const v = sanitizeInteger(e.target.value);
+                          updateItem(index, "quantity", v);
+                        }}
                         className="border-gray-300 w-20"
                       />
                     </td>
                     <td className="px-4 py-3">
                       <Input
-                        type="number"
-                        min="0"
+                        type="text"
+                        inputMode="decimal"
+                        pattern="^\\d*\\.?\\d{0,2}$"
+                        min={0}
                         step="0.01"
                         value={item.unitCost}
-                        onChange={(e) =>
-                          updateItem(index, "unitCost", e.target.value)
-                        }
+                        onKeyDown={preventNonNumericKeys}
+                        onChange={(e) => {
+                          const v = sanitizeCurrency(e.target.value);
+                          updateItem(index, "unitCost", v);
+                        }}
                         className="border-gray-300 w-28"
                       />
                     </td>
