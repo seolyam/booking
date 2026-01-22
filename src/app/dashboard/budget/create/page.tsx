@@ -58,6 +58,7 @@ export default function CreateBudgetPage() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
   // Budget Type State
+  const [budgetTitle, setBudgetTitle] = useState("");
   const [budgetType, setBudgetType] = useState<"capex" | "opex" | "">("");
   const [budgetIdPreview, setBudgetIdPreview] = useState<string>("");
 
@@ -267,6 +268,10 @@ export default function CreateBudgetPage() {
     }
 
     // Validate budget type
+    if (!budgetTitle.trim()) {
+      setError("Please enter a Budget Request Name.");
+      return;
+    }
     if (!budgetType) {
       setError("Please select a Budget Type (CapEx or OpEx).");
       return;
@@ -310,6 +315,7 @@ export default function CreateBudgetPage() {
 
       // Create budget draft
       const draftFd = new FormData();
+      draftFd.set("title", budgetTitle.trim());
       draftFd.set("budgetType", budgetType);
       draftFd.set("fiscalYear", String(new Date().getFullYear()));
       if (projectId) draftFd.set("projectId", projectId);
@@ -567,6 +573,30 @@ export default function CreateBudgetPage() {
             )}
           </div>
         )}
+      </section>
+
+      {/* Budget Request Details */}
+      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span>📝</span> Budget Request Details
+        </h2>
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <Label className="text-gray-700 font-medium mb-2 block">
+              Budget Request Name <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              placeholder="e.g., HV Test Equipment Upgrade (Q2 2026)"
+              value={budgetTitle}
+              onChange={(e) => setBudgetTitle(e.target.value)}
+              className="border-gray-300"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Give this request a clear, concise name. It is separate from the
+              project name.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* Phase 2: Budget Type Selection */}
