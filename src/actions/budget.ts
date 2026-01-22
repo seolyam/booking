@@ -54,6 +54,7 @@ const CreateBudgetSchema = z.object({
   budgetType: z.enum(["capex", "opex"]),
   fiscalYear: z.number().int().min(2025).max(2030),
   projectId: z.string().uuid().optional().nullable(),
+  title: z.string().trim().min(3).max(200),
 });
 
 export async function createBudgetDraft(
@@ -79,11 +80,13 @@ export async function createBudgetDraft(
   const endDateStr = formData.get("endDate") as string | null;
   const projectIdStr = formData.get("projectId") as string | null;
   const projectId = projectIdStr && projectIdStr !== "" ? projectIdStr : null;
+  const title = (formData.get("title") as string | null) ?? null;
 
   const validated = CreateBudgetSchema.safeParse({
     budgetType,
     fiscalYear,
     projectId,
+    title: (title ?? "").toString(),
   });
 
   if (!validated.success) {
@@ -99,6 +102,7 @@ export async function createBudgetDraft(
       .values({
         user_id: user.id,
         project_id: validated.data.projectId ?? null,
+        title: validated.data.title,
         budget_type: validated.data.budgetType,
         fiscal_year: validated.data.fiscalYear,
         status: "draft",
