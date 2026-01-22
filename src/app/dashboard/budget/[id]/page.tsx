@@ -11,6 +11,9 @@ import {
 } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { editFinalDecision } from "@/actions/budget";
 import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
@@ -176,20 +179,15 @@ function computeSteps(status: string): WorkflowStep[] {
   });
 }
 
-type MilestoneLabel =
-  | "Submitted"
-  | "Reviewed"
-  | "Verified"
-  | "Approved"
-  | "Rejected"
-  | "Revision requested";
-
 export default async function BudgetDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const { id } = await params;
+  const { error, success } = await searchParams;
 
   // Try to parse as budget_number first (numeric or BUD-XXX format)
   let budgetNum: number | null = null;
@@ -227,6 +225,15 @@ export default async function BudgetDetailPage({
   const user = await getAuthUser();
 
   if (!user) redirect("/login");
+
+  const currentUser = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+  });
+  const canEditDecision =
+    currentUser?.role === "approver" || currentUser?.role === "superadmin";
+  const canShowDecisionEditPanel =
+    canEditDecision &&
+    (budget.status === "approved" || budget.status === "rejected");
 
   const [requester] = await db
     .select({
@@ -292,26 +299,21 @@ export default async function BudgetDetailPage({
   const projectSub =
     `${budgetDisplayId} • ${requester?.department ?? ""}`.trim();
 
-  const milestoneLines = (() => {
-    const labels = new Set<MilestoneLabel | null>(
-      logs.map((l): MilestoneLabel | null => {
-        if (l.action === "submit") return "Submitted";
-        if (l.action === "reviewed") return "Reviewed";
-        if (l.action === "verify") return "Verified";
-        if (l.action === "approve") return "Approved";
-        if (l.action === "reject") return "Rejected";
-        if (l.action === "request_revision") return "Revision requested";
-        return null;
-      }),
-    );
-
-    return Array.from(labels)
-      .filter((v): v is MilestoneLabel => v !== null)
-      .slice(0, 5);
-  })();
-
   return (
     <div className="space-y-6">
+      {error ? (
+        <Alert variant="destructive">
+          <AlertTitle>Action blocked</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+      {success ? (
+        <Alert>
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -333,14 +335,114 @@ export default async function BudgetDetailPage({
           </div>
         </div>
 
-        <div
-          className={
-            "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold " +
-            status.cls
-          }
-        >
-          {status.icon}
-          {status.label}
+        <div className="flex flex-col items-end gap-2">
+          <div
+            className={
+              "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold " +
+              status.cls
+            }
+          >
+            {status.icon}
+            {status.label}
+          </div>
+
+          {canShowDecisionEditPanel ? (
+            <details className="w-full max-w-sm">
+              <summary
+                className={
+                  buttonVariants({ variant: "outline", size: "sm" }) +
+                  " cursor-pointer list-none [&::-webkit-details-marker]:hidden"
+                }
+              >
+                Edit Decision
+              </summary>
+
+              <div className="mt-3 rounded-2xl bg-white shadow-sm ring-1 ring-black/5 p-4">
+                <div className="text-sm font-semibold text-gray-900">
+                  Change Decision
+                </div>
+                <div className="mt-1 text-xs text-gray-600">
+                  Explanation is required for audit purposes.
+                </div>
+
+                <form action={editFinalDecision} className="mt-4 space-y-3">
+                  <input type="hidden" name="budgetId" value={budget.id} />
+                  <input
+                    type="hidden"
+                    name="returnTo"
+                    value={`/dashboard/budget/${id}`}
+                  />
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-700">
+                      Explanation <span className="text-red-600">*</span>
+                    </label>
+                    <textarea
+                      name="reason"
+                      required
+                      rows={3}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/10"
+                      placeholder="Please specify why you are changing your decision..."
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {budget.status === "approved" ? (
+                      <>
+                        <button
+                          type="submit"
+                          name="intent"
+                          value="reject"
+                          className={buttonVariants({
+                            variant: "destructive",
+                            size: "sm",
+                          })}
+                        >
+                          Reject decision
+                        </button>
+                        <button
+                          type="submit"
+                          name="intent"
+                          value="revoke"
+                          className={buttonVariants({
+                            variant: "outline",
+                            size: "sm",
+                          })}
+                        >
+                          Revoke decision
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="submit"
+                          name="intent"
+                          value="approve"
+                          className={buttonVariants({
+                            variant: "default",
+                            size: "sm",
+                          })}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="submit"
+                          name="intent"
+                          value="revoke"
+                          className={buttonVariants({
+                            variant: "outline",
+                            size: "sm",
+                          })}
+                        >
+                          Revoke decision
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </details>
+          ) : null}
         </div>
       </div>
 
