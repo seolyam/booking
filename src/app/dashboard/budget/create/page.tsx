@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
-import { Bell, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { Bell, Trash2, FolderPlus, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,13 @@ import {
   submitBudget,
 } from "@/actions/budget";
 import {
+  createProject,
+  generateProjectCode,
+  getActiveProjects,
+  getBudgetCategories,
+  getNextBudgetIdPreview,
+} from "@/actions/project";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,11 +28,44 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type Project = {
+  id: string;
+  project_code: string;
+  name: string;
+  department: string;
+  description: string | null;
+};
+
+type BudgetCategory = {
+  id: string;
+  name: string;
+  description: string | null;
+  allowed_type: "CAPEX" | "OPEX" | "BOTH";
+};
+
 export default function CreateBudgetPage() {
   const router = useRouter();
-  const reactId = useId();
+
+  // Project State
+  const [projectMode, setProjectMode] = useState<"new" | "existing" | null>(
+    null,
+  );
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectCode, setNewProjectCode] = useState("");
+  const [newProjectDescription, setNewProjectDescription] = useState("");
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+
+  // Budget Type State
   const [budgetType, setBudgetType] = useState<"capex" | "opex" | "">("");
-  const [projectTitle, setProjectTitle] = useState("");
+  const [budgetIdPreview, setBudgetIdPreview] = useState<string>("");
+
+  // Categories State
+  const [categories, setCategories] = useState<BudgetCategory[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
+  // Form State
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState([
@@ -38,14 +78,92 @@ export default function CreateBudgetPage() {
   const [varianceExplanation, setVarianceExplanation] = useState("");
   const MAX_MILESTONES = 6;
 
-  const projectId = useMemo(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const suffix = reactId.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    const short = (suffix.slice(-5) || "00000").padStart(5, "0");
-    return `PROJ-${year}${month}-${short}`;
-  }, [reactId]);
+  // Load projects on mount
+  useEffect(() => {
+    async function loadProjects() {
+      setIsLoadingProjects(true);
+      try {
+        const result = await getActiveProjects();
+        if (result.success && result.projects) {
+          setProjects(result.projects as Project[]);
+        }
+      } catch (e) {
+        console.error("Error loading projects:", e);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    }
+    loadProjects();
+  }, []);
+
+  // Generate project code when new project mode is selected
+  useEffect(() => {
+    async function loadProjectCode() {
+      if (projectMode === "new" && !newProjectCode) {
+        try {
+          const code = await generateProjectCode();
+          setNewProjectCode(code);
+        } catch (e) {
+          console.error("Error generating project code:", e);
+        }
+      }
+    }
+    loadProjectCode();
+  }, [projectMode, newProjectCode]);
+
+  // Load categories when budget type changes
+  useEffect(() => {
+    async function loadCategories() {
+      if (!budgetType) {
+        setCategories([]);
+        return;
+      }
+
+      setIsLoadingCategories(true);
+      try {
+        const result = await getBudgetCategories(budgetType);
+        if (result.success && result.categories) {
+          setCategories(result.categories as BudgetCategory[]);
+        }
+      } catch (e) {
+        console.error("Error loading categories:", e);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    }
+    loadCategories();
+  }, [budgetType]);
+
+  // Get budget ID preview when type changes
+  useEffect(() => {
+    async function loadBudgetIdPreview() {
+      if (!budgetType) {
+        setBudgetIdPreview("");
+        return;
+      }
+
+      try {
+        const result = await getNextBudgetIdPreview(budgetType);
+        if (result.success && result.previewId) {
+          setBudgetIdPreview(result.previewId);
+        }
+      } catch (e) {
+        console.error("Error loading budget ID preview:", e);
+      }
+    }
+    loadBudgetIdPreview();
+  }, [budgetType]);
+
+  // Clear item categories when budget type changes (since categories are filtered)
+  useEffect(() => {
+    setItems((prevItems) =>
+      prevItems.map((item) => ({ ...item, category: "" })),
+    );
+  }, [budgetType]);
+
+  const selectedProject = useMemo(() => {
+    return projects.find((p) => p.id === selectedProjectId);
+  }, [projects, selectedProjectId]);
 
   const addItem = () => {
     setItems([
@@ -88,24 +206,36 @@ export default function CreateBudgetPage() {
     0,
   );
 
-  const categories = [
-    "Equipment",
-    "Labor",
-    "Materials",
-    "Services",
-    "Software",
-    "Maintenance",
-    "Parts",
-    "Testing",
-    "Installation",
-  ];
+  const handleProjectModeChange = useCallback((mode: "new" | "existing") => {
+    setProjectMode(mode);
+    setSelectedProjectId("");
+    setNewProjectName("");
+    setNewProjectDescription("");
+    setError(null);
+  }, []);
 
   const persistBudget = async (mode: "draft" | "submit") => {
     setError(null);
 
-    const selectedType = budgetType || "";
-    if (!selectedType) {
-      setError("Please select a Budget Type.");
+    // Validate project selection
+    if (!projectMode) {
+      setError("Please select whether this is for a new or existing project.");
+      return;
+    }
+
+    if (projectMode === "existing" && !selectedProjectId) {
+      setError("Please select an existing project.");
+      return;
+    }
+
+    if (projectMode === "new" && !newProjectName.trim()) {
+      setError("Please enter a project name.");
+      return;
+    }
+
+    // Validate budget type
+    if (!budgetType) {
+      setError("Please select a Budget Type (CapEx or OpEx).");
       return;
     }
 
@@ -124,9 +254,32 @@ export default function CreateBudgetPage() {
 
     setIsSaving(true);
     try {
+      let projectId: string | null = null;
+
+      // Create new project if needed
+      if (projectMode === "new") {
+        const projectFd = new FormData();
+        projectFd.set("name", newProjectName.trim());
+        projectFd.set("projectCode", newProjectCode);
+        if (newProjectDescription.trim()) {
+          projectFd.set("description", newProjectDescription.trim());
+        }
+
+        const projectRes = await createProject(projectFd);
+        if (!projectRes.success || !projectRes.project) {
+          setError(projectRes.message ?? "Failed to create project.");
+          return;
+        }
+        projectId = projectRes.project.id;
+      } else {
+        projectId = selectedProjectId;
+      }
+
+      // Create budget draft
       const draftFd = new FormData();
-      draftFd.set("budgetType", selectedType);
+      draftFd.set("budgetType", budgetType);
       draftFd.set("fiscalYear", String(new Date().getFullYear()));
+      if (projectId) draftFd.set("projectId", projectId);
       if (startDate) draftFd.set("startDate", startDate);
       if (endDate) draftFd.set("endDate", endDate);
 
@@ -138,6 +291,7 @@ export default function CreateBudgetPage() {
 
       const budgetId = draftRes.budgetId;
 
+      // Add budget items
       for (const item of items) {
         const desc = item.description.trim();
         if (
@@ -169,7 +323,7 @@ export default function CreateBudgetPage() {
         const milestoneFd = new FormData();
         milestoneFd.set("budgetId", budgetId);
         milestoneFd.set("description", milestoneDesc.trim());
-        milestoneFd.set("targetQuarter", "Q1"); // Default quarter
+        milestoneFd.set("targetQuarter", "Q1");
 
         const milestoneRes = await addBudgetMilestone(null, milestoneFd);
         if (
@@ -177,7 +331,6 @@ export default function CreateBudgetPage() {
           milestoneRes.message !== "Milestone added"
         ) {
           console.error("Failed to add milestone:", milestoneRes.message);
-          // Continue even if milestone fails
         }
       }
 
@@ -201,7 +354,7 @@ export default function CreateBudgetPage() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -214,108 +367,279 @@ export default function CreateBudgetPage() {
         </div>
         <Bell className="h-6 w-6 text-gray-400" />
       </div>
+
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
-      {/* Project Information Section */}
-      <section className="mb-8">
+
+      {/* Phase 1: Project Scope */}
+      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>📋</span> Project Information
+          <Building2 className="h-5 w-5" /> Project Scope
         </h2>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <Label
-              htmlFor="projectTitle"
-              className="text-gray-700 font-medium mb-2 block"
-            >
-              Project Title <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="projectTitle"
-              placeholder="Enter project name"
-              value={projectTitle}
-              onChange={(e) => setProjectTitle(e.target.value)}
-              className="mt-2 border-gray-300"
-            />
-          </div>
+        <p className="text-gray-600 mb-4">
+          Is this budget for a new project or an existing one?
+        </p>
 
-          <div>
-            <Label className="text-gray-700 font-medium mb-2 block">
-              Project ID
-            </Label>
-            <Input
-              value={projectId}
-              disabled
-              className="mt-2 bg-gray-50 border-gray-300 text-gray-600"
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <button
+            type="button"
+            onClick={() => handleProjectModeChange("new")}
+            className={`p-4 border-2 rounded-lg text-left transition-all flex items-center gap-3 ${
+              projectMode === "new"
+                ? "border-green-400 bg-green-50"
+                : "border-gray-200 bg-white hover:border-gray-300"
+            }`}
+          >
+            <FolderPlus
+              className={`h-6 w-6 ${projectMode === "new" ? "text-green-600" : "text-gray-400"}`}
             />
-          </div>
+            <div>
+              <div
+                className={`font-semibold ${projectMode === "new" ? "text-green-700" : "text-gray-900"}`}
+              >
+                New Project
+              </div>
+              <div
+                className={`text-sm ${projectMode === "new" ? "text-green-600" : "text-gray-600"}`}
+              >
+                Create a new project for this budget
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleProjectModeChange("existing")}
+            className={`p-4 border-2 rounded-lg text-left transition-all flex items-center gap-3 ${
+              projectMode === "existing"
+                ? "border-blue-400 bg-blue-50"
+                : "border-gray-200 bg-white hover:border-gray-300"
+            }`}
+          >
+            <Building2
+              className={`h-6 w-6 ${projectMode === "existing" ? "text-blue-600" : "text-gray-400"}`}
+            />
+            <div>
+              <div
+                className={`font-semibold ${projectMode === "existing" ? "text-blue-700" : "text-gray-900"}`}
+              >
+                Existing Project
+              </div>
+              <div
+                className={`text-sm ${projectMode === "existing" ? "text-blue-600" : "text-gray-600"}`}
+              >
+                Add to an existing project
+              </div>
+            </div>
+          </button>
         </div>
 
-        {/* Budget Type */}
-        <div className="mt-6">
-          <Label className="text-gray-700 font-medium mb-3 block">
-            Budget Type <span className="text-red-500">*</span>
-          </Label>
-          <div className="grid grid-cols-2 gap-4">
-            {/* CapEx */}
-            <button
-              type="button"
-              onClick={() => setBudgetType("capex")}
-              className={`p-4 border-2 rounded-lg text-left transition-all ${
-                budgetType === "capex"
-                  ? "border-blue-400 bg-blue-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
-              }`}
+        {/* New Project Form */}
+        {projectMode === "new" && (
+          <div className="space-y-4 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-700 font-medium mb-2 block">
+                  Project Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="e.g., Bacolod Substation Rehab"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  className="border-gray-300"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-700 font-medium mb-2 block">
+                  Project Code
+                </Label>
+                <Input
+                  value={newProjectCode}
+                  onChange={(e) => setNewProjectCode(e.target.value)}
+                  className="bg-gray-50 border-gray-300"
+                  placeholder="Auto-generated"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-gray-700 font-medium mb-2 block">
+                Project Description
+              </Label>
+              <Textarea
+                placeholder="Brief description of the project..."
+                value={newProjectDescription}
+                onChange={(e) => setNewProjectDescription(e.target.value)}
+                className="border-gray-300"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Existing Project Selection */}
+        {projectMode === "existing" && (
+          <div className="pt-4 border-t border-gray-100">
+            <Label className="text-gray-700 font-medium mb-2 block">
+              Select Project <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={selectedProjectId}
+              onValueChange={setSelectedProjectId}
+              disabled={isLoadingProjects}
             >
+              <SelectTrigger className="border-gray-300">
+                <SelectValue
+                  placeholder={
+                    isLoadingProjects
+                      ? "Loading projects..."
+                      : "Select a project"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent position="popper" sideOffset={5}>
+                {projects.length === 0 ? (
+                  <SelectItem value="none" disabled>
+                    No projects available
+                  </SelectItem>
+                ) : (
+                  projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-gray-500">
+                          {project.project_code}
+                        </span>
+                        <span>{project.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+
+            {selectedProject && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="text-sm">
+                  <span className="font-medium text-blue-800">Selected:</span>{" "}
+                  <span className="text-blue-700">{selectedProject.name}</span>
+                </div>
+                {selectedProject.description && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    {selectedProject.description}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Phase 2: Budget Type Selection */}
+      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span>📋</span> Budget Type & Classification
+        </h2>
+
+        <div className="grid grid-cols-2 gap-4">
+          {/* CapEx */}
+          <button
+            type="button"
+            onClick={() => setBudgetType("capex")}
+            className={`p-4 border-2 rounded-lg text-left transition-all ${
+              budgetType === "capex"
+                ? "border-blue-400 bg-blue-50"
+                : "border-gray-200 bg-white hover:border-gray-300"
+            }`}
+          >
+            <div className="flex items-center justify-between">
               <div
-                className={`font-semibold ${
+                className={`font-semibold text-lg ${
                   budgetType === "capex" ? "text-blue-700" : "text-gray-900"
                 }`}
               >
                 CapEx
               </div>
-              <div
-                className={`text-sm mt-1 ${
-                  budgetType === "capex" ? "text-blue-600" : "text-gray-600"
-                }`}
-              >
-                Capital Expenditure - Long term assets and infrastructure
-              </div>
-            </button>
-
-            {/* OpEx */}
-            <button
-              type="button"
-              onClick={() => setBudgetType("opex")}
-              className={`p-4 border-2 rounded-lg text-left transition-all ${
-                budgetType === "opex"
-                  ? "border-purple-400 bg-purple-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
+              {budgetType === "capex" && budgetIdPreview && (
+                <span className="text-xs font-mono bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  {budgetIdPreview}
+                </span>
+              )}
+            </div>
+            <div
+              className={`text-sm mt-1 ${
+                budgetType === "capex" ? "text-blue-600" : "text-gray-600"
               }`}
             >
+              Capital Expenditure - Long term assets and infrastructure
+            </div>
+            <div
+              className={`text-xs mt-2 ${
+                budgetType === "capex" ? "text-blue-500" : "text-gray-400"
+              }`}
+            >
+              Examples: Heavy Machinery, Vehicles, Buildings
+            </div>
+          </button>
+
+          {/* OpEx */}
+          <button
+            type="button"
+            onClick={() => setBudgetType("opex")}
+            className={`p-4 border-2 rounded-lg text-left transition-all ${
+              budgetType === "opex"
+                ? "border-purple-400 bg-purple-50"
+                : "border-gray-200 bg-white hover:border-gray-300"
+            }`}
+          >
+            <div className="flex items-center justify-between">
               <div
-                className={`font-semibold ${
+                className={`font-semibold text-lg ${
                   budgetType === "opex" ? "text-purple-700" : "text-gray-900"
                 }`}
               >
                 OpEx
               </div>
-              <div
-                className={`text-sm mt-1 ${
-                  budgetType === "opex" ? "text-purple-600" : "text-gray-600"
-                }`}
-              >
-                Operating Expenditure - Day-to-day operational costs
-              </div>
-            </button>
-          </div>
+              {budgetType === "opex" && budgetIdPreview && (
+                <span className="text-xs font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                  {budgetIdPreview}
+                </span>
+              )}
+            </div>
+            <div
+              className={`text-sm mt-1 ${
+                budgetType === "opex" ? "text-purple-600" : "text-gray-600"
+              }`}
+            >
+              Operating Expenditure - Day-to-day operational costs
+            </div>
+            <div
+              className={`text-xs mt-2 ${
+                budgetType === "opex" ? "text-purple-500" : "text-gray-400"
+              }`}
+            >
+              Examples: Office Supplies, Utilities, Subscriptions
+            </div>
+          </button>
         </div>
+
+        {budgetType && budgetIdPreview && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Generated ID:</span>
+              <span
+                className={`font-mono font-semibold ${budgetType === "capex" ? "text-blue-600" : "text-purple-600"}`}
+              >
+                {budgetIdPreview}
+              </span>
+            </div>
+          </div>
+        )}
       </section>
+
       {/* Cost Items Section */}
-      <section>
+      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <span>₱</span> Cost Items <span className="text-red-500">*</span>
@@ -328,6 +652,12 @@ export default function CreateBudgetPage() {
             Add item +
           </Button>
         </div>
+
+        {!budgetType && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+            Please select a Budget Type above to see available categories.
+          </div>
+        )}
 
         {/* Cost Items Table */}
         <div className="border border-gray-200 rounded-lg">
@@ -367,14 +697,34 @@ export default function CreateBudgetPage() {
                         onValueChange={(val) =>
                           updateItem(index, "category", val)
                         }
+                        disabled={!budgetType || isLoadingCategories}
                       >
-                        <SelectTrigger className="border-gray-300">
-                          <SelectValue placeholder="Select Category" />
+                        <SelectTrigger className="border-gray-300 min-w-45">
+                          <SelectValue
+                            placeholder={
+                              isLoadingCategories
+                                ? "Loading..."
+                                : "Select Category"
+                            }
+                          />
                         </SelectTrigger>
                         <SelectContent position="popper" sideOffset={5}>
                           {categories.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat}
+                            <SelectItem key={cat.id} value={cat.name}>
+                              <div className="flex items-center gap-2">
+                                <span>{cat.name}</span>
+                                {cat.allowed_type !== "BOTH" && (
+                                  <span
+                                    className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                      cat.allowed_type === "CAPEX"
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-purple-100 text-purple-700"
+                                    }`}
+                                  >
+                                    {cat.allowed_type}
+                                  </span>
+                                )}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -411,7 +761,7 @@ export default function CreateBudgetPage() {
                         onChange={(e) =>
                           updateItem(index, "unitCost", e.target.value)
                         }
-                        className="border-gray-300 w-24"
+                        className="border-gray-300 w-28"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -459,8 +809,9 @@ export default function CreateBudgetPage() {
           </div>
         </div>
       </section>
+
       {/* Timeline Section */}
-      <section className="mb-8 pt-8">
+      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span>📅</span> Timeline
         </h2>
@@ -554,8 +905,9 @@ export default function CreateBudgetPage() {
           )}
         </div>
       </section>
+
       {/* Variance Explanation Section */}
-      <section className="mb-8">
+      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span>ⓘ</span> Variance Explanation
         </h2>
@@ -573,8 +925,9 @@ export default function CreateBudgetPage() {
           />
         </div>
       </section>
+
       {/* Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 pb-8">
         <Button
           type="button"
           className="bg-orange-600 hover:bg-orange-700 text-white"
@@ -602,7 +955,7 @@ export default function CreateBudgetPage() {
         >
           {isSaving ? "Submitting…" : "✓ Submit request"}
         </Button>
-      </div>{" "}
+      </div>
     </div>
   );
 }
