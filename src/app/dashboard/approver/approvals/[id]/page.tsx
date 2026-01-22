@@ -255,9 +255,9 @@ export default async function ApproverReviewDetailPage({
         {/* Main Content Area */}
         <div className="lg:col-span-8 space-y-10">
           {/* Project Info Card */}
-          <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 relative overflow-hidden">
             {/* Status Pill */}
-            <div className="absolute top-10 right-10 flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full border border-orange-100">
+            <div className="absolute top-6 right-6 flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full border border-orange-100">
               <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
               <span className="text-sm font-bold text-orange-600">Pending</span>
             </div>
@@ -265,7 +265,7 @@ export default async function ApproverReviewDetailPage({
             <div className="space-y-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-3xl font-black text-gray-900 leading-tight">
+                  <h2 className="text-2xl font-bold text-gray-900 leading-tight">
                     {items[0]?.description || "Substation Transformer Upgrade"}
                   </h2>
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
@@ -291,7 +291,7 @@ export default async function ApproverReviewDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Total amount
                   </p>
-                  <p className="text-3xl font-black text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {formatPhp(budget.total_amount)}
                   </p>
                 </div>
@@ -328,9 +328,9 @@ export default async function ApproverReviewDetailPage({
           </div>
 
           {/* Cost Breakdown */}
-          <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-black text-gray-900">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-gray-900">
                 ₱ Cost Breakdown
               </span>
             </div>
@@ -340,7 +340,7 @@ export default async function ApproverReviewDetailPage({
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className="p-6 bg-gray-50/50 rounded-2xl flex justify-between items-center border border-gray-100/50"
+                    className="p-4 bg-gray-50 rounded-xl flex justify-between items-center"
                   >
                     <div className="space-y-1">
                       <p className="text-lg font-bold text-gray-900">
@@ -355,54 +355,54 @@ export default async function ApproverReviewDetailPage({
                     </p>
                   </div>
                 ))}
-                <div className="flex justify-end pt-6 border-t border-gray-100">
-                  <p className="text-2xl font-bold text-gray-900">
+                <div className="flex justify-end pt-6 border-t border-gray-200">
+                  <p className="text-xl font-bold text-gray-900">
                     Total:{" "}
-                    <span className="font-black ml-2 text-3xl">
+                    <span className="font-bold ml-2 text-2xl">
                       {formatPhp(budget.total_amount)}
                     </span>
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="text-gray-400 text-lg font-medium italic p-10 text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-200">
+              <div className="text-gray-400 text-base font-medium italic p-10 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
                 No budget items found.
               </div>
             )}
           </div>
 
           {/* Project Timeline & Milestones */}
-          <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-6 h-6 text-gray-900" />
-              <h2 className="text-2xl font-black text-gray-900">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-gray-700" />
+              <h2 className="text-lg font-semibold text-gray-900">
                 Project timeline & milestones
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex justify-between items-center p-5 bg-gray-50/50 rounded-2xl border border-gray-100/50">
-                <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">
+              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Start Date
                 </span>
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-sm font-semibold text-gray-900">
                   {budget.start_date
                     ? formatDate(budget.start_date)
                     : "Not set"}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-5 bg-gray-50/50 rounded-2xl border border-gray-100/50">
-                <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">
+              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   End Date
                 </span>
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-sm font-semibold text-gray-900">
                   {budget.end_date ? formatDate(budget.end_date) : "Not set"}
                 </span>
               </div>
             </div>
 
-            <div className="p-8 bg-gray-50/30 rounded-3xl border border-gray-100/50">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">
+            <div className="p-6 bg-gray-50 rounded-xl">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
                 Milestones:
               </p>
               {milestones.length === 0 ? (
@@ -430,12 +430,19 @@ export default async function ApproverReviewDetailPage({
             </div>
           </div>
 
+          {/* Quick Stats */}
+          <QuickStatsCard
+            projectDuration={projectDuration}
+            costItems={items.length}
+            averageItemsCost={formatPhp(averageItemsCost)}
+          />
+
           {/* Variance Explanation */}
           {budget.variance_explanation && (
-            <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-6 h-6 text-gray-900" />
-                <h2 className="text-2xl font-black text-gray-900">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-gray-700" />
+                <h2 className="text-lg font-semibold text-gray-900">
                   Variance Explanation
                 </h2>
               </div>
@@ -443,7 +450,7 @@ export default async function ApproverReviewDetailPage({
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                   Requested by {requester?.full_name || "Lebron James"}
                 </p>
-                <p className="text-lg text-gray-700 font-medium leading-relaxed italic">
+                <p className="text-sm text-gray-700 font-medium leading-relaxed italic">
                   &ldquo;{budget.variance_explanation}&rdquo;
                 </p>
               </div>
@@ -470,13 +477,6 @@ export default async function ApproverReviewDetailPage({
 
         {/* Sidebar Decision Panel & Stats */}
         <div className="lg:col-span-4 lg:sticky lg:top-10 space-y-8">
-          {/* Quick Stats */}
-          <QuickStatsCard
-            projectDuration={projectDuration}
-            costItems={items.length}
-            averageItemsCost={formatPhp(averageItemsCost)}
-          />
-
           {/* Review Checklist */}
           <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-6">
             <div className="flex items-center gap-3">
