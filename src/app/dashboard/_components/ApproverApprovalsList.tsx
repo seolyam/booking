@@ -16,6 +16,21 @@ export default function ApproverApprovalsList({
   const [currentStatus, setCurrentStatus] =
     useState<ApproverDashboardRow["statusLabel"]>(activeStatus);
 
+  type SortKey =
+    | "budgetId"
+    | "projectName"
+    | "type"
+    | "amount"
+    | "status"
+    | "date"
+    | "dateApproved"
+    | "action";
+
+  const [sortKey, setSortKey] = useState<SortKey>(
+    activeStatus === "Approved" ? "dateApproved" : "date",
+  );
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
   const filteredRows = initialRows.filter((r) => {
     const matchesSearch =
       r.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -23,6 +38,44 @@ export default function ApproverApprovalsList({
       r.projectSub.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = r.statusLabel === currentStatus;
     return matchesSearch && matchesStatus;
+  });
+
+  const parsePhp = (s: string) => {
+    const n = Number(s.replace(/[^0-9.-]+/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const parseDateLike = (label: string) => {
+    // label is MM-DD-YY
+    const [mm, dd, yy] = label.split("-").map((v) => Number(v));
+    if (!mm || !dd || !yy) return 0;
+    const fullYear = 2000 + yy;
+    return new Date(fullYear, mm - 1, dd).getTime();
+  };
+
+  const sortedRows = [...filteredRows].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const cmp = (x: number | string, y: number | string) => {
+      if (typeof x === "number" && typeof y === "number") return x - y;
+      return String(x).localeCompare(String(y));
+    };
+
+    if (sortKey === "budgetId") return dir * cmp(a.displayId, b.displayId);
+    if (sortKey === "projectName")
+      return dir * cmp(a.projectName, b.projectName);
+    if (sortKey === "type") return dir * cmp(a.type, b.type);
+    if (sortKey === "amount")
+      return dir * (parsePhp(a.amount) - parsePhp(b.amount));
+    if (sortKey === "status") return dir * cmp(a.statusLabel, b.statusLabel);
+    if (sortKey === "date")
+      return dir * (parseDateLike(a.dateLabel) - parseDateLike(b.dateLabel));
+    if (sortKey === "dateApproved") {
+      const aT = a.approvedAt ? Date.parse(a.approvedAt) : 0;
+      const bT = b.approvedAt ? Date.parse(b.approvedAt) : 0;
+      return dir * (aT - bT);
+    }
+    // action: no meaningful ordering
+    return 0;
   });
 
   const typePill = (type: "CapEx" | "OpEx") => {
@@ -58,7 +111,13 @@ export default function ApproverApprovalsList({
 
   const filterBtn = (status: ApproverDashboardRow["statusLabel"]) => (
     <button
-      onClick={() => setCurrentStatus(status)}
+      onClick={() => {
+        setCurrentStatus(status);
+        if (status === "Approved") {
+          setSortKey("dateApproved");
+          setSortDir("desc");
+        }
+      }}
       className={`px-6 py-1.5 rounded-lg text-sm font-bold transition-all border ${
         currentStatus === status
           ? status === "Approved"
@@ -99,7 +158,35 @@ export default function ApproverApprovalsList({
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Order by
+                </span>
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value as SortKey)}
+                  className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334]"
+                >
+                  <option value="budgetId">Budget ID</option>
+                  <option value="projectName">Project name</option>
+                  <option value="type">Type</option>
+                  <option value="amount">Amount</option>
+                  <option value="status">Status</option>
+                  <option value="date">Date</option>
+                  <option value="dateApproved">Date approved</option>
+                  <option value="action">Action</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+                  }
+                  className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-700 hover:bg-gray-50"
+                >
+                  {sortDir === "desc" ? "↓" : "↑"}
+                </button>
+              </div>
               {filterBtn("Approved")}
               {filterBtn("Pending")}
               {filterBtn("Rejected")}
@@ -115,7 +202,9 @@ export default function ApproverApprovalsList({
                   <th className="pb-4 pr-4 font-bold">TYPE</th>
                   <th className="pb-4 pr-4 font-bold text-center">AMOUNT</th>
                   <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
-                  <th className="pb-4 pr-4 font-bold text-center">DATE</th>
+                  <th className="pb-4 pr-4 font-bold text-center">
+                    {currentStatus === "Approved" ? "DATE APPROVED" : "DATE"}
+                  </th>
                   <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
                 </tr>
               </thead>
@@ -130,7 +219,7 @@ export default function ApproverApprovalsList({
                     </td>
                   </tr>
                 ) : (
-                  filteredRows.map((r) => (
+                  sortedRows.map((r) => (
                     <tr
                       key={r.budgetId}
                       className={`group hover:bg-gray-50/50 transition-colors ${
@@ -158,7 +247,9 @@ export default function ApproverApprovalsList({
                         {statusPill(r.statusLabel)}
                       </td>
                       <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
-                        {r.dateLabel}
+                        {currentStatus === "Approved"
+                          ? (r.approvedDateLabel ?? r.dateLabel)
+                          : r.dateLabel}
                       </td>
                       <td className="py-5 pr-0 text-center">
                         {r.statusLabel === "Pending" ? (
