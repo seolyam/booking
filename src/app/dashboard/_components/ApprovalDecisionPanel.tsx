@@ -183,7 +183,6 @@ export default function ApprovalDecisionPanel({
           <p className="text-xs text-red-600 font-medium">{errorMessage}</p>
         </div>
       )}
-
     </>
   );
 
@@ -210,9 +209,7 @@ export default function ApprovalDecisionPanel({
             </button>
           </div>
 
-          <div className="px-6 py-6 overflow-y-auto">
-            {panelContent}
-          </div>
+          <div className="px-6 py-6 overflow-y-auto">{panelContent}</div>
 
           <div className="px-6 py-5 border-t border-gray-100 bg-white">
             <Button
