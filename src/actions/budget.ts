@@ -421,7 +421,7 @@ export async function rejectBudget(formData: FormData): Promise<void> {
 
 export async function finalizeBudget(
   budgetId: string,
-  decision: "approve" | "reject",
+  decision: "approve" | "reject" | "revoke",
   comment?: string,
 ) {
   const user = await getUser();
@@ -444,12 +444,32 @@ export async function finalizeBudget(
   });
   if (!existingBudget) return { message: "Budget not found" };
 
-  const approvableStatuses = ["verified", "verified_by_reviewer"];
-  if (!approvableStatuses.includes(existingBudget.status)) {
-    return { message: "Budget is not in an approvable state" };
+  const status = existingBudget.status;
+  const canApproveReject =
+    status === "verified" || status === "verified_by_reviewer";
+  const canEditApproved = status === "approved";
+  const canEditRejected = status === "rejected";
+
+  if (decision === "approve") {
+    if (!(canApproveReject || canEditRejected)) {
+      return { message: "Budget is not in an approvable state" };
+    }
+  } else if (decision === "reject") {
+    if (!(canApproveReject || canEditApproved)) {
+      return { message: "Budget is not in a rejectable state" };
+    }
+  } else if (decision === "revoke") {
+    if (!(canEditApproved || canEditRejected)) {
+      return { message: "Budget is not in a revocable state" };
+    }
   }
 
-  const newStatus = decision === "approve" ? "approved" : "rejected";
+  const newStatus =
+    decision === "approve"
+      ? "approved"
+      : decision === "reject"
+        ? "rejected"
+        : "verified";
 
   await db
     .update(budgets)
@@ -465,7 +485,8 @@ export async function finalizeBudget(
     comment: comment?.trim() ? comment.trim() : undefined,
   });
 
-  revalidatePath("/dashboard/budget");
+  invalidateDashboardCaches();
+  revalidatePath("/dashboard/approver/approvals");
   return { message: `Budget ${decision}` };
 }
 
