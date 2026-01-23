@@ -161,21 +161,12 @@ export default function ApproverApprovalsList({
                         {r.dateLabel}
                       </td>
                       <td className="py-5 pr-0 text-center">
-                        {r.statusLabel === "Pending" ? (
-                          <Link
-                            href={`/dashboard/approver/approvals/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 transition-colors shadow-sm"
-                          >
-                            View <Eye className="h-3.5 w-3.5" />
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/dashboard/budget/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-gray-200/80 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-300/80 transition-colors"
-                          >
-                            View <Eye className="h-3.5 w-3.5" />
-                          </Link>
-                        )}
+                        <Link
+                          href={`/dashboard/budget/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-200/80 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-300/80 transition-colors"
+                        >
+                          View <Eye className="h-3.5 w-3.5" />
+                        </Link>
                       </td>
                     </tr>
                   ))

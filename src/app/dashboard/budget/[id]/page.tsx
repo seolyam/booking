@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
+import ApprovalDecisionButton from "@/app/dashboard/_components/ApprovalDecisionButton";
 import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
@@ -113,6 +114,7 @@ function actionLabel(action: string) {
   if (action === "request_revision") return "Revision requested";
   if (action === "approve") return "Approved";
   if (action === "reject") return "Rejected";
+  if (action === "revoke") return "Revoked";
   return action
     .split("_")
     .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
@@ -128,6 +130,8 @@ function auditDescription(action: string) {
   if (action === "approve")
     return "Budget approved - Added to approved budget list";
   if (action === "reject") return "Budget rejected";
+  if (action === "revoke")
+    return "Decision revoked - Returned to pending approval";
   return "";
 }
 
@@ -176,14 +180,6 @@ function computeSteps(status: string): WorkflowStep[] {
   });
 }
 
-type MilestoneLabel =
-  | "Submitted"
-  | "Reviewed"
-  | "Verified"
-  | "Approved"
-  | "Rejected"
-  | "Revision requested";
-
 export default async function BudgetDetailPage({
   params,
 }: {
@@ -227,6 +223,13 @@ export default async function BudgetDetailPage({
   const user = await getAuthUser();
 
   if (!user) redirect("/login");
+
+  const appUser = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+  });
+
+  const canApprove =
+    appUser?.role === "approver" || appUser?.role === "superadmin";
 
   const [requester] = await db
     .select({
@@ -292,24 +295,6 @@ export default async function BudgetDetailPage({
   const projectSub =
     `${budgetDisplayId} • ${requester?.department ?? ""}`.trim();
 
-  const milestoneLines = (() => {
-    const labels = new Set<MilestoneLabel | null>(
-      logs.map((l): MilestoneLabel | null => {
-        if (l.action === "submit") return "Submitted";
-        if (l.action === "reviewed") return "Reviewed";
-        if (l.action === "verify") return "Verified";
-        if (l.action === "approve") return "Approved";
-        if (l.action === "reject") return "Rejected";
-        if (l.action === "request_revision") return "Revision requested";
-        return null;
-      }),
-    );
-
-    return Array.from(labels)
-      .filter((v): v is MilestoneLabel => v !== null)
-      .slice(0, 5);
-  })();
-
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -333,14 +318,23 @@ export default async function BudgetDetailPage({
           </div>
         </div>
 
-        <div
-          className={
-            "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold " +
-            status.cls
-          }
-        >
-          {status.icon}
-          {status.label}
+        <div className="flex items-center gap-3">
+          {canApprove && (
+            <ApprovalDecisionButton
+              budgetId={budget.id}
+              budgetStatus={budget.status}
+              redirectHref={null}
+            />
+          )}
+          <div
+            className={
+              "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold " +
+              status.cls
+            }
+          >
+            {status.icon}
+            {status.label}
+          </div>
         </div>
       </div>
 

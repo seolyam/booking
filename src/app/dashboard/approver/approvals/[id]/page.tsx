@@ -21,9 +21,8 @@ import {
 } from "lucide-react";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import ReviewerAssessmentCard from "../../../_components/ReviewerAssessmentCard";
-import ApprovalDecisionPanel from "../../../_components/ApprovalDecisionPanel";
+import ApprovalDecisionWrapper from "../_components/ApprovalDecisionWrapper";
 import QuickStatsCard from "../../../_components/QuickStatsCard";
-import ReviewChecklist from "@/components/ReviewChecklist";
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
@@ -519,7 +518,7 @@ export default async function ApproverReviewDetailPage({
             </div>
           </div>
 
-          <ApprovalDecisionPanel
+          <ApprovalDecisionWrapper
             budgetId={budget.id}
             budgetStatus={budget.status}
           />
