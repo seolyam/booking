@@ -7,17 +7,17 @@ import {
   auditLogs,
   users,
   reviewChecklists,
-  budgetMilestones,
   budgetProjectCounters,
   archivedBudgets,
   archivedBudgetItems,
-  archivedBudgetMilestones,
   archivedAuditLogs,
 } from "@/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 type AuthedUser = {
   id: string;
@@ -63,7 +63,7 @@ function formatProjectCode(budgetType: "capex" | "opex", n: number) {
 }
 
 async function archiveFiscalYearTx(params: {
-  tx: typeof db;
+  tx: DbTx;
   fiscalYearToArchive: number;
 }) {
   const { tx, fiscalYearToArchive } = params;
@@ -141,24 +141,6 @@ async function archiveFiscalYearTx(params: {
   `);
 
   await tx.execute(sql`
-    insert into ${archivedBudgetMilestones} (
-      archived_budget_id,
-      description,
-      target_quarter,
-      created_at
-    )
-    select
-      ab.id,
-      bm.description,
-      bm.target_quarter,
-      bm.created_at
-    from ${budgetMilestones} bm
-    inner join ${budgets} b on b.id = bm.budget_id
-    inner join ${archivedBudgets} ab on ab.source_budget_id = b.id
-    where b.fiscal_year = ${fiscalYearToArchive}
-  `);
-
-  await tx.execute(sql`
     insert into ${archivedAuditLogs} (
       archived_budget_id,
       actor_id,
@@ -187,7 +169,7 @@ async function archiveFiscalYearTx(params: {
 }
 
 async function allocateProjectCodeTx(params: {
-  tx: typeof db;
+  tx: DbTx;
   fiscalYear: number;
   budgetType: "capex" | "opex";
 }) {
@@ -317,35 +299,6 @@ export async function createBudgetDraft(
   } catch (e) {
     console.error(e);
     return { message: "Failed to create budget" };
-  }
-}
-
-export async function addBudgetMilestone(
-  prevState: unknown,
-  formData: FormData,
-) {
-  const user = await getUser();
-  if (!user) return { message: "Unauthorized" };
-
-  const budgetId = formData.get("budgetId") as string;
-  const description = formData.get("description") as string;
-  const targetQuarter = formData.get("targetQuarter") as string | null;
-
-  if (!budgetId || !description) {
-    return { message: "Budget ID and description are required" };
-  }
-
-  try {
-    await db.insert(budgetMilestones).values({
-      budget_id: budgetId,
-      description,
-      target_quarter: targetQuarter,
-    });
-
-    return { message: "Milestone added" };
-  } catch (e) {
-    console.error(e);
-    return { message: "Failed to add milestone" };
   }
 }
 
@@ -1022,54 +975,6 @@ export async function deleteBudgetItem(formData: FormData) {
 }
 
 // Delete a budget milestone
-export async function deleteBudgetMilestone(formData: FormData) {
-  const user = await getUser();
-  if (!user) {
-    return { message: "Unauthorized" };
-  }
-
-  const milestoneId = formData.get("milestoneId") as string;
-
-  if (!milestoneId) {
-    return { message: "Missing milestone ID" };
-  }
-
-  try {
-    // Verify milestone exists
-    const milestone = await db.query.budgetMilestones.findFirst({
-      where: eq(budgetMilestones.id, milestoneId),
-    });
-
-    if (!milestone) {
-      return { message: "Milestone not found" };
-    }
-
-    // Verify budget belongs to user
-    const budget = await db.query.budgets.findFirst({
-      where: eq(budgets.id, milestone.budget_id),
-    });
-
-    if (!budget || budget.user_id !== user.id) {
-      return { message: "Unauthorized" };
-    }
-
-    // Only allow deletion on revision_requested budgets
-    if (budget.status !== "revision_requested") {
-      return { message: "Cannot delete milestones for this budget status" };
-    }
-
-    await db
-      .delete(budgetMilestones)
-      .where(eq(budgetMilestones.id, milestoneId));
-
-    revalidatePath(`/dashboard/budget/edit/${milestone.budget_id}`);
-    return { message: "Milestone deleted successfully" };
-  } catch (error) {
-    console.error("deleteBudgetMilestone error:", error);
-    return { message: "Failed to delete milestone" };
-  }
-}
-
 // Resubmit a budget after revision
 export async function resubmitBudget(
   budgetId: string,
