@@ -7,7 +7,7 @@ import { inArray, sql } from "drizzle-orm";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { formatDateShort, formatPhp } from "@/lib/dashboardData";
-import { MatchedProjectsAccordion } from "./matched-projects-accordion";
+import { MatchedProjectsCompare } from "./matched-projects-compare";
 
 export const dynamic = "force-dynamic";
 
@@ -304,8 +304,6 @@ function matchByProjectCode(params: {
   return matched;
 }
 
-
-
 function CompareSection({
   title,
   type,
@@ -394,7 +392,7 @@ function CompareSection({
         </div>
       </div>
 
-      <MatchedProjectsAccordion
+      <MatchedProjectsCompare
         matchedRows={matchedRows}
         lastYear={lastYear}
         currentYear={currentYear}
