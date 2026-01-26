@@ -4,7 +4,6 @@ import { db } from "@/db";
 import {
   archivedBudgets,
   archivedBudgetItems,
-  archivedBudgetMilestones,
   archivedAuditLogs,
   users,
 } from "@/db/schema";
@@ -88,12 +87,6 @@ export default async function ArchivedBudgetDetailPage({
     .from(archivedBudgetItems)
     .where(eq(archivedBudgetItems.archived_budget_id, budget.id))
     .orderBy(desc(archivedBudgetItems.total_cost));
-
-  const milestones = await db
-    .select()
-    .from(archivedBudgetMilestones)
-    .where(eq(archivedBudgetMilestones.archived_budget_id, budget.id))
-    .orderBy(asc(archivedBudgetMilestones.created_at));
 
   const logs = await db
     .select()
@@ -196,36 +189,6 @@ export default async function ArchivedBudgetDetailPage({
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-xl border border-black/10 bg-white">
-            <div className="p-5 border-b border-black/10">
-              <div className="text-base font-semibold text-gray-900">
-                Milestones
-              </div>
-              <div className="text-sm text-gray-600">
-                Planned milestones snapshot
-              </div>
-            </div>
-            <div className="p-5">
-              {milestones.length === 0 ? (
-                <div className="text-sm text-gray-500">
-                  No milestones recorded.
-                </div>
-              ) : (
-                <ol className="space-y-2">
-                  {milestones.map((m) => (
-                    <li key={m.id} className="text-sm text-gray-900">
-                      {m.description}
-                      <div className="text-xs text-gray-500">
-                        {m.target_quarter ?? "—"} •{" "}
-                        {formatDateShort(m.created_at)}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
-          </div>
-
           <div className="rounded-xl border border-black/10 bg-white">
             <div className="p-5 border-b border-black/10">
               <div className="text-base font-semibold text-gray-900">

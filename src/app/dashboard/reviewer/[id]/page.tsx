@@ -3,14 +3,8 @@ import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
-import {
-  budgets,
-  budgetItems,
-  budgetMilestones,
-  users,
-  reviewChecklists,
-} from "@/db/schema";
-import { eq, and, inArray, asc } from "drizzle-orm";
+import { budgets, budgetItems, users, reviewChecklists } from "@/db/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import ReviewPageClient from "./ReviewPageClient";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import { Calendar, AlertCircle, ChevronLeft, Bell, Clock } from "lucide-react";
@@ -121,11 +115,6 @@ export default async function ReviewBudgetDetailPage({
     })
     .from(budgetItems)
     .where(eq(budgetItems.budget_id, budget.id));
-
-  const milestones = await db.query.budgetMilestones.findMany({
-    where: eq(budgetMilestones.budget_id, budget.id),
-    orderBy: [asc(budgetMilestones.created_at)],
-  });
 
   // Get review checklist for this reviewer
   let checklist: (typeof reviewChecklists.$inferSelect)[] = [];
@@ -414,7 +403,7 @@ export default async function ReviewBudgetDetailPage({
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-gray-700" />
               <h2 className="text-lg font-bold text-gray-900">
-                Project timeline & milestones
+                Project timeline
               </h2>
             </div>
 
@@ -437,34 +426,6 @@ export default async function ReviewBudgetDetailPage({
                   {budget.end_date ? formatDate(budget.end_date) : "Not set"}
                 </span>
               </div>
-            </div>
-
-            <div className="p-5 bg-gray-50/30 rounded-2xl border border-gray-50">
-              <p className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider opacity-60">
-                Milestones:
-              </p>
-              {milestones.length === 0 ? (
-                <div className="text-sm text-gray-600">No milestones set.</div>
-              ) : (
-                <ul className="space-y-2">
-                  {milestones.map((m) => (
-                    <li
-                      key={m.id}
-                      className="flex items-start gap-2 text-sm font-semibold text-gray-600"
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5" />
-                      <div className="min-w-0">
-                        <div className="truncate">{m.description}</div>
-                        {m.target_quarter ? (
-                          <div className="text-xs text-gray-500">
-                            {m.target_quarter}
-                          </div>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
           </div>
 

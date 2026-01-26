@@ -2,13 +2,7 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import {
-  auditLogs,
-  budgetItems,
-  budgets,
-  users,
-  budgetMilestones,
-} from "@/db/schema";
+import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
 import WorkflowProgress, {
@@ -227,11 +221,6 @@ export default async function RequestViewPage({
     orderBy: [desc(budgetItems.total_cost)],
   });
 
-  const milestones = await db.query.budgetMilestones.findMany({
-    where: eq(budgetMilestones.budget_id, budget.id),
-    orderBy: [asc(budgetMilestones.created_at)],
-  });
-
   const logs = await db.query.auditLogs.findMany({
     where: eq(auditLogs.budget_id, budget.id),
     orderBy: [asc(auditLogs.timestamp)],
@@ -406,31 +395,6 @@ export default async function RequestViewPage({
             {!budget.start_date && !budget.end_date && (
               <div className="text-sm text-gray-600">No timeline set.</div>
             )}
-
-            <div className="pt-2">
-              <div className="text-sm font-semibold text-gray-900">
-                Milestones:
-              </div>
-              {milestones.length === 0 ? (
-                <div className="mt-2 text-sm text-gray-600">
-                  No milestones set.
-                </div>
-              ) : (
-                <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                  {milestones.map((m) => (
-                    <li key={m.id} className="flex items-center gap-2">
-                      <span aria-hidden="true">•</span>
-                      <span>{m.description}</span>
-                      {m.target_quarter && (
-                        <span className="text-xs text-gray-500">
-                          ({m.target_quarter})
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           </div>
 
           {budget.variance_explanation ? (
