@@ -1,3 +1,4 @@
+import React from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
@@ -318,6 +319,152 @@ function matchByProjectCode(params: {
   return matched;
 }
 
+function MatchedProjectsAccordion({
+  matchedRows,
+  lastYear,
+  currentYear,
+  title,
+}: {
+  matchedRows: MatchedProjectRow[];
+  lastYear: number;
+  currentYear: number;
+  title: string;
+}) {
+  const [expandAll, setExpandAll] = React.useState(false);
+
+  if (matchedRows.length === 0) {
+    return (
+      <div className="p-6 pt-0">
+        <div className="text-sm font-semibold text-gray-900 mb-2">
+          Matched projects ({title})
+        </div>
+        <div className="rounded-lg border border-black/10 bg-gray-50 p-8 text-center text-gray-500">
+          No {title} projects with project codes found to compare.
+        </div>
+      </div>
+    );
+  }
+
+  const rowsToShow = expandAll ? matchedRows : [matchedRows[0]];
+
+  return (
+    <div className="p-6 pt-0 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-semibold text-gray-900">
+          Matched projects ({title})
+        </div>
+        {matchedRows.length > 1 && (
+          <button
+            onClick={() => setExpandAll(!expandAll)}
+            className="text-xs font-medium text-blue-600 hover:text-blue-700"
+          >
+            {expandAll ? "Show less" : `Show all (${matchedRows.length})`}
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {rowsToShow.map((m) => {
+          const lastAmount = m.last ? safeNumber(m.last.amount) : 0;
+          const currentAmount = m.current ? safeNumber(m.current.amount) : 0;
+          const delta = currentAmount - lastAmount;
+
+          return (
+            <details
+              key={m.projectCode}
+              className="rounded-lg border border-black/10 bg-white group"
+            >
+              <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50">
+                <div className="flex items-center gap-3 flex-1">
+                  <span className="font-medium text-gray-900">
+                    {m.projectCode}
+                  </span>
+                  <div className="text-xs text-gray-500">
+                    {m.last && m.current ? "Both years" : m.last ? "Last year only" : "Current year only"}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-sm font-medium">
+                  <span className={delta >= 0 ? "text-green-700" : "text-red-700"}>
+                    {delta >= 0 ? "+" : ""}
+                    {formatPhp(String(delta))}
+                  </span>
+                  <svg
+                    className="w-5 h-5 text-gray-600 group-open:rotate-180 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    />
+                  </svg>
+                </div>
+              </summary>
+
+              <div className="border-t border-black/10 bg-gray-50 p-4 space-y-4">
+                {m.last && (
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 mb-2">
+                      {lastYear} (Last Year)
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {formatPhp(m.last.amount)}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {m.last.projectName}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {m.last.department} • {m.last.date}
+                        </div>
+                        <div className="mt-2">
+                          <span className={statusPill(m.last.status)}>
+                            {m.last.status.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {m.current && (
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 mb-2">
+                      {currentYear} (This Year)
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {formatPhp(m.current.amount)}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {m.current.projectName}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {m.current.department} • {m.current.date}
+                        </div>
+                        <div className="mt-2">
+                          <span className={statusPill(m.current.status)}>
+                            {m.current.status.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </details>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CompareSection({
   title,
   type,
@@ -406,124 +553,12 @@ function CompareSection({
         </div>
       </div>
 
-      <div className="p-6 pt-0">
-        <div className="text-sm font-semibold text-gray-900 mb-2">
-          Matched projects ({title})
-        </div>
-        <div className="overflow-x-auto rounded-lg border border-black/10">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-600">
-              <tr>
-                <th className="text-left px-4 py-3">Project Code</th>
-                <th className="text-left px-4 py-3">Last year ({lastYear})</th>
-                <th className="text-left px-4 py-3">
-                  This year ({currentYear})
-                </th>
-                <th className="text-left px-4 py-3">Δ Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matchedRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-8 text-center text-gray-500"
-                  >
-                    No {title} projects with project codes found to compare.
-                  </td>
-                </tr>
-              ) : (
-                matchedRows.slice(0, 50).map((m) => {
-                  const lastAmount = m.last ? safeNumber(m.last.amount) : 0;
-                  const currentAmount = m.current
-                    ? safeNumber(m.current.amount)
-                    : 0;
-                  const delta = currentAmount - lastAmount;
-
-                  return (
-                    <tr
-                      key={m.projectCode}
-                      className="border-t border-black/10"
-                    >
-                      <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
-                        {m.current?.href ? (
-                          <Link
-                            href={m.current.href}
-                            className="hover:underline"
-                          >
-                            {m.projectCode}
-                          </Link>
-                        ) : m.last?.href ? (
-                          <Link href={m.last.href} className="hover:underline">
-                            {m.projectCode}
-                          </Link>
-                        ) : (
-                          m.projectCode
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {m.last ? (
-                          <div>
-                            <div className="font-medium text-gray-900 whitespace-nowrap">
-                              {formatPhp(m.last.amount)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {m.last.projectName} • {m.last.department || "—"}{" "}
-                              • {m.last.date}
-                            </div>
-                            <div className="mt-1">
-                              <span className={statusPill(m.last.status)}>
-                                {m.last.status.replace(/_/g, " ")}
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-gray-500">—</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {m.current ? (
-                          <div>
-                            <div className="font-medium text-gray-900 whitespace-nowrap">
-                              {formatPhp(m.current.amount)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {m.current.projectName} •{" "}
-                              {m.current.department || "—"} • {m.current.date}
-                            </div>
-                            <div className="mt-1">
-                              <span className={statusPill(m.current.status)}>
-                                {m.current.status.replace(/_/g, " ")}
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-gray-500">—</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-medium whitespace-nowrap">
-                        <span
-                          className={
-                            delta >= 0 ? "text-green-700" : "text-red-700"
-                          }
-                        >
-                          {delta >= 0 ? "+" : ""}
-                          {formatPhp(String(delta))}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-        {matchedRows.length > 50 ? (
-          <div className="text-xs text-gray-500 mt-2">
-            Showing first 50 rows.
-          </div>
-        ) : null}
-      </div>
+      <MatchedProjectsAccordion
+        matchedRows={matchedRows}
+        lastYear={lastYear}
+        currentYear={currentYear}
+        title={title}
+      />
     </section>
   );
 }
