@@ -2,13 +2,7 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import {
-  auditLogs,
-  budgetItems,
-  budgets,
-  users,
-  budgetMilestones,
-} from "@/db/schema";
+import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
 import WorkflowProgress, {
@@ -176,14 +170,6 @@ function computeSteps(status: string): WorkflowStep[] {
   });
 }
 
-type MilestoneLabel =
-  | "Submitted"
-  | "Reviewed"
-  | "Verified"
-  | "Approved"
-  | "Rejected"
-  | "Revision requested";
-
 export default async function RequestViewPage({
   params,
 }: {
@@ -191,14 +177,32 @@ export default async function RequestViewPage({
 }) {
   const { id } = await params;
 
+  const decodedId = decodeURIComponent(id);
+  const looksLikeProjectCode = /^(CapEx|OpEx)-\d+$/i.test(decodedId);
+  const looksLikeBudLabel = decodedId.startsWith("BUD-");
+  const numericId =
+    !looksLikeProjectCode && !looksLikeBudLabel ? Number(decodedId) : NaN;
+
   const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
   // Requester view: only allow viewing your own requests.
-  const budget = await db.query.budgets.findFirst({
-    where: sql`${budgets.id} = ${id} and ${budgets.user_id} = ${user.id}`,
-  });
+  const budget = looksLikeProjectCode
+    ? await db.query.budgets.findFirst({
+        where: sql`${budgets.project_code} = ${decodedId} and ${budgets.user_id} = ${user.id}`,
+      })
+    : looksLikeBudLabel
+      ? await db.query.budgets.findFirst({
+          where: sql`${budgets.budget_number} = ${parseInt(decodedId.slice(4), 10)} and ${budgets.user_id} = ${user.id}`,
+        })
+      : Number.isFinite(numericId)
+        ? await db.query.budgets.findFirst({
+            where: sql`${budgets.budget_number} = ${numericId} and ${budgets.user_id} = ${user.id}`,
+          })
+        : await db.query.budgets.findFirst({
+            where: sql`${budgets.id} = ${decodedId} and ${budgets.user_id} = ${user.id}`,
+          });
 
   if (!budget) notFound();
 
@@ -215,11 +219,6 @@ export default async function RequestViewPage({
   const items = await db.query.budgetItems.findMany({
     where: eq(budgetItems.budget_id, budget.id),
     orderBy: [desc(budgetItems.total_cost)],
-  });
-
-  const milestones = await db.query.budgetMilestones.findMany({
-    where: eq(budgetMilestones.budget_id, budget.id),
-    orderBy: [asc(budgetMilestones.created_at)],
   });
 
   const logs = await db.query.auditLogs.findMany({
@@ -245,8 +244,8 @@ export default async function RequestViewPage({
   );
 
   const projectName = items[0]?.description ?? "Budget Request";
-  const projectSub =
-    `BUD-${budget.budget_number} • ${requester?.department ?? ""}`.trim();
+  const displayId = budget.project_code ?? `BUD-${budget.budget_number}`;
+  const projectSub = `${displayId} • ${requester?.department ?? ""}`.trim();
 
   const status = statusMeta(budget.status);
   const steps = computeSteps(budget.status);
@@ -263,24 +262,6 @@ export default async function RequestViewPage({
 
   const createdAt = formatDateShort(budget.created_at);
   const updatedAt = formatDateShort(budget.updated_at);
-
-  const milestoneLines = (() => {
-    const labels = new Set<MilestoneLabel | null>(
-      logs.map((l): MilestoneLabel | null => {
-        if (l.action === "submit") return "Submitted";
-        if (l.action === "reviewed") return "Reviewed";
-        if (l.action === "verify") return "Verified";
-        if (l.action === "approve") return "Approved";
-        if (l.action === "reject") return "Rejected";
-        if (l.action === "request_revision") return "Revision requested";
-        return null;
-      }),
-    );
-
-    return Array.from(labels)
-      .filter((v): v is MilestoneLabel => v !== null)
-      .slice(0, 5);
-  })();
 
   return (
     <div className="space-y-6">
@@ -414,31 +395,6 @@ export default async function RequestViewPage({
             {!budget.start_date && !budget.end_date && (
               <div className="text-sm text-gray-600">No timeline set.</div>
             )}
-
-            <div className="pt-2">
-              <div className="text-sm font-semibold text-gray-900">
-                Milestones:
-              </div>
-              {milestones.length === 0 ? (
-                <div className="mt-2 text-sm text-gray-600">
-                  No milestones set.
-                </div>
-              ) : (
-                <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                  {milestones.map((m) => (
-                    <li key={m.id} className="flex items-center gap-2">
-                      <span aria-hidden="true">•</span>
-                      <span>{m.description}</span>
-                      {m.target_quarter && (
-                        <span className="text-xs text-gray-500">
-                          ({m.target_quarter})
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           </div>
 
           {budget.variance_explanation ? (

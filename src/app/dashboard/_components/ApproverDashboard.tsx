@@ -180,21 +180,30 @@ export default function ApproverDashboard({
                         {r.dateLabel}
                       </td>
                       <td className="py-5 pr-0 text-center">
-                        {r.statusLabel === "Pending" ? (
-                          <Link
-                            href={`/dashboard/approver/approvals/${r.budgetId}`}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 transition-colors shadow-sm"
-                          >
-                            Approve <Check className="h-3.5 w-3.5" />
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/dashboard/budget/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-gray-700 px-4 py-2 text-xs font-bold text-white hover:bg-gray-800 transition-colors shadow-sm"
-                          >
-                            View <Eye className="h-3.5 w-3.5" />
-                          </Link>
-                        )}
+                        {(() => {
+                          const href = `/dashboard/approver/approvals/${encodeURIComponent(
+                            r.displayId,
+                          )}`;
+                          const isPending = r.statusLabel === "Pending";
+
+                          return (
+                            <Link
+                              href={href}
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
+                                isPending
+                                  ? "bg-orange-500 text-white hover:bg-orange-600"
+                                  : "bg-gray-700 text-white hover:bg-gray-800"
+                              }`}
+                            >
+                              {isPending ? "Review" : "View"}{" "}
+                              {isPending ? (
+                                <Check className="h-3.5 w-3.5" />
+                              ) : (
+                                <Eye className="h-3.5 w-3.5" />
+                              )}
+                            </Link>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))

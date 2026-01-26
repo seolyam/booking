@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListChecks } from "lucide-react";
+import { ArrowLeftRight, LayoutDashboard, ListChecks } from "lucide-react";
 import type { NavItem, NavSection } from "./types";
 
 export function reviewerNav(): NavSection[] {
@@ -22,6 +22,13 @@ export function reviewerNav(): NavSection[] {
       label: "List of Requests",
       href: "/dashboard/budget",
       isActive: (p) => p.startsWith("/dashboard/budget"),
+    },
+    {
+      key: "compare",
+      label: "Compare Projects",
+      href: "/dashboard/compare",
+      icon: ArrowLeftRight,
+      isActive: (p) => p.startsWith("/dashboard/compare"),
     },
   ];
 

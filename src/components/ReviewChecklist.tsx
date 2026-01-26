@@ -43,7 +43,10 @@ export default function ReviewChecklist({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div
+      className="bg-white rounded-lg border border-gray-200 p-6"
+      data-budget-id={budgetId}
+    >
       <h2 className="text-lg font-semibold text-gray-900 mb-2">
         Review Checklist
       </h2>

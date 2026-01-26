@@ -154,6 +154,7 @@ export default async function RequestsPage({
     : myBudgets.filter((b) => {
         const budDisplayId = `bud-${b.budget_number}`;
         const budNum = String(b.budget_number);
+        const projectCode = b.project_code;
         const projectName = firstItem.get(b.id) ?? "Budget Request";
         const status = statusLabel(b.status);
         const type = b.budget_type;
@@ -161,6 +162,7 @@ export default async function RequestsPage({
 
         return (
           includesQuery(b.id, q) ||
+          includesQuery(projectCode, q) ||
           includesQuery(budDisplayId, q) ||
           includesQuery(budNum, q) ||
           includesQuery(projectName, q) ||
@@ -310,6 +312,14 @@ export default async function RequestsPage({
               ) : (
                 filteredBudgets.map((b) => {
                   const budDisplayId = `BUD-${b.budget_number}`;
+                  const projectCode = b.project_code;
+                  const displayId = projectCode ?? budDisplayId;
+                  const editHref = projectCode
+                    ? `/dashboard/budget/edit/${encodeURIComponent(projectCode)}`
+                    : `/dashboard/budget/edit/BUD-${String(b.budget_number).padStart(3, "0")}`;
+                  const viewHref = projectCode
+                    ? `/dashboard/requests/${encodeURIComponent(projectCode)}`
+                    : `/dashboard/requests/${b.id}`;
                   const projectName = firstItem.get(b.id) ?? "Budget Request";
                   return (
                     <tr
@@ -322,7 +332,7 @@ export default async function RequestsPage({
                     >
                       <td className="py-4 pl-6 pr-4">
                         <div className="font-medium text-gray-900">
-                          {budDisplayId}
+                          {displayId}
                         </div>
                       </td>
                       <td className="py-4 px-4">
@@ -349,14 +359,14 @@ export default async function RequestsPage({
                       <td className="py-4 px-3 pr-6 text-right whitespace-nowrap">
                         {b.status === "revision_requested" ? (
                           <Link
-                            href={`/dashboard/budget/edit/BUD-${String(b.budget_number).padStart(3, "0")}`}
+                            href={editHref}
                             className="inline-flex items-center gap-1.5 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-200 transition-colors"
                           >
                             Edit
                           </Link>
                         ) : (
                           <Link
-                            href={`/dashboard/requests/${b.id}`}
+                            href={viewHref}
                             className="inline-flex items-center gap-1.5 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300 transition-colors"
                           >
                             View <Eye className="h-4 w-4" />

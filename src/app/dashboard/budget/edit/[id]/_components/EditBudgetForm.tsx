@@ -9,9 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import {
   addBudgetItem,
-  addBudgetMilestone,
   deleteBudgetItem,
-  deleteBudgetMilestone,
   updateBudgetItem,
   resubmitBudget,
 } from "@/actions/budget";
@@ -38,11 +36,6 @@ type BudgetItem = {
   unit_cost: string;
 };
 
-type BudgetMilestone = {
-  id: string;
-  description: string;
-};
-
 type ReviewerComment = {
   comment: string;
   reviewerName: string;
@@ -52,14 +45,12 @@ type ReviewerComment = {
 type Props = {
   budget: Budget;
   items: BudgetItem[];
-  milestones: BudgetMilestone[];
   reviewerComment?: ReviewerComment;
 };
 
 export default function EditBudgetForm({
   budget,
   items: initialItems,
-  milestones: initialMilestones,
   reviewerComment,
 }: Props) {
   const router = useRouter();
@@ -94,27 +85,7 @@ export default function EditBudgetForm({
     }>
   >([]);
 
-  // Existing milestones from database
-  const [existingMilestones, setExistingMilestones] = useState(
-    initialMilestones.map((m) => ({ id: m.id, description: m.description })),
-  );
-
-  // New milestones to be added
-  const [milestone, setMilestone] = useState("");
-  const [newMilestones, setNewMilestones] = useState<string[]>([]);
-
-  const [startDate, setStartDate] = useState(
-    budget.start_date
-      ? new Date(budget.start_date).toISOString().split("T")[0]
-      : "",
-  );
-  const [endDate, setEndDate] = useState(
-    budget.end_date
-      ? new Date(budget.end_date).toISOString().split("T")[0]
-      : "",
-  );
   const [varianceExplanation, setVarianceExplanation] = useState("");
-  const MAX_MILESTONES = 6;
 
   const categories = [
     "Equipment",
@@ -171,38 +142,6 @@ export default function EditBudgetForm({
       setExistingItems(existingItems.filter((_, i) => i !== index));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete item");
-    }
-  };
-
-  const addMilestoneToList = () => {
-    const totalCount = existingMilestones.length + newMilestones.length;
-    if (totalCount >= MAX_MILESTONES) {
-      setError(`You can add up to ${MAX_MILESTONES} milestones.`);
-      return;
-    }
-    if (milestone.trim()) {
-      setNewMilestones([...newMilestones, milestone]);
-      setMilestone("");
-      setError(null);
-    }
-  };
-
-  const removeNewMilestone = (index: number) => {
-    setNewMilestones(newMilestones.filter((_, i) => i !== index));
-  };
-
-  const removeExistingMilestone = async (index: number) => {
-    const ms = existingMilestones[index];
-    if (!ms) return;
-
-    try {
-      const formData = new FormData();
-      formData.set("milestoneId", ms.id);
-
-      await deleteBudgetMilestone(formData);
-      setExistingMilestones(existingMilestones.filter((_, i) => i !== index));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to delete milestone");
     }
   };
 
@@ -284,22 +223,6 @@ export default function EditBudgetForm({
         if (itemRes?.message && itemRes.message !== "Item added") {
           setError(itemRes.message);
           return;
-        }
-      }
-
-      // Add new milestones
-      for (const milestoneDesc of newMilestones) {
-        const milestoneFd = new FormData();
-        milestoneFd.set("budgetId", budget.id);
-        milestoneFd.set("description", milestoneDesc.trim());
-        milestoneFd.set("targetQuarter", "Q1");
-
-        const milestoneRes = await addBudgetMilestone(null, milestoneFd);
-        if (
-          milestoneRes?.message &&
-          milestoneRes.message !== "Milestone added"
-        ) {
-          console.error("Failed to add milestone:", milestoneRes.message);
         }
       }
 
@@ -647,136 +570,6 @@ export default function EditBudgetForm({
               })}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Timeline Section */}
-      <section className="mb-8 pt-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>📅</span> Timeline
-        </h2>
-
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="startDate" className="text-gray-700 font-medium">
-                Start Date
-              </Label>
-              <button
-                type="button"
-                onClick={() => {
-                  const today = new Date().toISOString().split("T")[0];
-                  setStartDate(today);
-                }}
-                className="text-xs text-green-600 hover:text-green-700 font-medium hover:underline"
-              >
-                Today
-              </button>
-            </div>
-            <Input
-              id="startDate"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border-gray-300"
-            />
-          </div>
-
-          <div>
-            <Label
-              htmlFor="endDate"
-              className="text-gray-700 font-medium mb-2 block"
-            >
-              End Date
-            </Label>
-            <Input
-              id="endDate"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border-gray-300"
-            />
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <Label className="text-gray-700 font-medium">Milestone</Label>
-            <button
-              type="button"
-              onClick={addMilestoneToList}
-              disabled={
-                existingMilestones.length + newMilestones.length >=
-                MAX_MILESTONES
-              }
-              className={`text-sm font-medium ${
-                existingMilestones.length + newMilestones.length >=
-                MAX_MILESTONES
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-blue-600 hover:text-blue-700"
-              }`}
-            >
-              + Add milestone
-            </button>
-          </div>
-          <Input
-            placeholder="e.g., Equipment Procurement - Q1"
-            value={milestone}
-            onChange={(e) => setMilestone(e.target.value)}
-            className="border-gray-300"
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            {existingMilestones.length + newMilestones.length}/{MAX_MILESTONES}{" "}
-            milestones
-          </p>
-
-          {/* Existing milestones */}
-          {existingMilestones.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs text-gray-500 font-medium">
-                Existing Milestones:
-              </p>
-              {existingMilestones.map((m, idx) => (
-                <div
-                  key={`existing-${m.id}`}
-                  className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200"
-                >
-                  <span className="text-gray-700">{m.description}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeExistingMilestone(idx)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* New milestones */}
-          {newMilestones.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs text-blue-600 font-medium">
-                New Milestones:
-              </p>
-              {newMilestones.map((m, idx) => (
-                <div
-                  key={`new-${idx}`}
-                  className="flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-200"
-                >
-                  <span className="text-gray-700">{m}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeNewMilestone(idx)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </section>
 
