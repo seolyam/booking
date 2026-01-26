@@ -8,6 +8,8 @@ import {
   timestamp,
   pgEnum,
   boolean,
+  primaryKey,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -73,26 +75,126 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const budgets = pgTable("budgets", {
+export const budgets = pgTable(
+  "budgets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .references(() => users.id)
+      .notNull(), // requester
+    budget_number: bigint("budget_number", { mode: "number" })
+      .default(sql`nextval('public.budget_number_seq')`)
+      .notNull(),
+    // Human-friendly, year-resetting project ID: CapEx-1..CapEx-N / OpEx-1..OpEx-N
+    // Nullable for backwards compatibility (older rows).
+    project_code: text("project_code"),
+    budget_type: budgetTypeEnum("budget_type").notNull(),
+    fiscal_year: integer("fiscal_year").notNull(),
+    status: budgetStatusEnum("status").default("draft").notNull(),
+    total_amount: decimal("total_amount", { precision: 15, scale: 2 })
+      .notNull()
+      .default("0"),
+    variance_explanation: text("variance_explanation"), // Nullable
+    roi_analysis: text("roi_analysis"), // Nullable, only for approver. Text or JSON. Instructions say text/json. Let's use text for simplicity or jsonb if structured. "text/json, nullable" -> logic says text is easier for "Hidden Details".
+    start_date: timestamp("start_date"),
+    end_date: timestamp("end_date"),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+    updated_at: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    projectCodePerYearUq: uniqueIndex("budgets_project_code_year_uq").on(
+      t.fiscal_year,
+      t.project_code,
+    ),
+  }),
+);
+
+export const budgetProjectCounters = pgTable(
+  "budget_project_counters",
+  {
+    fiscal_year: integer("fiscal_year").notNull(),
+    budget_type: budgetTypeEnum("budget_type").notNull(),
+    // Next number to assign (1-based).
+    next_number: integer("next_number").notNull().default(1),
+    updated_at: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.fiscal_year, t.budget_type] }),
+  }),
+);
+
+export const archivedBudgets = pgTable(
+  "archived_budgets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    // Original budget UUID from the active table.
+    source_budget_id: uuid("source_budget_id").notNull(),
+    user_id: uuid("user_id")
+      .references(() => users.id)
+      .notNull(),
+    budget_number: bigint("budget_number", { mode: "number" }).notNull(),
+    project_code: text("project_code"),
+    budget_type: budgetTypeEnum("budget_type").notNull(),
+    fiscal_year: integer("fiscal_year").notNull(),
+    status: budgetStatusEnum("status").notNull(),
+    total_amount: decimal("total_amount", { precision: 15, scale: 2 })
+      .notNull()
+      .default("0"),
+    variance_explanation: text("variance_explanation"),
+    roi_analysis: text("roi_analysis"),
+    start_date: timestamp("start_date"),
+    end_date: timestamp("end_date"),
+    created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+    archived_at: timestamp("archived_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    sourceUq: uniqueIndex("archived_budgets_source_uq").on(t.source_budget_id),
+    projectCodePerYearUq: uniqueIndex(
+      "archived_budgets_project_code_year_uq",
+    ).on(t.fiscal_year, t.project_code),
+  }),
+);
+
+export const archivedBudgetItems = pgTable("archived_budget_items", {
   id: uuid("id").defaultRandom().primaryKey(),
-  user_id: uuid("user_id")
-    .references(() => users.id)
-    .notNull(), // requester
-  budget_number: bigint("budget_number", { mode: "number" })
-    .default(sql`nextval('public.budget_number_seq')`)
+  archived_budget_id: uuid("archived_budget_id")
+    .references(() => archivedBudgets.id, { onDelete: "cascade" })
     .notNull(),
-  budget_type: budgetTypeEnum("budget_type").notNull(),
-  fiscal_year: integer("fiscal_year").notNull(),
-  status: budgetStatusEnum("status").default("draft").notNull(),
-  total_amount: decimal("total_amount", { precision: 15, scale: 2 })
-    .notNull()
-    .default("0"),
-  variance_explanation: text("variance_explanation"), // Nullable
-  roi_analysis: text("roi_analysis"), // Nullable, only for approver. Text or JSON. Instructions say text/json. Let's use text for simplicity or jsonb if structured. "text/json, nullable" -> logic says text is easier for "Hidden Details".
-  start_date: timestamp("start_date"),
-  end_date: timestamp("end_date"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull(),
+  unit_cost: decimal("unit_cost", { precision: 15, scale: 2 }).notNull(),
+  total_cost: decimal("total_cost", { precision: 15, scale: 2 }).notNull(),
+  quarter: text("quarter").notNull(),
+});
+
+export const archivedBudgetMilestones = pgTable("archived_budget_milestones", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  archived_budget_id: uuid("archived_budget_id")
+    .references(() => archivedBudgets.id, { onDelete: "cascade" })
+    .notNull(),
+  description: text("description").notNull(),
+  target_quarter: text("target_quarter"),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+});
+
+export const archivedAuditLogs = pgTable("archived_audit_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  archived_budget_id: uuid("archived_budget_id")
+    .references(() => archivedBudgets.id, { onDelete: "cascade" })
+    .notNull(),
+  actor_id: uuid("actor_id")
+    .references(() => users.id)
+    .notNull(),
+  action: text("action").notNull(),
+  previous_status: text("previous_status"),
+  new_status: text("new_status"),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
+  comment: text("comment"),
 });
 
 export const budgetItems = pgTable("budget_items", {
