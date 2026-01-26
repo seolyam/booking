@@ -98,7 +98,7 @@ export default async function DashboardPage() {
 
       return {
         budgetId: b.id,
-        displayId: `BUD-${b.budget_number}`,
+        displayId: b.project_code ?? `BUD-${b.budget_number}`,
         projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
         projectSub: "",
         type,
@@ -124,7 +124,9 @@ export default async function DashboardPage() {
         b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
       return {
         budgetId: b.id,
-        displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
+        displayId:
+          (b as { project_code?: string | null }).project_code ??
+          `BUD-${String(b.budget_number).padStart(3, "0")}`,
         projectName: reviewerFirstItemByBudgetId.get(b.id) ?? "Budget Request",
         projectSub: b.department ?? "",
         type,
@@ -151,7 +153,9 @@ export default async function DashboardPage() {
         return {
           budgetId: b.id,
           budgetNumber: b.budget_number,
-          displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
+          displayId:
+            (b as { project_code?: string | null }).project_code ??
+            `BUD-${String(b.budget_number).padStart(3, "0")}`,
           projectName:
             approverFirstItemByBudgetId.get(b.id) ?? "Budget Request",
           projectSub: b.department ?? "",
@@ -213,7 +217,9 @@ export default async function DashboardPage() {
       return {
         budgetId: b.id,
         budgetNumber: b.budget_number,
-        displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
+        displayId:
+          (b as { project_code?: string | null }).project_code ??
+          `BUD-${String(b.budget_number).padStart(3, "0")}`,
         projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
         projectSub: b.department ?? "",
         type,
@@ -286,13 +292,14 @@ export default async function DashboardPage() {
     const actionLabel = isRevisionRequested
       ? ("Edit" as const)
       : ("View" as const);
+    const projectCode = b.project_code;
     const actionHref = isRevisionRequested
-      ? `/dashboard/budget/edit/${b.id}`
-      : `/dashboard/requests/${b.id}`;
+      ? `/dashboard/budget/edit/${encodeURIComponent(projectCode ?? b.id)}`
+      : `/dashboard/requests/${encodeURIComponent(projectCode ?? b.id)}`;
 
     return {
       budgetId: b.id,
-      displayId: `BUD-${b.budget_number}`,
+      displayId: b.project_code ?? `BUD-${b.budget_number}`,
       projectName,
       projectSub: appUser.department,
       type,

@@ -172,7 +172,6 @@ export default function DashboardShell({
         SIDEBAR_MIN_WIDTH,
         Math.min(SIDEBAR_MAX_WIDTH, containerWidth - MAIN_MIN_WIDTH - gap),
       );
-      const nextZ = nextZRef.current++;
       setLayout((prev) => ({
         ...prev,
         floating: {
@@ -181,7 +180,7 @@ export default function DashboardShell({
             y: 0,
             width: sidebarWidth,
             height: containerHeight,
-            z: nextZ + 1,
+            z: 4,
           },
           main: {
             x: sidebarWidth + gap,
@@ -191,7 +190,7 @@ export default function DashboardShell({
               containerWidth - sidebarWidth - gap,
             ),
             height: containerHeight,
-            z: nextZ,
+            z: 3,
           },
         },
       }));
@@ -224,7 +223,6 @@ export default function DashboardShell({
   }, [hasHydratedLayout, sidebarWidth, sidebarSide, mode, floating]);
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const nextZRef = React.useRef(3);
   const [containerSize, setContainerSize] = React.useState({
     width: 0,
     height: 0,
@@ -363,14 +361,16 @@ export default function DashboardShell({
   };
 
   const bringPanelToFront = (panel: PanelKey) => {
-    const nextZ = nextZRef.current++;
-    setLayout((prev) => ({
-      ...prev,
-      floating: {
-        ...prev.floating,
-        [panel]: { ...prev.floating[panel], z: nextZ },
-      },
-    }));
+    setLayout((prev) => {
+      const nextZ = Math.max(prev.floating.sidebar.z, prev.floating.main.z) + 1;
+      return {
+        ...prev,
+        floating: {
+          ...prev.floating,
+          [panel]: { ...prev.floating[panel], z: nextZ },
+        },
+      };
+    });
   };
 
   const startFloatingDrag = (
@@ -498,7 +498,6 @@ export default function DashboardShell({
 
   const resetLayout = () => {
     setLayout(DEFAULT_LAYOUT);
-    nextZRef.current = 3;
   };
 
   const toggleMode = () => {
@@ -518,9 +517,9 @@ export default function DashboardShell({
     const rect = containerRef.current.getBoundingClientRect();
     const containerWidth = rect.width;
     const containerHeight = rect.height;
-    const nextZ = nextZRef.current++;
 
     setLayout((prev) => {
+      const nextZ = Math.max(prev.floating.sidebar.z, prev.floating.main.z) + 1;
       restoreRef.current[panel] = prev.floating[panel];
       return {
         ...prev,
@@ -573,26 +572,31 @@ export default function DashboardShell({
       SIDEBAR_MIN_WIDTH,
       Math.min(SIDEBAR_MAX_WIDTH, containerWidth - MAIN_MIN_WIDTH - gap),
     );
-    const nextZ = nextZRef.current++;
-    setLayout((prev) => ({
-      ...prev,
-      floating: {
-        sidebar: {
-          x: 0,
-          y: 0,
-          width: sidebarWidth,
-          height: containerHeight,
-          z: nextZ + 1,
+    setLayout((prev) => {
+      const nextZ = Math.max(prev.floating.sidebar.z, prev.floating.main.z) + 1;
+      return {
+        ...prev,
+        floating: {
+          sidebar: {
+            x: 0,
+            y: 0,
+            width: sidebarWidth,
+            height: containerHeight,
+            z: nextZ + 1,
+          },
+          main: {
+            x: sidebarWidth + gap,
+            y: 0,
+            width: Math.max(
+              MAIN_MIN_WIDTH,
+              containerWidth - sidebarWidth - gap,
+            ),
+            height: containerHeight,
+            z: nextZ,
+          },
         },
-        main: {
-          x: sidebarWidth + gap,
-          y: 0,
-          width: Math.max(MAIN_MIN_WIDTH, containerWidth - sidebarWidth - gap),
-          height: containerHeight,
-          z: nextZ,
-        },
-      },
-    }));
+      };
+    });
   };
 
   const [sidebarMenuOpen, setSidebarMenuOpen] = React.useState(false);

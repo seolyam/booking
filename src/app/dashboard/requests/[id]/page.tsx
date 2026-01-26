@@ -176,14 +176,6 @@ function computeSteps(status: string): WorkflowStep[] {
   });
 }
 
-type MilestoneLabel =
-  | "Submitted"
-  | "Reviewed"
-  | "Verified"
-  | "Approved"
-  | "Rejected"
-  | "Revision requested";
-
 export default async function RequestViewPage({
   params,
 }: {
@@ -191,14 +183,32 @@ export default async function RequestViewPage({
 }) {
   const { id } = await params;
 
+  const decodedId = decodeURIComponent(id);
+  const looksLikeProjectCode = /^(CapEx|OpEx)-\d+$/i.test(decodedId);
+  const looksLikeBudLabel = decodedId.startsWith("BUD-");
+  const numericId =
+    !looksLikeProjectCode && !looksLikeBudLabel ? Number(decodedId) : NaN;
+
   const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
   // Requester view: only allow viewing your own requests.
-  const budget = await db.query.budgets.findFirst({
-    where: sql`${budgets.id} = ${id} and ${budgets.user_id} = ${user.id}`,
-  });
+  const budget = looksLikeProjectCode
+    ? await db.query.budgets.findFirst({
+        where: sql`${budgets.project_code} = ${decodedId} and ${budgets.user_id} = ${user.id}`,
+      })
+    : looksLikeBudLabel
+      ? await db.query.budgets.findFirst({
+          where: sql`${budgets.budget_number} = ${parseInt(decodedId.slice(4), 10)} and ${budgets.user_id} = ${user.id}`,
+        })
+      : Number.isFinite(numericId)
+        ? await db.query.budgets.findFirst({
+            where: sql`${budgets.budget_number} = ${numericId} and ${budgets.user_id} = ${user.id}`,
+          })
+        : await db.query.budgets.findFirst({
+            where: sql`${budgets.id} = ${decodedId} and ${budgets.user_id} = ${user.id}`,
+          });
 
   if (!budget) notFound();
 
@@ -245,8 +255,8 @@ export default async function RequestViewPage({
   );
 
   const projectName = items[0]?.description ?? "Budget Request";
-  const projectSub =
-    `BUD-${budget.budget_number} • ${requester?.department ?? ""}`.trim();
+  const displayId = budget.project_code ?? `BUD-${budget.budget_number}`;
+  const projectSub = `${displayId} • ${requester?.department ?? ""}`.trim();
 
   const status = statusMeta(budget.status);
   const steps = computeSteps(budget.status);
@@ -263,24 +273,6 @@ export default async function RequestViewPage({
 
   const createdAt = formatDateShort(budget.created_at);
   const updatedAt = formatDateShort(budget.updated_at);
-
-  const milestoneLines = (() => {
-    const labels = new Set<MilestoneLabel | null>(
-      logs.map((l): MilestoneLabel | null => {
-        if (l.action === "submit") return "Submitted";
-        if (l.action === "reviewed") return "Reviewed";
-        if (l.action === "verify") return "Verified";
-        if (l.action === "approve") return "Approved";
-        if (l.action === "reject") return "Rejected";
-        if (l.action === "request_revision") return "Revision requested";
-        return null;
-      }),
-    );
-
-    return Array.from(labels)
-      .filter((v): v is MilestoneLabel => v !== null)
-      .slice(0, 5);
-  })();
 
   return (
     <div className="space-y-6">

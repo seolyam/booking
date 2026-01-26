@@ -130,11 +130,14 @@ export default async function ReviewerReviewQueuePage({
     : reviewQueue.filter((b) => {
         const budDisplayId = `bud-${b.budget_number}`;
         const budNum = String(b.budget_number);
+        const projectCode = (b as { project_code?: string | null })
+          .project_code;
         const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
         const dept = b.department ?? "";
 
         return (
           includesQuery(b.id, q) ||
+          includesQuery(projectCode, q) ||
           includesQuery(budDisplayId, q) ||
           includesQuery(budNum, q) ||
           includesQuery(projectName, q) ||
@@ -162,7 +165,9 @@ export default async function ReviewerReviewQueuePage({
 
     return {
       budgetId: b.id,
-      displayId: `BUD-${b.budget_number}`,
+      displayId:
+        (b as { project_code?: string | null }).project_code ??
+        `BUD-${b.budget_number}`,
       projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
       projectSub: b.department ?? "",
       type,

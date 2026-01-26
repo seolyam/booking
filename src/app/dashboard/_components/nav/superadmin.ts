@@ -1,4 +1,11 @@
-import { ShieldCheck, LayoutDashboard, ListChecks, Eye, CheckCircle } from "lucide-react";
+import {
+  ArrowLeftRight,
+  ShieldCheck,
+  LayoutDashboard,
+  ListChecks,
+  Eye,
+  CheckCircle,
+} from "lucide-react";
 import type { NavItem, NavSection } from "./types";
 
 export function superadminNav(): NavSection[] {
@@ -61,6 +68,13 @@ export function superadminNav(): NavSection[] {
       href: "/dashboard/approver/approvals",
       icon: CheckCircle,
       isActive: (p) => p.startsWith("/dashboard/approver"),
+    },
+    {
+      key: "compare",
+      label: "Compare Projects",
+      href: "/dashboard/compare",
+      icon: ArrowLeftRight,
+      isActive: (p) => p.startsWith("/dashboard/compare"),
     },
   ];
 

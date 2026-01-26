@@ -182,12 +182,15 @@ export default async function BudgetIndexPage({
         const dept = departmentById.get(b.user_id) ?? "";
 
         const budLabel = `BUD-${b.budget_number}`;
+        const projectCode = (b as { project_code?: string | null })
+          .project_code;
         const statusText = statusLabel(b.status);
         const amountDigits = normalizeDigits(formatPhp(b.total_amount));
         const qDigits = normalizeDigits(q);
 
         return (
           includesQuery(b.id, q) ||
+          includesQuery(projectCode, q) ||
           includesQuery(budLabel, q) ||
           includesQuery(String(b.budget_number), q) ||
           includesQuery(projectName, q) ||
@@ -313,7 +316,7 @@ export default async function BudgetIndexPage({
             </colgroup>
             <thead>
               <tr className="text-left text-xs text-gray-500 border-t border-black/10">
-                <th className="py-4 pl-6 pr-4 font-medium">BUDGET ID</th>
+                <th className="py-4 pl-6 pr-4 font-medium">PROJECT ID</th>
                 <th className="py-4 px-4 font-medium">PROJECT NAME</th>
                 <th className="py-4 px-3 font-medium">TYPE</th>
                 <th className="py-4 px-3 font-medium">AMOUNT</th>
@@ -337,6 +340,12 @@ export default async function BudgetIndexPage({
                     firstItemByBudgetId.get(b.id) ?? "Budget Request";
                   const sub = departmentById.get(b.user_id) ?? "";
                   const requesterName = requesterById.get(b.user_id);
+                  const projectCode = (b as { project_code?: string | null })
+                    .project_code;
+                  const displayId = projectCode ?? `BUD-${b.budget_number}`;
+                  const viewHref = projectCode
+                    ? `/dashboard/budget/${encodeURIComponent(projectCode)}`
+                    : `/dashboard/budget/BUD-${String(b.budget_number).padStart(3, "0")}`;
 
                   const statusText = statusLabel(b.status);
 
@@ -350,7 +359,7 @@ export default async function BudgetIndexPage({
                       }`}
                     >
                       <td className="py-5 pl-6 pr-4 text-gray-900 font-medium whitespace-nowrap">
-                        {`BUD-${b.budget_number}`}
+                        {displayId}
                       </td>
                       <td className="py-5 px-4 align-top whitespace-normal">
                         <div className="font-medium text-gray-900 whitespace-normal wrap-break-word leading-snug line-clamp-2">
@@ -378,7 +387,7 @@ export default async function BudgetIndexPage({
                       </td>
                       <td className="py-5 pl-3 pr-6 text-right whitespace-nowrap">
                         <Link
-                          href={`/dashboard/budget/BUD-${String(b.budget_number).padStart(3, "0")}`}
+                          href={viewHref}
                           className="inline-flex items-center gap-2 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300"
                         >
                           View

@@ -27,20 +27,32 @@ export default async function EditBudgetPage({
 
   const { id } = await params;
 
+  const decodedId = decodeURIComponent(id);
+  const looksLikeProjectCode = /^(CapEx|OpEx)-\d+$/i.test(decodedId);
+
   // Try to parse as budget_number first (numeric or BUD-XXX format)
   let budgetNum: number | null = null;
-  if (id.startsWith("BUD-")) {
-    budgetNum = parseInt(id.slice(4), 10);
+  if (decodedId.startsWith("BUD-")) {
+    budgetNum = parseInt(decodedId.slice(4), 10);
   } else {
-    const parsed = parseInt(id, 10);
+    const parsed = parseInt(decodedId, 10);
     if (!isNaN(parsed)) {
       budgetNum = parsed;
     }
   }
 
-  // Fetch the budget by budget_number if we have one, otherwise by UUID for backward compatibility
+  // Fetch the budget by project_code, then by budget_number, otherwise by UUID for backward compatibility
   let budget;
-  if (budgetNum !== null) {
+  if (looksLikeProjectCode) {
+    const result = await db
+      .select()
+      .from(budgets)
+      .where(
+        and(eq(budgets.project_code, decodedId), eq(budgets.user_id, user.id)),
+      )
+      .limit(1);
+    budget = result[0];
+  } else if (budgetNum !== null) {
     const result = await db
       .select()
       .from(budgets)
@@ -51,7 +63,7 @@ export default async function EditBudgetPage({
     budget = result[0];
   } else {
     budget = await db.query.budgets.findFirst({
-      where: and(eq(budgets.id, id), eq(budgets.user_id, user.id)),
+      where: and(eq(budgets.id, decodedId), eq(budgets.user_id, user.id)),
     });
   }
 
@@ -61,9 +73,9 @@ export default async function EditBudgetPage({
 
   // Only allow editing if status is revision_requested
   if (budget.status !== "revision_requested") {
-    const redirectId = budgetNum
-      ? `BUD-${String(budgetNum).padStart(3, "0")}`
-      : id;
+    const redirectId =
+      budget.project_code ??
+      (budgetNum ? `BUD-${String(budgetNum).padStart(3, "0")}` : decodedId);
     redirect(`/dashboard/requests/${redirectId}`);
   }
 

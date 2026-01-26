@@ -187,20 +187,30 @@ export default async function BudgetDetailPage({
 }) {
   const { id } = await params;
 
+  const decodedId = decodeURIComponent(id);
+  const looksLikeProjectCode = /^(CapEx|OpEx)-\d+$/i.test(decodedId);
+
   // Try to parse as budget_number first (numeric or BUD-XXX format)
   let budgetNum: number | null = null;
-  if (id.startsWith("BUD-")) {
-    budgetNum = parseInt(id.slice(4), 10);
+  if (decodedId.startsWith("BUD-")) {
+    budgetNum = parseInt(decodedId.slice(4), 10);
   } else {
-    const parsed = parseInt(id, 10);
+    const parsed = parseInt(decodedId, 10);
     if (!isNaN(parsed)) {
       budgetNum = parsed;
     }
   }
 
-  // Fetch budget by budget_number if we have one, otherwise by UUID for backward compatibility
+  // Fetch budget by project_code, then budget_number, otherwise by UUID for backward compatibility
   let budget;
-  if (budgetNum !== null) {
+  if (looksLikeProjectCode) {
+    const result = await db
+      .select()
+      .from(budgets)
+      .where(eq(budgets.project_code, decodedId))
+      .limit(1);
+    budget = result[0];
+  } else if (budgetNum !== null) {
     const result = await db
       .select()
       .from(budgets)
@@ -211,7 +221,7 @@ export default async function BudgetDetailPage({
     const result = await db
       .select()
       .from(budgets)
-      .where(eq(budgets.id, id))
+      .where(eq(budgets.id, decodedId))
       .limit(1);
     budget = result[0];
   }
