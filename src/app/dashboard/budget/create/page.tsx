@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import {
   addBudgetItem,
-  addBudgetMilestone,
   createBudgetDraft,
   submitBudget,
 } from "@/actions/budget";
@@ -31,12 +30,7 @@ export default function CreateBudgetPage() {
   const [items, setItems] = useState([
     { category: "", description: "", quantity: "", unitCost: "" },
   ]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [milestone, setMilestone] = useState("");
-  const [milestones, setMilestones] = useState<string[]>([]);
   const [varianceExplanation, setVarianceExplanation] = useState("");
-  const MAX_MILESTONES = 6;
 
   const projectId = useMemo(() => {
     const now = new Date();
@@ -62,22 +56,6 @@ export default function CreateBudgetPage() {
     const updated = [...items];
     updated[index] = { ...updated[index], [field]: value };
     setItems(updated);
-  };
-
-  const addMilestone = () => {
-    if (milestones.length >= MAX_MILESTONES) {
-      setError(`You can add up to ${MAX_MILESTONES} milestones.`);
-      return;
-    }
-    if (milestone.trim()) {
-      setMilestones([...milestones, milestone]);
-      setMilestone("");
-      setError(null);
-    }
-  };
-
-  const removeMilestone = (index: number) => {
-    setMilestones(milestones.filter((_, i) => i !== index));
   };
 
   const totalBudget = items.reduce(
@@ -127,8 +105,6 @@ export default function CreateBudgetPage() {
       const draftFd = new FormData();
       draftFd.set("budgetType", selectedType);
       draftFd.set("fiscalYear", String(new Date().getFullYear()));
-      if (startDate) draftFd.set("startDate", startDate);
-      if (endDate) draftFd.set("endDate", endDate);
 
       const draftRes = await createBudgetDraft(null, draftFd);
       if (!draftRes?.budgetId) {
@@ -161,23 +137,6 @@ export default function CreateBudgetPage() {
         if (itemRes?.message && itemRes.message !== "Item added") {
           setError(itemRes.message);
           return;
-        }
-      }
-
-      // Save milestones
-      for (const milestoneDesc of milestones) {
-        const milestoneFd = new FormData();
-        milestoneFd.set("budgetId", budgetId);
-        milestoneFd.set("description", milestoneDesc.trim());
-        milestoneFd.set("targetQuarter", "Q1"); // Default quarter
-
-        const milestoneRes = await addBudgetMilestone(null, milestoneFd);
-        if (
-          milestoneRes?.message &&
-          milestoneRes.message !== "Milestone added"
-        ) {
-          console.error("Failed to add milestone:", milestoneRes.message);
-          // Continue even if milestone fails
         }
       }
 
@@ -457,101 +416,6 @@ export default function CreateBudgetPage() {
               })}
             </div>
           </div>
-        </div>
-      </section>
-      {/* Timeline Section */}
-      <section className="mb-8 pt-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>📅</span> Timeline
-        </h2>
-
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="startDate" className="text-gray-700 font-medium">
-                Start Date <span className="text-red-500">*</span>
-              </Label>
-              <button
-                type="button"
-                onClick={() => {
-                  const today = new Date().toISOString().split("T")[0];
-                  setStartDate(today);
-                }}
-                className="text-xs text-green-600 hover:text-green-700 font-medium hover:underline"
-              >
-                Set day today
-              </button>
-            </div>
-            <Input
-              id="startDate"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border-gray-300"
-            />
-          </div>
-
-          <div>
-            <Label
-              htmlFor="endDate"
-              className="text-gray-700 font-medium mb-2 block"
-            >
-              End Date <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="endDate"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border-gray-300"
-            />
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <Label className="text-gray-700 font-medium">Milestone</Label>
-            <button
-              type="button"
-              onClick={addMilestone}
-              disabled={milestones.length >= MAX_MILESTONES}
-              className={`text-sm font-medium ${
-                milestones.length >= MAX_MILESTONES
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-blue-600 hover:text-blue-700"
-              }`}
-            >
-              + Add milestone
-            </button>
-          </div>
-          <Input
-            placeholder="e.g., Equipment Procurement - Q1"
-            value={milestone}
-            onChange={(e) => setMilestone(e.target.value)}
-            className="border-gray-300"
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            {milestones.length}/{MAX_MILESTONES} milestones
-          </p>
-          {milestones.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {milestones.map((m, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200"
-                >
-                  <span className="text-gray-700">{m}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeMilestone(idx)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </section>
       {/* Variance Explanation Section */}

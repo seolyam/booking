@@ -1,13 +1,7 @@
 import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import {
-  budgets,
-  budgetItems,
-  budgetMilestones,
-  auditLogs,
-  users,
-} from "@/db/schema";
+import { budgets, budgetItems, auditLogs, users } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import EditBudgetForm from "./_components/EditBudgetForm";
 
@@ -84,11 +78,6 @@ export default async function EditBudgetPage({
     where: eq(budgetItems.budget_id, budget.id),
   });
 
-  // Fetch milestones
-  const milestones = await db.query.budgetMilestones.findMany({
-    where: eq(budgetMilestones.budget_id, budget.id),
-  });
-
   // Fetch the latest revision request comment from the reviewer
   const revisionLog = await db
     .select({
@@ -130,7 +119,6 @@ export default async function EditBudgetPage({
     <EditBudgetForm
       budget={budget}
       items={items}
-      milestones={milestones}
       reviewerComment={reviewerComment}
     />
   );
