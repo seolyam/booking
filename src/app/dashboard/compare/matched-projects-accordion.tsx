@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { formatPhp } from "@/lib/dashboardData";
 
 type ProjectRow = {

@@ -15,22 +15,6 @@ function getUtcYear(d: Date) {
   return d.getUTCFullYear();
 }
 
-function statusPill(status: string) {
-  const base =
-    "inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium";
-  if (status === "approved") return `${base} bg-green-100 text-green-700`;
-  if (status === "rejected") return `${base} bg-red-100 text-red-700`;
-  if (status === "revision_requested")
-    return `${base} bg-orange-100 text-orange-700`;
-  if (
-    status === "submitted" ||
-    status === "verified" ||
-    status === "verified_by_reviewer"
-  )
-    return `${base} bg-blue-100 text-blue-700`;
-  return `${base} bg-gray-100 text-gray-700`;
-}
-
 function typePill(type: "capex" | "opex") {
   const base =
     "inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium";
