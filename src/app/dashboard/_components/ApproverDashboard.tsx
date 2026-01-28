@@ -20,6 +20,8 @@ export type ApproverDashboardRow = {
   amount: string;
   statusLabel: "Approved" | "Pending" | "Rejected";
   dateLabel: string;
+  approvedAt?: string | null;
+  approvedDateLabel?: string;
 };
 
 export default function ApproverDashboard({

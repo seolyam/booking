@@ -12,10 +12,11 @@ import {
   archivedBudgetItems,
   archivedAuditLogs,
 } from "@/db/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -210,6 +211,8 @@ async function allocateProjectCodeTx(params: {
 const CreateBudgetSchema = z.object({
   budgetType: z.enum(["capex", "opex"]),
   fiscalYear: z.number().int().min(2025).max(2030),
+  projectId: z.string().uuid().optional().nullable(),
+  title: z.string().trim().min(3).max(200),
 });
 
 export async function createBudgetDraft(
@@ -233,8 +236,16 @@ export async function createBudgetDraft(
   const fiscalYear = parseInt(formData.get("fiscalYear") as string);
   const startDateStr = formData.get("startDate") as string | null;
   const endDateStr = formData.get("endDate") as string | null;
+  const projectIdStr = formData.get("projectId") as string | null;
+  const projectId = projectIdStr && projectIdStr !== "" ? projectIdStr : null;
+  const title = (formData.get("title") as string | null) ?? null;
 
-  const validated = CreateBudgetSchema.safeParse({ budgetType, fiscalYear });
+  const validated = CreateBudgetSchema.safeParse({
+    budgetType,
+    fiscalYear,
+    projectId,
+    title: (title ?? "").toString(),
+  });
 
   if (!validated.success) {
     return {
@@ -648,6 +659,192 @@ export async function finalizeBudget(
   invalidateDashboardCaches();
   revalidatePath("/dashboard/approver/approvals");
   return { message: `Budget ${decision}` };
+}
+
+const EditFinalDecisionSchema = z.object({
+  budgetId: z.string().uuid(),
+  intent: z.enum(["approve", "reject", "revoke"]),
+  reason: z.string().trim().min(1, "Explanation is required"),
+  returnTo: z.string().min(1).optional(),
+});
+
+function buildRedirectUrl(
+  returnTo: string | undefined,
+  params: Record<string, string>,
+) {
+  const base = returnTo?.startsWith("/") ? returnTo : "/dashboard/budget";
+  const qs = new URLSearchParams(params);
+  return `${base}?${qs.toString()}`;
+}
+
+function normalizeRevokeTargetStatus(status: string | null | undefined) {
+  if (status === "verified" || status === "verified_by_reviewer") return status;
+  return "verified";
+}
+
+// Used by Budget Tracking (approved/rejected) to change or revoke decisions.
+export async function editFinalDecision(formData: FormData) {
+  const user = await getUser();
+  const rawReturnTo = (formData.get("returnTo") as string | null) ?? undefined;
+
+  if (!user) {
+    redirect(buildRedirectUrl(rawReturnTo, { error: "Unauthorized" }));
+  }
+
+  const parsed = EditFinalDecisionSchema.safeParse({
+    budgetId: formData.get("budgetId"),
+    intent: formData.get("intent"),
+    reason: formData.get("reason"),
+    returnTo: rawReturnTo,
+  });
+
+  if (!parsed.success) {
+    redirect(
+      buildRedirectUrl(rawReturnTo, {
+        error:
+          parsed.error.flatten().fieldErrors.reason?.[0] ?? "Invalid request",
+      }),
+    );
+  }
+
+  const { budgetId, intent, reason } = parsed.data;
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser) {
+    redirect(
+      buildRedirectUrl(rawReturnTo, {
+        error:
+          "Your account is not yet provisioned in the app. Ask an admin to create your profile (role/department).",
+      }),
+    );
+  }
+
+  if (appUser.role !== "approver" && appUser.role !== "superadmin") {
+    redirect(buildRedirectUrl(rawReturnTo, { error: "Forbidden" }));
+  }
+
+  const existingBudget = await db.query.budgets.findFirst({
+    where: eq(budgets.id, budgetId),
+  });
+  if (!existingBudget) {
+    redirect(buildRedirectUrl(rawReturnTo, { error: "Budget not found" }));
+  }
+
+  const editableStatuses = ["approved", "rejected"];
+  if (!editableStatuses.includes(existingBudget.status)) {
+    redirect(
+      buildRedirectUrl(rawReturnTo, {
+        error: "Budget is not in an editable decision state",
+      }),
+    );
+  }
+
+  // Safety check: only allow edits when the latest log is the terminal decision.
+  // For non-superadmin users, also require that they are the one who made it.
+  const [latestLog] = await db
+    .select({
+      action: auditLogs.action,
+      actorId: auditLogs.actor_id,
+      newStatus: auditLogs.new_status,
+      previousStatus: auditLogs.previous_status,
+    })
+    .from(auditLogs)
+    .where(eq(auditLogs.budget_id, budgetId))
+    .orderBy(desc(auditLogs.timestamp))
+    .limit(1);
+
+  const isLatestTerminalDecision =
+    latestLog &&
+    (latestLog.action === "approve" || latestLog.action === "reject") &&
+    latestLog.newStatus === existingBudget.status;
+
+  if (!isLatestTerminalDecision) {
+    redirect(
+      buildRedirectUrl(rawReturnTo, {
+        error:
+          "Cannot edit. The next approver has already processed this request.",
+      }),
+    );
+  }
+
+  if (appUser.role !== "superadmin" && latestLog.actorId !== user.id) {
+    redirect(
+      buildRedirectUrl(rawReturnTo, {
+        error:
+          "Cannot edit. The next approver has already processed this request.",
+      }),
+    );
+  }
+
+  const now = new Date();
+
+  if (intent === "revoke") {
+    const [decisionLog] = await db
+      .select({ previousStatus: auditLogs.previous_status })
+      .from(auditLogs)
+      .where(
+        and(
+          eq(auditLogs.budget_id, budgetId),
+          inArray(auditLogs.action, ["approve", "reject"]),
+        ),
+      )
+      .orderBy(desc(auditLogs.timestamp))
+      .limit(1);
+
+    const revertTo = normalizeRevokeTargetStatus(decisionLog?.previousStatus);
+
+    await db
+      .update(budgets)
+      .set({ status: revertTo, updated_at: now })
+      .where(eq(budgets.id, budgetId));
+
+    await db.insert(auditLogs).values({
+      budget_id: budgetId,
+      actor_id: user.id,
+      action: "revoke_decision",
+      previous_status: existingBudget.status,
+      new_status: revertTo,
+      comment: reason,
+    });
+
+    invalidateDashboardCaches();
+    revalidatePath(`/dashboard/budget/${budgetId}`);
+    revalidatePath("/dashboard/approver/approvals");
+    redirect(
+      buildRedirectUrl(rawReturnTo, {
+        success: "Decision revoked successfully",
+      }),
+    );
+  }
+
+  const newStatus = intent === "approve" ? "approved" : "rejected";
+
+  if (newStatus === existingBudget.status) {
+    redirect(buildRedirectUrl(rawReturnTo, { error: "No change to apply" }));
+  }
+
+  await db
+    .update(budgets)
+    .set({ status: newStatus, updated_at: now })
+    .where(eq(budgets.id, budgetId));
+
+  await db.insert(auditLogs).values({
+    budget_id: budgetId,
+    actor_id: user.id,
+    action: intent,
+    previous_status: existingBudget.status,
+    new_status: newStatus,
+    comment: reason,
+  });
+
+  invalidateDashboardCaches();
+  revalidatePath(`/dashboard/budget/${budgetId}`);
+  revalidatePath("/dashboard/approver/approvals");
+  redirect(
+    buildRedirectUrl(rawReturnTo, {
+      success: "Decision updated successfully",
+    }),
+  );
 }
 
 // Add Item Action

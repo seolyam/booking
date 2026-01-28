@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
-import { desc, eq, inArray, and } from "drizzle-orm";
+import { desc, eq, inArray, and, ne } from "drizzle-orm";
 import { Bell, Search, Eye } from "lucide-react";
 
 // Force dynamic rendering - requires auth and DB access
@@ -125,7 +125,7 @@ export default async function RequestsPage({
   const myBudgets = await db.query.budgets.findMany({
     where: statusWhere
       ? and(eq(budgets.user_id, user.id), statusWhere)
-      : eq(budgets.user_id, user.id),
+      : and(eq(budgets.user_id, user.id), ne(budgets.status, "draft")),
     orderBy: [desc(budgets.created_at)],
     limit: 200,
   });
@@ -165,7 +165,7 @@ export default async function RequestsPage({
           includesQuery(projectCode, q) ||
           includesQuery(budDisplayId, q) ||
           includesQuery(budNum, q) ||
-          includesQuery(projectName, q) ||
+          includesQuery(displayName, q) ||
           includesQuery(type, q) ||
           includesQuery(status, q) ||
           includesQuery(amountDigits, normalizeDigits(q))
@@ -202,7 +202,7 @@ export default async function RequestsPage({
               <input
                 name="q"
                 defaultValue={qRaw ?? ""}
-                placeholder="Search (BUD-#, project, type, status…)"
+                placeholder="Search (BUD-#, request name, type, status…)"
                 className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400"
               />
               {activeStatus !== "all" ? (
@@ -287,7 +287,7 @@ export default async function RequestsPage({
             <thead>
               <tr className="text-left text-xs text-gray-500 border-t border-black/10">
                 <th className="py-4 pl-6 pr-4 font-medium">BUDGET ID</th>
-                <th className="py-4 px-4 font-medium">PROJECT NAME</th>
+                <th className="py-4 px-4 font-medium">REQUEST NAME</th>
                 <th className="py-4 px-3 font-medium">TYPE</th>
                 <th className="py-4 px-3 font-medium">AMOUNT</th>
                 <th className="py-4 px-3 font-medium">STATUS</th>
@@ -337,7 +337,7 @@ export default async function RequestsPage({
                       </td>
                       <td className="py-4 px-4">
                         <div className="font-medium text-gray-900 line-clamp-2 leading-snug">
-                          {projectName}
+                          {displayName}
                         </div>
                       </td>
                       <td className="py-4 px-3">

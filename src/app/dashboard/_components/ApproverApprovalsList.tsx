@@ -16,6 +16,21 @@ export default function ApproverApprovalsList({
   const [currentStatus, setCurrentStatus] =
     useState<ApproverDashboardRow["statusLabel"]>(activeStatus);
 
+  type SortKey =
+    | "budgetId"
+    | "projectName"
+    | "type"
+    | "amount"
+    | "status"
+    | "date"
+    | "dateApproved"
+    | "action";
+
+  const [sortKey, setSortKey] = useState<SortKey>(
+    activeStatus === "Approved" ? "dateApproved" : "date",
+  );
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
   const filteredRows = initialRows.filter((r) => {
     const matchesSearch =
       r.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -23,6 +38,44 @@ export default function ApproverApprovalsList({
       r.projectSub.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = r.statusLabel === currentStatus;
     return matchesSearch && matchesStatus;
+  });
+
+  const parsePhp = (s: string) => {
+    const n = Number(s.replace(/[^0-9.-]+/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const parseDateLike = (label: string) => {
+    // label is MM-DD-YY
+    const [mm, dd, yy] = label.split("-").map((v) => Number(v));
+    if (!mm || !dd || !yy) return 0;
+    const fullYear = 2000 + yy;
+    return new Date(fullYear, mm - 1, dd).getTime();
+  };
+
+  const sortedRows = [...filteredRows].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const cmp = (x: number | string, y: number | string) => {
+      if (typeof x === "number" && typeof y === "number") return x - y;
+      return String(x).localeCompare(String(y));
+    };
+
+    if (sortKey === "budgetId") return dir * cmp(a.displayId, b.displayId);
+    if (sortKey === "projectName")
+      return dir * cmp(a.projectName, b.projectName);
+    if (sortKey === "type") return dir * cmp(a.type, b.type);
+    if (sortKey === "amount")
+      return dir * (parsePhp(a.amount) - parsePhp(b.amount));
+    if (sortKey === "status") return dir * cmp(a.statusLabel, b.statusLabel);
+    if (sortKey === "date")
+      return dir * (parseDateLike(a.dateLabel) - parseDateLike(b.dateLabel));
+    if (sortKey === "dateApproved") {
+      const aT = a.approvedAt ? Date.parse(a.approvedAt) : 0;
+      const bT = b.approvedAt ? Date.parse(b.approvedAt) : 0;
+      return dir * (aT - bT);
+    }
+    // action: no meaningful ordering
+    return 0;
   });
 
   const typePill = (type: "CapEx" | "OpEx") => {
@@ -115,7 +168,9 @@ export default function ApproverApprovalsList({
                   <th className="pb-4 pr-4 font-bold">TYPE</th>
                   <th className="pb-4 pr-4 font-bold text-center">AMOUNT</th>
                   <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
-                  <th className="pb-4 pr-4 font-bold text-center">DATE</th>
+                  <th className="pb-4 pr-4 font-bold text-center">
+                    {currentStatus === "Approved" ? "DATE APPROVED" : "DATE"}
+                  </th>
                   <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
                 </tr>
               </thead>

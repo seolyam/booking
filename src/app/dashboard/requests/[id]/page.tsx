@@ -302,13 +302,21 @@ export default async function RequestViewPage({
           <div className="min-w-0">
             <div className="flex items-center gap-3">
               <div className="text-lg font-semibold text-gray-900 truncate">
-                {projectName}
+                {displayTitle}
               </div>
               <span className={typePill(budget.budget_type)}>
                 {budget.budget_type === "capex" ? "CapEx" : "OpEx"}
               </span>
             </div>
             <div className="mt-1 text-xs text-gray-500">{projectSub}</div>
+            {budget.project && (
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <span className="text-gray-500">Project:</span>
+                <span className="font-medium text-gray-700">
+                  {budget.project.project_code} - {budget.project.name}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
