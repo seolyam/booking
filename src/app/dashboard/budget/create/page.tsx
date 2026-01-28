@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 // import { useMemo, useCallback } from "react"; // DISABLED - for project feature
-import { Bell, Trash2 } from "lucide-react";
+import { Bell, Trash2, Calendar } from "lucide-react";
 // import { FolderPlus, Building2 } from "lucide-react"; // DISABLED - for project feature
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -145,6 +145,10 @@ export default function CreateBudgetPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState<CostItem[]>([createEmptyItem()]);
   const [varianceExplanation, setVarianceExplanation] = useState("");
+
+  // Timeline State
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Load projects on mount - DISABLED
   // useEffect(() => {
@@ -336,6 +340,14 @@ export default function CreateBudgetPage() {
       draftFd.set("title", budgetTitle.trim());
       draftFd.set("budgetType", budgetType);
       draftFd.set("fiscalYear", String(new Date().getFullYear()));
+
+      // Add timeline dates if provided
+      if (startDate) {
+        draftFd.set("startDate", startDate);
+      }
+      if (endDate) {
+        draftFd.set("endDate", endDate);
+      }
 
       const draftRes = await createBudgetDraft(null, draftFd);
       if (!draftRes?.budgetId) {
@@ -723,6 +735,44 @@ export default function CreateBudgetPage() {
           </div>
         </div>
       </section>
+
+      {/* Timeline Section */}
+      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Calendar className="h-5 w-5" /> Project Timeline
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-gray-700 font-medium mb-2 block">
+              Start Date
+            </Label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border-gray-300"
+            />
+          </div>
+          <div>
+            <Label className="text-gray-700 font-medium mb-2 block">
+              End Date
+            </Label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || undefined}
+              className="border-gray-300"
+            />
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500 mt-3">
+          Optional: Specify the timeline for this budget request.
+        </p>
+      </section>
+
       {/* Variance Explanation Section */}
       <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
