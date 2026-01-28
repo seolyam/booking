@@ -7,13 +7,18 @@ import {
   auditLogs,
   users,
   reviewChecklists,
-  budgetMilestones,
+  budgetProjectCounters,
+  archivedBudgets,
+  archivedBudgetItems,
+  archivedAuditLogs,
 } from "@/db/schema";
 import { eq, sql, and, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+
+type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 type AuthedUser = {
   id: string;
@@ -48,6 +53,159 @@ function invalidateDashboardCaches() {
 }
 
 const VARIANCE_THRESHOLD = 50000;
+
+function getUtcYear(d: Date) {
+  return d.getUTCFullYear();
+}
+
+function formatProjectCode(budgetType: "capex" | "opex", n: number) {
+  const prefix = budgetType === "capex" ? "CapEx" : "OpEx";
+  return `${prefix}-${n}`;
+}
+
+async function archiveFiscalYearTx(params: {
+  tx: DbTx;
+  fiscalYearToArchive: number;
+}) {
+  const { tx, fiscalYearToArchive } = params;
+
+  // Archive only if there are any budgets for that year.
+  // drizzle-orm/postgres-js returns rows directly as an array
+  const countRows = (await tx.execute(sql<{ count: number }>`
+    select count(*)::int as count
+    from ${budgets}
+    where ${budgets.fiscal_year} = ${fiscalYearToArchive}
+  `)) as unknown as Array<{ count: number }>;
+
+  const toArchiveCount = countRows[0]?.count ?? 0;
+  if (toArchiveCount <= 0) return;
+
+  // 1) Snapshot budgets into archive table.
+  await tx.execute(sql`
+    insert into ${archivedBudgets} (
+      source_budget_id,
+      user_id,
+      budget_number,
+      project_code,
+      budget_type,
+      fiscal_year,
+      status,
+      total_amount,
+      variance_explanation,
+      roi_analysis,
+      start_date,
+      end_date,
+      created_at,
+      updated_at
+    )
+    select
+      ${budgets.id},
+      ${budgets.user_id},
+      ${budgets.budget_number},
+      ${budgets.project_code},
+      ${budgets.budget_type},
+      ${budgets.fiscal_year},
+      ${budgets.status},
+      ${budgets.total_amount},
+      ${budgets.variance_explanation},
+      ${budgets.roi_analysis},
+      ${budgets.start_date},
+      ${budgets.end_date},
+      ${budgets.created_at},
+      ${budgets.updated_at}
+    from ${budgets}
+    where ${budgets.fiscal_year} = ${fiscalYearToArchive}
+    on conflict (source_budget_id) do nothing
+  `);
+
+  // 2) Snapshot items/milestones/logs using the mapping (source_budget_id -> archived_budgets.id).
+  await tx.execute(sql`
+    insert into ${archivedBudgetItems} (
+      archived_budget_id,
+      description,
+      quantity,
+      unit_cost,
+      total_cost,
+      quarter
+    )
+    select
+      ab.id,
+      bi.description,
+      bi.quantity,
+      bi.unit_cost,
+      bi.total_cost,
+      bi.quarter
+    from ${budgetItems} bi
+    inner join ${budgets} b on b.id = bi.budget_id
+    inner join ${archivedBudgets} ab on ab.source_budget_id = b.id
+    where b.fiscal_year = ${fiscalYearToArchive}
+  `);
+
+  await tx.execute(sql`
+    insert into ${archivedAuditLogs} (
+      archived_budget_id,
+      actor_id,
+      action,
+      previous_status,
+      new_status,
+      timestamp,
+      comment
+    )
+    select
+      ab.id,
+      al.actor_id,
+      al.action,
+      al.previous_status,
+      al.new_status,
+      al.timestamp,
+      al.comment
+    from ${auditLogs} al
+    inner join ${budgets} b on b.id = al.budget_id
+    inner join ${archivedBudgets} ab on ab.source_budget_id = b.id
+    where b.fiscal_year = ${fiscalYearToArchive}
+  `);
+
+  // 3) Delete from active tables (cascades to items/milestones/logs).
+  await tx.delete(budgets).where(eq(budgets.fiscal_year, fiscalYearToArchive));
+}
+
+async function allocateProjectCodeTx(params: {
+  tx: DbTx;
+  fiscalYear: number;
+  budgetType: "capex" | "opex";
+}) {
+  const { tx, fiscalYear, budgetType } = params;
+
+  // Ensure the counter row exists.
+  await tx.execute(sql`
+    insert into ${budgetProjectCounters} (fiscal_year, budget_type, next_number)
+    values (${fiscalYear}, ${budgetType}, 1)
+    on conflict (fiscal_year, budget_type) do nothing
+  `);
+
+  // Lock the row and read the next number.
+  // drizzle-orm/postgres-js returns rows directly as an array
+  const counterRows = (await tx.execute(sql<{ next_number: number }>`
+    select next_number
+    from ${budgetProjectCounters}
+    where fiscal_year = ${fiscalYear} and budget_type = ${budgetType}
+    for update
+  `)) as unknown as Array<{ next_number: number }>;
+
+  const nextNumber = counterRows[0]?.next_number;
+  if (!nextNumber || !Number.isFinite(nextNumber)) {
+    throw new Error("Failed to allocate project code");
+  }
+
+  await tx.execute(sql`
+    update ${budgetProjectCounters}
+    set next_number = next_number + 1,
+        updated_at = now()
+    where fiscal_year = ${fiscalYear} and budget_type = ${budgetType}
+  `);
+
+  return formatProjectCode(budgetType, nextNumber);
+}
 
 // Schema for Draft Creation
 const CreateBudgetSchema = z.object({
@@ -97,61 +255,61 @@ export async function createBudgetDraft(
   }
 
   try {
-    const [newBudget] = await db
-      .insert(budgets)
-      .values({
-        user_id: user.id,
-        project_id: validated.data.projectId ?? null,
-        title: validated.data.title,
-        budget_type: validated.data.budgetType,
-        fiscal_year: validated.data.fiscalYear,
-        status: "draft",
-        total_amount: "0",
-        start_date: startDateStr ? new Date(startDateStr) : null,
-        end_date: endDateStr ? new Date(endDateStr) : null,
-      })
-      .returning();
+    const now = new Date();
+    const fiscalYear = validated.data.fiscalYear;
+    const budgetType = validated.data.budgetType;
 
-    await db.insert(auditLogs).values({
-      budget_id: newBudget.id,
-      actor_id: user.id,
-      action: "create_draft",
-      new_status: "draft",
+    const newBudget = await db.transaction(async (tx) => {
+      // If we're creating a budget for the current calendar year, automatically archive last year's
+      // budgets into archived_* tables so IDs reset cleanly year-over-year.
+      const nowYear = getUtcYear(now);
+      if (fiscalYear === nowYear) {
+        await archiveFiscalYearTx({
+          tx,
+          fiscalYearToArchive: fiscalYear - 1,
+        });
+      }
+
+      const projectCode = await allocateProjectCodeTx({
+        tx,
+        fiscalYear,
+        budgetType,
+      });
+
+      const [created] = await tx
+        .insert(budgets)
+        .values({
+          user_id: user.id,
+          budget_type: budgetType,
+          fiscal_year: fiscalYear,
+          project_code: projectCode,
+          status: "draft",
+          total_amount: "0",
+          start_date: startDateStr ? new Date(startDateStr) : null,
+          end_date: endDateStr ? new Date(endDateStr) : null,
+          created_at: now,
+          updated_at: now,
+        })
+        .returning();
+
+      await tx.insert(auditLogs).values({
+        budget_id: created.id,
+        actor_id: user.id,
+        action: "create_draft",
+        new_status: "draft",
+      });
+
+      return created;
     });
 
-    return { message: "Budget draft created", budgetId: newBudget.id };
+    return {
+      message: "Budget draft created",
+      budgetId: newBudget.id,
+      projectCode: newBudget.project_code,
+    };
   } catch (e) {
     console.error(e);
     return { message: "Failed to create budget" };
-  }
-}
-
-export async function addBudgetMilestone(
-  prevState: unknown,
-  formData: FormData,
-) {
-  const user = await getUser();
-  if (!user) return { message: "Unauthorized" };
-
-  const budgetId = formData.get("budgetId") as string;
-  const description = formData.get("description") as string;
-  const targetQuarter = formData.get("targetQuarter") as string | null;
-
-  if (!budgetId || !description) {
-    return { message: "Budget ID and description are required" };
-  }
-
-  try {
-    await db.insert(budgetMilestones).values({
-      budget_id: budgetId,
-      description,
-      target_quarter: targetQuarter,
-    });
-
-    return { message: "Milestone added" };
-  } catch (e) {
-    console.error(e);
-    return { message: "Failed to add milestone" };
   }
 }
 
@@ -434,7 +592,7 @@ export async function rejectBudget(formData: FormData): Promise<void> {
 
 export async function finalizeBudget(
   budgetId: string,
-  decision: "approve" | "reject",
+  decision: "approve" | "reject" | "revoke",
   comment?: string,
 ) {
   const user = await getUser();
@@ -457,12 +615,32 @@ export async function finalizeBudget(
   });
   if (!existingBudget) return { message: "Budget not found" };
 
-  const approvableStatuses = ["verified", "verified_by_reviewer"];
-  if (!approvableStatuses.includes(existingBudget.status)) {
-    return { message: "Budget is not in an approvable state" };
+  const status = existingBudget.status;
+  const canApproveReject =
+    status === "verified" || status === "verified_by_reviewer";
+  const canEditApproved = status === "approved";
+  const canEditRejected = status === "rejected";
+
+  if (decision === "approve") {
+    if (!(canApproveReject || canEditRejected)) {
+      return { message: "Budget is not in an approvable state" };
+    }
+  } else if (decision === "reject") {
+    if (!(canApproveReject || canEditApproved)) {
+      return { message: "Budget is not in a rejectable state" };
+    }
+  } else if (decision === "revoke") {
+    if (!(canEditApproved || canEditRejected)) {
+      return { message: "Budget is not in a revocable state" };
+    }
   }
 
-  const newStatus = decision === "approve" ? "approved" : "rejected";
+  const newStatus =
+    decision === "approve"
+      ? "approved"
+      : decision === "reject"
+        ? "rejected"
+        : "verified";
 
   await db
     .update(budgets)
@@ -478,7 +656,8 @@ export async function finalizeBudget(
     comment: comment?.trim() ? comment.trim() : undefined,
   });
 
-  revalidatePath("/dashboard/budget");
+  invalidateDashboardCaches();
+  revalidatePath("/dashboard/approver/approvals");
   return { message: `Budget ${decision}` };
 }
 
@@ -993,54 +1172,6 @@ export async function deleteBudgetItem(formData: FormData) {
 }
 
 // Delete a budget milestone
-export async function deleteBudgetMilestone(formData: FormData) {
-  const user = await getUser();
-  if (!user) {
-    return { message: "Unauthorized" };
-  }
-
-  const milestoneId = formData.get("milestoneId") as string;
-
-  if (!milestoneId) {
-    return { message: "Missing milestone ID" };
-  }
-
-  try {
-    // Verify milestone exists
-    const milestone = await db.query.budgetMilestones.findFirst({
-      where: eq(budgetMilestones.id, milestoneId),
-    });
-
-    if (!milestone) {
-      return { message: "Milestone not found" };
-    }
-
-    // Verify budget belongs to user
-    const budget = await db.query.budgets.findFirst({
-      where: eq(budgets.id, milestone.budget_id),
-    });
-
-    if (!budget || budget.user_id !== user.id) {
-      return { message: "Unauthorized" };
-    }
-
-    // Only allow deletion on revision_requested budgets
-    if (budget.status !== "revision_requested") {
-      return { message: "Cannot delete milestones for this budget status" };
-    }
-
-    await db
-      .delete(budgetMilestones)
-      .where(eq(budgetMilestones.id, milestoneId));
-
-    revalidatePath(`/dashboard/budget/edit/${milestone.budget_id}`);
-    return { message: "Milestone deleted successfully" };
-  } catch (error) {
-    console.error("deleteBudgetMilestone error:", error);
-    return { message: "Failed to delete milestone" };
-  }
-}
-
 // Resubmit a budget after revision
 export async function resubmitBudget(
   budgetId: string,

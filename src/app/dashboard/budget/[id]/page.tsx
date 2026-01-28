@@ -2,18 +2,10 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import {
-  auditLogs,
-  budgetItems,
-  budgets,
-  users,
-  budgetMilestones,
-} from "@/db/schema";
+import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { editFinalDecision } from "@/actions/budget";
+import ApprovalDecisionButton from "@/app/dashboard/_components/ApprovalDecisionButton";
 import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
@@ -116,6 +108,7 @@ function actionLabel(action: string) {
   if (action === "request_revision") return "Revision requested";
   if (action === "approve") return "Approved";
   if (action === "reject") return "Rejected";
+  if (action === "revoke") return "Revoked";
   return action
     .split("_")
     .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
@@ -131,6 +124,8 @@ function auditDescription(action: string) {
   if (action === "approve")
     return "Budget approved - Added to approved budget list";
   if (action === "reject") return "Budget rejected";
+  if (action === "revoke")
+    return "Decision revoked - Returned to pending approval";
   return "";
 }
 
@@ -189,20 +184,30 @@ export default async function BudgetDetailPage({
   const { id } = await params;
   const { error, success } = await searchParams;
 
+  const decodedId = decodeURIComponent(id);
+  const looksLikeProjectCode = /^(CapEx|OpEx)-\d+$/i.test(decodedId);
+
   // Try to parse as budget_number first (numeric or BUD-XXX format)
   let budgetNum: number | null = null;
-  if (id.startsWith("BUD-")) {
-    budgetNum = parseInt(id.slice(4), 10);
+  if (decodedId.startsWith("BUD-")) {
+    budgetNum = parseInt(decodedId.slice(4), 10);
   } else {
-    const parsed = parseInt(id, 10);
+    const parsed = parseInt(decodedId, 10);
     if (!isNaN(parsed)) {
       budgetNum = parsed;
     }
   }
 
-  // Fetch budget by budget_number if we have one, otherwise by UUID for backward compatibility
+  // Fetch budget by project_code, then budget_number, otherwise by UUID for backward compatibility
   let budget;
-  if (budgetNum !== null) {
+  if (looksLikeProjectCode) {
+    const result = await db
+      .select()
+      .from(budgets)
+      .where(eq(budgets.project_code, decodedId))
+      .limit(1);
+    budget = result[0];
+  } else if (budgetNum !== null) {
     const result = await db
       .select()
       .from(budgets)
@@ -213,7 +218,7 @@ export default async function BudgetDetailPage({
     const result = await db
       .select()
       .from(budgets)
-      .where(eq(budgets.id, id))
+      .where(eq(budgets.id, decodedId))
       .limit(1);
     budget = result[0];
   }
@@ -226,14 +231,12 @@ export default async function BudgetDetailPage({
 
   if (!user) redirect("/login");
 
-  const currentUser = await db.query.users.findFirst({
+  const appUser = await db.query.users.findFirst({
     where: eq(users.id, user.id),
   });
-  const canEditDecision =
-    currentUser?.role === "approver" || currentUser?.role === "superadmin";
-  const canShowDecisionEditPanel =
-    canEditDecision &&
-    (budget.status === "approved" || budget.status === "rejected");
+
+  const canApprove =
+    appUser?.role === "approver" || appUser?.role === "superadmin";
 
   const [requester] = await db
     .select({
@@ -248,11 +251,6 @@ export default async function BudgetDetailPage({
   const items = await db.query.budgetItems.findMany({
     where: eq(budgetItems.budget_id, budget.id),
     orderBy: [desc(budgetItems.total_cost)],
-  });
-
-  const milestones = await db.query.budgetMilestones.findMany({
-    where: eq(budgetMilestones.budget_id, budget.id),
-    orderBy: [asc(budgetMilestones.created_at)],
   });
 
   const logs = await db.query.auditLogs.findMany({
@@ -335,7 +333,14 @@ export default async function BudgetDetailPage({
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex items-center gap-3">
+          {canApprove && (
+            <ApprovalDecisionButton
+              budgetId={budget.id}
+              budgetStatus={budget.status}
+              redirectHref={null}
+            />
+          )}
           <div
             className={
               "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold " +
@@ -345,104 +350,6 @@ export default async function BudgetDetailPage({
             {status.icon}
             {status.label}
           </div>
-
-          {canShowDecisionEditPanel ? (
-            <details className="w-full max-w-sm">
-              <summary
-                className={
-                  buttonVariants({ variant: "outline", size: "sm" }) +
-                  " cursor-pointer list-none [&::-webkit-details-marker]:hidden"
-                }
-              >
-                Edit Decision
-              </summary>
-
-              <div className="mt-3 rounded-2xl bg-white shadow-sm ring-1 ring-black/5 p-4">
-                <div className="text-sm font-semibold text-gray-900">
-                  Change Decision
-                </div>
-                <div className="mt-1 text-xs text-gray-600">
-                  Explanation is required for audit purposes.
-                </div>
-
-                <form action={editFinalDecision} className="mt-4 space-y-3">
-                  <input type="hidden" name="budgetId" value={budget.id} />
-                  <input
-                    type="hidden"
-                    name="returnTo"
-                    value={`/dashboard/budget/${id}`}
-                  />
-
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">
-                      Explanation <span className="text-red-600">*</span>
-                    </label>
-                    <textarea
-                      name="reason"
-                      required
-                      rows={3}
-                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/10"
-                      placeholder="Please specify why you are changing your decision..."
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {budget.status === "approved" ? (
-                      <>
-                        <button
-                          type="submit"
-                          name="intent"
-                          value="reject"
-                          className={buttonVariants({
-                            variant: "destructive",
-                            size: "sm",
-                          })}
-                        >
-                          Reject decision
-                        </button>
-                        <button
-                          type="submit"
-                          name="intent"
-                          value="revoke"
-                          className={buttonVariants({
-                            variant: "outline",
-                            size: "sm",
-                          })}
-                        >
-                          Revoke decision
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="submit"
-                          name="intent"
-                          value="approve"
-                          className={buttonVariants({
-                            variant: "default",
-                            size: "sm",
-                          })}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="submit"
-                          name="intent"
-                          value="revoke"
-                          className={buttonVariants({
-                            variant: "outline",
-                            size: "sm",
-                          })}
-                        >
-                          Revoke decision
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </form>
-              </div>
-            </details>
-          ) : null}
         </div>
       </div>
 
@@ -570,31 +477,6 @@ export default async function BudgetDetailPage({
             {!budget.start_date && !budget.end_date && (
               <div className="text-sm text-gray-600">No timeline set.</div>
             )}
-
-            <div className="pt-2">
-              <div className="text-sm font-semibold text-gray-900">
-                Milestones:
-              </div>
-              {milestones.length === 0 ? (
-                <div className="mt-2 text-sm text-gray-600">
-                  No milestones set.
-                </div>
-              ) : (
-                <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                  {milestones.map((m) => (
-                    <li key={m.id} className="flex items-center gap-2">
-                      <span aria-hidden="true">•</span>
-                      <span>{m.description}</span>
-                      {m.target_quarter && (
-                        <span className="text-xs text-gray-500">
-                          ({m.target_quarter})
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           </div>
 
           {budget.variance_explanation ? (

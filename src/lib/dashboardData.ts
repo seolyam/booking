@@ -3,6 +3,132 @@ import { budgets, budgetItems, users } from "@/db/schema";
 import { desc, eq, inArray, and, gte, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
+function errorMessage(err: unknown) {
+  return String((err as { message?: unknown })?.message ?? err);
+}
+
+function coerceNumber(value: unknown) {
+  if (typeof value === "number") return value;
+  if (typeof value === "bigint") return Number(value);
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function coerceDate(value: unknown) {
+  if (value instanceof Date) return value;
+  return new Date(String(value));
+}
+
+function coerceDateNullable(value: unknown) {
+  if (value === null || value === undefined) return null;
+  return coerceDate(value);
+}
+
+type DashboardBudgetRow = {
+  id: string;
+  user_id: string;
+  budget_number: number;
+  project_code: string | null;
+  budget_type: "capex" | "opex";
+  fiscal_year: number;
+  status: string;
+  total_amount: string;
+  variance_explanation: string | null;
+  roi_analysis: string | null;
+  start_date: Date | null;
+  end_date: Date | null;
+  created_at: Date;
+  updated_at: Date;
+};
+
+function mapBudgetRow(r: Record<string, unknown>, hasProjectCode: boolean) {
+  return {
+    id: String(r.id),
+    user_id: String(r.user_id),
+    budget_number: coerceNumber(r.budget_number),
+    project_code: hasProjectCode
+      ? ((r.project_code as string | null) ?? null)
+      : null,
+    budget_type: r.budget_type as "capex" | "opex",
+    fiscal_year: coerceNumber(r.fiscal_year),
+    status: String(r.status),
+    total_amount: String(r.total_amount),
+    variance_explanation:
+      (r.variance_explanation as string | null | undefined) ?? null,
+    roi_analysis: (r.roi_analysis as string | null | undefined) ?? null,
+    start_date: coerceDateNullable(r.start_date),
+    end_date: coerceDateNullable(r.end_date),
+    created_at: coerceDate(r.created_at),
+    updated_at: coerceDate(r.updated_at),
+  } satisfies DashboardBudgetRow;
+}
+
+async function selectBudgetsSafe(params: {
+  where?: ReturnType<typeof sql>;
+  limit: number;
+}) {
+  const { where, limit } = params;
+
+  const whereClause = where ? sql`where ${where}` : sql``;
+
+  try {
+    // drizzle-orm/postgres-js returns rows directly as an array, not { rows: [...] }
+    const rows = (await db.execute(sql`
+      select
+        id,
+        user_id,
+        budget_number,
+        project_code,
+        budget_type,
+        fiscal_year,
+        status,
+        total_amount,
+        variance_explanation,
+        roi_analysis,
+        start_date,
+        end_date,
+        created_at,
+        updated_at
+      from budgets
+      ${whereClause}
+      order by created_at desc
+      limit ${limit}
+    `)) as unknown as Array<Record<string, unknown>>;
+
+    return rows.map((r) => mapBudgetRow(r, true));
+  } catch (err) {
+    const msg = errorMessage(err).toLowerCase();
+
+    // Backward-compatible fallback if the DB hasn't applied the project_code migration yet.
+    if (msg.includes('column "project_code" does not exist')) {
+      const rows = (await db.execute(sql`
+        select
+          id,
+          user_id,
+          budget_number,
+          budget_type,
+          fiscal_year,
+          status,
+          total_amount,
+          variance_explanation,
+          roi_analysis,
+          start_date,
+          end_date,
+          created_at,
+          updated_at
+        from budgets
+        ${whereClause}
+        order by created_at desc
+        limit ${limit}
+      `)) as unknown as Array<Record<string, unknown>>;
+
+      return rows.map((r) => mapBudgetRow(r, false));
+    }
+
+    throw err;
+  }
+}
+
 // Helper to format PHP currency
 export function formatPhp(amount: string) {
   const n = Number(amount);
@@ -28,9 +154,8 @@ export const getRequesterDashboardData = unstable_cache(
   async (userId: string) => {
     // Run queries in parallel
     const [myBudgets, items] = await Promise.all([
-      db.query.budgets.findMany({
-        where: eq(budgets.user_id, userId),
-        orderBy: [desc(budgets.created_at)],
+      selectBudgetsSafe({
+        where: sql`user_id = ${userId}`,
         limit: 50,
       }),
       db
@@ -60,9 +185,11 @@ export const getReviewerDashboardData = unstable_cache(
 
     // Run queries in parallel
     const [reviewerBudgets, reviewerBudgetsWithDept] = await Promise.all([
-      db.query.budgets.findMany({
-        where: inArray(budgets.status, [...reviewStatuses]),
-        orderBy: [desc(budgets.created_at)],
+      selectBudgetsSafe({
+        where: sql`status in (${sql.join(
+          [...reviewStatuses].map((s) => sql`${s}`),
+          sql`, `,
+        )})`,
         limit: 50,
       }),
       db
@@ -192,10 +319,7 @@ export const getSuperadminDashboardData = unstable_cache(
     const [requesterData, reviewerData, approverData, pendingUsers] =
       await Promise.all([
         // All budgets for superadmin view
-        db.query.budgets.findMany({
-          orderBy: [desc(budgets.created_at)],
-          limit: 50,
-        }),
+        selectBudgetsSafe({ limit: 50 }),
         getReviewerDashboardData(),
         getApproverDashboardData(),
         db.query.users.findMany({

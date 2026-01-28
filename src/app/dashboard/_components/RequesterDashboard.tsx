@@ -37,17 +37,17 @@ export default function RequesterDashboard({
   ) => (
     <Link
       href={href}
-      className="rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group border border-gray-100/50 hover:-translate-y-1"
+      className="rounded-xl md:rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group border border-gray-100/50 hover:-translate-y-1"
     >
       <div
-        className={`h-12 w-12 rounded-xl flex items-center justify-center ${iconBg} transition-transform group-hover:scale-110 shadow-sm`}
+        className={`h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl flex items-center justify-center ${iconBg} transition-transform group-hover:scale-110 shadow-sm`}
       >
         {icon}
       </div>
-      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">
+      <div className="mt-3 md:mt-6 text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
         {value}
       </div>
-      <div className="mt-1 text-sm font-semibold text-gray-500 uppercase tracking-wide">
+      <div className="mt-0.5 md:mt-1 text-[10px] md:text-sm font-semibold text-gray-500 uppercase tracking-wide">
         {label}
       </div>
     </Link>
@@ -87,8 +87,8 @@ export default function RequesterDashboard({
   };
 
   return (
-    <div className="space-y-10">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+    <div className="space-y-6 md:space-y-10">
+      <div className="grid grid-cols-2 gap-3 md:gap-6 md:grid-cols-4">
         {statCard(
           <FileText className="h-6 w-6 text-blue-500" />,
           stats.totalSubmitted,
@@ -119,22 +119,22 @@ export default function RequesterDashboard({
         )}
       </div>
 
-      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
-        <div className="p-8">
-          <div className="flex items-center justify-between gap-4 mb-8">
-            <div className="text-xl font-bold text-gray-900">
+      <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+        <div className="p-4 md:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-4 mb-6 md:mb-8">
+            <div className="text-lg md:text-xl font-bold text-gray-900">
               My Budget Requests
             </div>
             <Link
               href="/dashboard/budget/create"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#358334] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#358334] px-4 md:px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm min-h-[44px]"
             >
               Create Request <span className="text-xl leading-none">+</span>
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
                   <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
@@ -212,10 +212,10 @@ export default function RequesterDashboard({
           </div>
         </div>
 
-        <div className="px-8 py-6 border-t border-gray-50 flex justify-end">
+        <div className="px-4 md:px-8 py-4 md:py-6 border-t border-gray-50 flex justify-end">
           <Link
             href="/dashboard/requests"
-            className="text-sm font-bold text-gray-900 hover:text-[#358334] transition-colors flex items-center gap-1 underline"
+            className="text-sm font-bold text-gray-900 hover:text-[#358334] transition-colors flex items-center gap-1 underline min-h-[44px] items-center"
           >
             View all
           </Link>

@@ -126,7 +126,7 @@ export default async function ReviewerDashboardPage() {
     }
   }
 
-  const rows: ReviewerDashboardRow[] = reviewQueue.map((b, idx) => {
+  const rows: ReviewerDashboardRow[] = reviewQueue.map((b) => {
     const type =
       b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
@@ -152,7 +152,9 @@ export default async function ReviewerDashboardPage() {
 
     return {
       budgetId: b.id,
-      displayId: `BUD-${b.budget_number}`,
+      displayId:
+        (b as { project_code?: string | null }).project_code ??
+        `BUD-${b.budget_number}`,
       projectName,
       projectSub,
       type,

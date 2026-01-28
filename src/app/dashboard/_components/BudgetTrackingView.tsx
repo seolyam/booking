@@ -16,12 +16,6 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 
-interface Milestone {
-  id: string;
-  description: string;
-  target_quarter: string | null;
-}
-
 interface Item {
   id: string;
   description: string;
@@ -58,7 +52,6 @@ interface AuditLog {
 interface BudgetTrackingViewProps {
   budget: BudgetDetails;
   items: Item[];
-  milestones: Milestone[];
   auditHistory: AuditLog[];
   backHref: string;
 }
@@ -66,7 +59,6 @@ interface BudgetTrackingViewProps {
 export default function BudgetTrackingView({
   budget,
   items,
-  milestones,
   auditHistory,
   backHref,
 }: BudgetTrackingViewProps) {
@@ -396,41 +388,6 @@ export default function BudgetTrackingView({
                       {budget.endDate || "N/A"}
                     </span>
                   </div>
-                </div>
-
-                <div className="p-5 bg-gray-50/30 rounded-2xl border border-gray-100">
-                  <p className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">
-                    Milestones:
-                  </p>
-                  <ul className="space-y-2">
-                    {milestones.length > 0 ? (
-                      milestones.map((m) => (
-                        <li
-                          key={m.id}
-                          className="flex items-center gap-2 text-sm font-semibold text-[#475569]"
-                        >
-                          <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                          {m.description}{" "}
-                          {m.target_quarter ? `- ${m.target_quarter}` : ""}
-                        </li>
-                      ))
-                    ) : (
-                      <>
-                        <li className="flex items-center gap-2 text-sm font-semibold text-[#475569]">
-                          <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                          Equipment Procurement - Q1
-                        </li>
-                        <li className="flex items-center gap-2 text-sm font-semibold text-[#475569]">
-                          <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                          Installation - Q2
-                        </li>
-                        <li className="flex items-center gap-2 text-sm font-semibold text-[#475569]">
-                          <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                          Testing & Commissioning - Q3
-                        </li>
-                      </>
-                    )}
-                  </ul>
                 </div>
               </div>
             </div>

@@ -111,14 +111,8 @@ export default function ApproverApprovalsList({
 
   const filterBtn = (status: ApproverDashboardRow["statusLabel"]) => (
     <button
-      onClick={() => {
-        setCurrentStatus(status);
-        if (status === "Approved") {
-          setSortKey("dateApproved");
-          setSortDir("desc");
-        }
-      }}
-      className={`px-6 py-1.5 rounded-lg text-sm font-bold transition-all border ${
+      onClick={() => setCurrentStatus(status)}
+      className={`px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 ${
         currentStatus === status
           ? status === "Approved"
             ? "bg-green-50 text-green-600 border-green-200 ring-2 ring-green-400"
@@ -135,66 +129,38 @@ export default function ApproverApprovalsList({
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-4xl font-black text-gray-900">
+        <h1 className="text-2xl md:text-4xl font-black text-gray-900">
           List of budget proposals
         </h1>
-        <p className="text-gray-500 mt-2 font-medium">
+        <p className="text-gray-500 mt-1 md:mt-2 font-medium text-sm md:text-base">
           Review and verify budget details before forwarding to approver
         </p>
       </div>
 
-      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
-        <div className="p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <div className="relative flex-1 max-w-md">
+      <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+        <div className="p-4 md:p-8">
+          <div className="flex flex-col gap-4 md:gap-6 mb-6 md:mb-10">
+            <div className="relative w-full md:max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search Department & Budget Type"
-                className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334] transition-all text-sm font-medium"
+                className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334] transition-all text-sm font-medium min-h-[44px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  Order by
-                </span>
-                <select
-                  value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value as SortKey)}
-                  className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334]"
-                >
-                  <option value="budgetId">Budget ID</option>
-                  <option value="projectName">Project name</option>
-                  <option value="type">Type</option>
-                  <option value="amount">Amount</option>
-                  <option value="status">Status</option>
-                  <option value="date">Date</option>
-                  <option value="dateApproved">Date approved</option>
-                  <option value="action">Action</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSortDir((d) => (d === "asc" ? "desc" : "asc"))
-                  }
-                  className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-700 hover:bg-gray-50"
-                >
-                  {sortDir === "desc" ? "↓" : "↑"}
-                </button>
-              </div>
+            <div className="flex flex-wrap gap-2 md:gap-3">
               {filterBtn("Approved")}
               {filterBtn("Pending")}
               {filterBtn("Rejected")}
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
                   <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
@@ -219,57 +185,92 @@ export default function ApproverApprovalsList({
                     </td>
                   </tr>
                 ) : (
-                  sortedRows.map((r) => (
-                    <tr
-                      key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${
-                        r.statusLabel === "Rejected"
-                          ? "opacity-60 bg-gray-50/30"
-                          : ""
-                      }`}
-                    >
-                      <td className="py-5 pr-4 font-bold text-gray-400 text-xs">
-                        {r.displayId}
-                      </td>
-                      <td className="py-5 pr-4">
-                        <div className="font-bold text-gray-900 leading-tight">
-                          {r.projectName}
-                        </div>
-                        <div className="text-xs font-semibold text-gray-400 mt-0.5">
-                          {r.projectSub}
-                        </div>
-                      </td>
-                      <td className="py-5 pr-4">{typePill(r.type)}</td>
-                      <td className="py-5 pr-4 text-gray-900 font-bold text-center">
-                        {r.amount}
-                      </td>
-                      <td className="py-5 pr-4 text-center">
-                        {statusPill(r.statusLabel)}
-                      </td>
-                      <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
-                        {currentStatus === "Approved"
-                          ? (r.approvedDateLabel ?? r.dateLabel)
-                          : r.dateLabel}
-                      </td>
-                      <td className="py-5 pr-0 text-center">
-                        {r.statusLabel === "Pending" ? (
-                          <Link
-                            href={`/dashboard/approver/approvals/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 transition-colors shadow-sm"
-                          >
-                            View <Eye className="h-3.5 w-3.5" />
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/dashboard/budget/BUD-${String(r.budgetNumber).padStart(3, "0")}`}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-gray-200/80 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-300/80 transition-colors"
-                          >
-                            View <Eye className="h-3.5 w-3.5" />
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                  filteredRows.map((r) => {
+                    const isRejected = r.statusLabel === "Rejected";
+
+                    return (
+                      <tr
+                        key={r.budgetId}
+                        className={`group hover:bg-gray-50/50 transition-colors ${
+                          isRejected ? "bg-gray-50/30" : ""
+                        }`}
+                      >
+                        <td
+                          className={`py-5 pr-4 font-bold text-gray-400 text-xs ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {r.displayId}
+                        </td>
+                        <td
+                          className={`py-5 pr-4 ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          <div className="font-bold text-gray-900 leading-tight">
+                            {r.projectName}
+                          </div>
+                          <div className="text-xs font-semibold text-gray-400 mt-0.5">
+                            {r.projectSub}
+                          </div>
+                        </td>
+                        <td
+                          className={`py-5 pr-4 ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {typePill(r.type)}
+                        </td>
+                        <td
+                          className={`py-5 pr-4 text-gray-900 font-bold text-center ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {r.amount}
+                        </td>
+                        <td
+                          className={`py-5 pr-4 text-center ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {statusPill(r.statusLabel)}
+                        </td>
+                        <td
+                          className={`py-5 pr-4 text-gray-400 font-bold text-xs text-center ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {r.dateLabel}
+                        </td>
+                        <td className="py-5 pr-0 text-center">
+                          {(() => {
+                            const isPending = r.statusLabel === "Pending";
+                            const href = isPending
+                              ? `/dashboard/approver/approvals/${encodeURIComponent(
+                                  r.displayId,
+                                )}`
+                              : `/dashboard/budget/${encodeURIComponent(
+                                  r.displayId,
+                                )}`;
+
+                            return (
+                              <Link
+                                href={href}
+                                className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
+                                  isPending
+                                    ? "bg-orange-500 text-white hover:bg-orange-600"
+                                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                                }`}
+                              >
+                                {isPending ? "Review" : "View"}{" "}
+                                <Eye className="h-3.5 w-3.5" />
+                              </Link>
+                            );
+                          })()}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

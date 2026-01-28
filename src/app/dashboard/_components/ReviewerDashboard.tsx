@@ -49,17 +49,17 @@ export default function ReviewerDashboard({
   ) => (
     <Link
       href={href}
-      className="rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group border border-gray-100/50 hover:-translate-y-1"
+      className="rounded-xl md:rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group border border-gray-100/50 hover:-translate-y-1"
     >
       <div
-        className={`h-12 w-12 rounded-xl flex items-center justify-center ${iconBg} transition-transform group-hover:scale-110 shadow-sm`}
+        className={`h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl flex items-center justify-center ${iconBg} transition-transform group-hover:scale-110 shadow-sm`}
       >
         {icon}
       </div>
-      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">
+      <div className="mt-3 md:mt-6 text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
         {value}
       </div>
-      <div className="mt-1 text-sm font-semibold text-gray-500 uppercase tracking-wide">
+      <div className="mt-0.5 md:mt-1 text-[10px] md:text-sm font-semibold text-gray-500 uppercase tracking-wide">
         {label}
       </div>
     </Link>
@@ -149,13 +149,13 @@ export default function ReviewerDashboard({
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
       {showStats && (
         <>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-xl md:text-2xl font-bold text-gray-900">
             Budgets to Review
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-6 md:grid-cols-4">
             {statCard(
               <CheckCircle2 className="h-6 w-6 text-green-500" />,
               stats.reviewedToday,
@@ -188,10 +188,10 @@ export default function ReviewerDashboard({
         </>
       )}
 
-      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
-        <div className="p-8">
+      <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+        <div className="p-4 md:p-8">
           {(activeFilter !== undefined || searchQuery !== undefined) && (
-            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="mb-6 md:mb-8 flex flex-col gap-4">
               <form
                 action="/dashboard/reviewer/review"
                 method="GET"
@@ -201,7 +201,7 @@ export default function ReviewerDashboard({
                   name="q"
                   defaultValue={searchQuery ?? ""}
                   placeholder="Search (BUD-#, project, department…)"
-                  className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400"
+                  className="h-11 md:h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400"
                 />
                 {activeFilter && activeFilter !== "all" ? (
                   <input type="hidden" name="status" value={activeFilter} />
@@ -233,8 +233,8 @@ export default function ReviewerDashboard({
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
                   <th className="pb-4 pr-4 font-bold">BUDGET ID</th>

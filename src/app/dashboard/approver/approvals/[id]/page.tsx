@@ -9,9 +9,8 @@ import {
   users,
   auditLogs,
   reviewChecklists,
-  budgetMilestones,
 } from "@/db/schema";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import {
   Calendar,
   AlertCircle,
@@ -21,9 +20,8 @@ import {
 } from "lucide-react";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import ReviewerAssessmentCard from "../../../_components/ReviewerAssessmentCard";
-import ApprovalDecisionPanel from "../../../_components/ApprovalDecisionPanel";
 import QuickStatsCard from "../../../_components/QuickStatsCard";
-import ReviewChecklist from "@/components/ReviewChecklist";
+import ApprovalDecisionButton from "@/app/dashboard/_components/ApprovalDecisionButton";
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
@@ -53,11 +51,12 @@ export default async function ApproverReviewDetailPage({
 }) {
   const { id: rawId } = await params;
 
-  const budgetNumber = Number.parseInt(rawId.replace(/^BUD-/, ""), 10);
-
-  if (!Number.isFinite(budgetNumber)) {
-    redirect("/dashboard/approver/approvals");
-  }
+  const decodedId = decodeURIComponent(rawId);
+  const looksLikeBudgetNumber =
+    /^BUD-\d+$/i.test(decodedId) || /^\d+$/.test(decodedId);
+  const budgetNumber = looksLikeBudgetNumber
+    ? Number.parseInt(decodedId.replace(/^BUD-/i, ""), 10)
+    : null;
 
   const user = await getAuthUser();
 
@@ -77,22 +76,46 @@ export default async function ApproverReviewDetailPage({
   }
 
   // Get budget details
-  const budgetData = await db
-    .select({
-      id: budgets.id,
-      budget_type: budgets.budget_type,
-      status: budgets.status,
-      total_amount: budgets.total_amount,
-      variance_explanation: budgets.variance_explanation,
-      created_at: budgets.created_at,
-      user_id: budgets.user_id,
-      start_date: budgets.start_date,
-      end_date: budgets.end_date,
-      budget_number: budgets.budget_number,
-    })
-    .from(budgets)
-    .where(eq(budgets.budget_number, budgetNumber))
-    .limit(1);
+  const budgetSelect = {
+    id: budgets.id,
+    budget_type: budgets.budget_type,
+    status: budgets.status,
+    total_amount: budgets.total_amount,
+    variance_explanation: budgets.variance_explanation,
+    created_at: budgets.created_at,
+    user_id: budgets.user_id,
+    start_date: budgets.start_date,
+    end_date: budgets.end_date,
+    budget_number: budgets.budget_number,
+  };
+
+  let budgetData =
+    budgetNumber !== null
+      ? await db
+          .select(budgetSelect)
+          .from(budgets)
+          .where(eq(budgets.budget_number, budgetNumber))
+          .limit(1)
+      : [];
+
+  if (!budgetData || budgetData.length === 0) {
+    // Prefer matching by project_code when the route param is a human display ID.
+    budgetData = await db
+      .select(budgetSelect)
+      .from(budgets)
+      // project_code is optional; if it doesn't match, fall back to UUID lookup below.
+      .where(eq(budgets.project_code, decodedId))
+      .limit(1);
+  }
+
+  if (!budgetData || budgetData.length === 0) {
+    // Fallback to UUID
+    budgetData = await db
+      .select(budgetSelect)
+      .from(budgets)
+      .where(eq(budgets.id, decodedId))
+      .limit(1);
+  }
 
   if (!budgetData || budgetData.length === 0) {
     redirect("/dashboard/approver/approvals");
@@ -127,11 +150,6 @@ export default async function ApproverReviewDetailPage({
     })
     .from(budgetItems)
     .where(eq(budgetItems.budget_id, budget.id));
-
-  const milestones = await db.query.budgetMilestones.findMany({
-    where: eq(budgetMilestones.budget_id, budget.id),
-    orderBy: [asc(budgetMilestones.created_at)],
-  });
 
   // Get reviewer assessment from audit logs
   // Looking for the most recent 'verify' action
@@ -246,9 +264,16 @@ export default async function ApproverReviewDetailPage({
             Review and verify budget details before forwarding to approver
           </p>
         </div>
-        <button className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
-          <Bell className="w-5 h-5 text-gray-900" />
-        </button>
+        <div className="flex items-center gap-3">
+          <ApprovalDecisionButton
+            budgetId={budget.id}
+            budgetStatus={budget.status}
+            redirectHref="/dashboard/approver/approvals"
+          />
+          <button className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
+            <Bell className="w-5 h-5 text-gray-900" />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
@@ -372,11 +397,11 @@ export default async function ApproverReviewDetailPage({
           </div>
 
           {/* Project Timeline & Milestones */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-gray-700" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Project timeline & milestones
+          <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-6 h-6 text-gray-900" />
+              <h2 classNamhttps://github.com/seolyam/budget/pull/47/conflict?name=src%252Fapp%252Fdashboard%252Fbudget%252F%255Bid%255D%252Fpage.tsx&ancestor_oid=818653b470725d510ea9fb81c7e1a093c9641c88&base_oid=baee2e8828712a2fbda000e6b42fcd19a9020f71&head_oid=34d20bec46e2953fe3b42ea394fe90dd01a58dbbe="text-2xl font-black text-gray-900">
+                Project timeline
               </h2>
             </div>
 
@@ -399,34 +424,6 @@ export default async function ApproverReviewDetailPage({
                   {budget.end_date ? formatDate(budget.end_date) : "Not set"}
                 </span>
               </div>
-            </div>
-
-            <div className="p-6 bg-gray-50 rounded-xl">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-                Milestones:
-              </p>
-              {milestones.length === 0 ? (
-                <div className="text-gray-500 text-sm font-medium italic">
-                  No milestones set.
-                </div>
-              ) : (
-                <ul className="space-y-4">
-                  {milestones.map((m) => (
-                    <li
-                      key={m.id}
-                      className="flex items-center gap-3 text-gray-700 font-bold"
-                    >
-                      <div className="w-2 h-2 rounded-full bg-gray-300" />
-                      <span className="min-w-0 truncate">{m.description}</span>
-                      {m.target_quarter ? (
-                        <span className="text-gray-400 font-black">
-                          - {m.target_quarter}
-                        </span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
           </div>
 
@@ -475,7 +472,7 @@ export default async function ApproverReviewDetailPage({
           />
         </div>
 
-        {/* Sidebar Decision Panel & Stats */}
+        {/* Sidebar Stats */}
         <div className="lg:col-span-4 lg:sticky lg:top-10 space-y-8">
           {/* Review Checklist */}
           <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-6">
@@ -518,11 +515,6 @@ export default async function ApproverReviewDetailPage({
               ))}
             </div>
           </div>
-
-          <ApprovalDecisionPanel
-            budgetId={budget.id}
-            budgetStatus={budget.status}
-          />
         </div>
       </div>
     </div>

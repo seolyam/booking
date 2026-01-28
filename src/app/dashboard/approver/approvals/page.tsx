@@ -127,7 +127,9 @@ export default async function ApproverApprovalsPage() {
     return {
       budgetId: b.id,
       budgetNumber: b.budget_number,
-      displayId: `BUD-${String(b.budget_number).padStart(3, "0")}`,
+      displayId:
+        (b as { project_code?: string | null }).project_code ??
+        `BUD-${String(b.budget_number).padStart(3, "0")}`,
       projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
       projectSub: b.department ?? "",
       type,
