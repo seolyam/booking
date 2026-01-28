@@ -145,6 +145,7 @@ export default async function BudgetTrackingPage({
       ? formatDate(new Date(budget.start_date))
       : null,
     endDate: budget.end_date ? formatDate(new Date(budget.end_date)) : null,
+    variance_explanation: budget.variance_explanation || null,
   };
 
   const auditHistory = logs
