@@ -165,7 +165,7 @@ export default async function RequestsPage({
           includesQuery(projectCode, q) ||
           includesQuery(budDisplayId, q) ||
           includesQuery(budNum, q) ||
-          includesQuery(displayName, q) ||
+          includesQuery(projectName, q) ||
           includesQuery(type, q) ||
           includesQuery(status, q) ||
           includesQuery(amountDigits, normalizeDigits(q))
@@ -337,7 +337,7 @@ export default async function RequestsPage({
                       </td>
                       <td className="py-4 px-4">
                         <div className="font-medium text-gray-900 line-clamp-2 leading-snug">
-                          {displayName}
+                          {projectName}
                         </div>
                       </td>
                       <td className="py-4 px-3">

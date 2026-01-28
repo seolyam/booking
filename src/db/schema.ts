@@ -10,6 +10,7 @@ import {
   boolean,
   primaryKey,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 import { sql, relations } from "drizzle-orm";
 
@@ -311,10 +312,6 @@ export const budgetsRelations = relations(budgets, ({ one, many }) => ({
   user: one(users, {
     fields: [budgets.user_id],
     references: [users.id],
-  }),
-  project: one(projects, {
-    fields: [budgets.project_id],
-    references: [projects.id],
   }),
   items: many(budgetItems),
   milestones: many(budgetMilestones),

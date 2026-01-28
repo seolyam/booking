@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { Bell, Trash2, FolderPlus, Building2 } from "lucide-react";
+import { useEffect, useState } from "react";
+// import { useMemo, useCallback } from "react"; // DISABLED - for project feature
+import { Bell, Trash2 } from "lucide-react";
+// import { FolderPlus, Building2 } from "lucide-react"; // DISABLED - for project feature
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -13,9 +15,9 @@ import {
   submitBudget,
 } from "@/actions/budget";
 import {
-  createProject,
-  generateProjectCode,
-  getActiveProjects,
+  // createProject, // DISABLED - for project feature
+  // generateProjectCode, // DISABLED - for project feature
+  // getActiveProjects, // DISABLED - for project feature
   getBudgetCategories,
   getNextBudgetIdPreview,
 } from "@/actions/project";
@@ -27,13 +29,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type Project = {
-  id: string;
-  project_code: string;
-  name: string;
-  department: string;
-  description: string | null;
-};
+// DISABLED - for project feature
+// type Project = {
+//   id: string;
+//   project_code: string;
+//   name: string;
+//   department: string;
+//   description: string | null;
+// };
 
 type BudgetCategory = {
   id: string;
@@ -61,19 +64,72 @@ const createEmptyItem = (): CostItem => ({
   unitCost: "",
 });
 
+// Helper function to prevent non-numeric keys in input fields
+const preventNonNumericKeys = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Allow: backspace, delete, tab, escape, enter, arrows, home, end
+  const allowedKeys = [
+    "Backspace",
+    "Delete",
+    "Tab",
+    "Escape",
+    "Enter",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    "Home",
+    "End",
+  ];
+  if (allowedKeys.includes(e.key)) return;
+
+  // Allow Ctrl/Cmd+A, C, V, X
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    ["a", "c", "v", "x"].includes(e.key.toLowerCase())
+  )
+    return;
+
+  // Allow: numbers, period (for decimals)
+  if (/^[0-9.]$/.test(e.key)) return;
+
+  // Block everything else
+  e.preventDefault();
+};
+
+// Helper function to sanitize integer input (remove non-digit characters)
+const sanitizeInteger = (value: string): string => {
+  return value.replace(/[^0-9]/g, "");
+};
+
+// Helper function to sanitize currency input (allow digits and one decimal point with up to 2 decimals)
+const sanitizeCurrency = (value: string): string => {
+  // Remove all non-digit and non-period characters
+  let sanitized = value.replace(/[^0-9.]/g, "");
+  // Only allow one decimal point
+  const parts = sanitized.split(".");
+  if (parts.length > 2) {
+    sanitized = parts[0] + "." + parts.slice(1).join("");
+  }
+  // Limit to 2 decimal places
+  if (parts.length === 2 && parts[1].length > 2) {
+    sanitized = parts[0] + "." + parts[1].slice(0, 2);
+  }
+  return sanitized;
+};
+
 export default function CreateBudgetPage() {
   const router = useRouter();
 
-  // Project State
-  const [projectMode, setProjectMode] = useState<"new" | "existing" | null>(
-    null,
-  );
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-  const [newProjectName, setNewProjectName] = useState("");
-  const [newProjectCode, setNewProjectCode] = useState("");
-  const [newProjectDescription, setNewProjectDescription] = useState("");
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  // Project State - DISABLED FOR NOW (focusing on CapEx/OpEx only)
+  // const [projectMode, setProjectMode] = useState<"new" | "existing" | null>(
+  //   null,
+  // );
+  // const [projects, setProjects] = useState<Project[]>([]);
+  // const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  // const [newProjectName, setNewProjectName] = useState("");
+  // const [newProjectCode, setNewProjectCode] = useState("");
+  // const [newProjectDescription, setNewProjectDescription] = useState("");
+  // const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
   // Budget Type State
   const [budgetTitle, setBudgetTitle] = useState("");
@@ -87,43 +143,41 @@ export default function CreateBudgetPage() {
   // Form State
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [items, setItems] = useState([
-    { category: "", description: "", quantity: "", unitCost: "" },
-  ]);
+  const [items, setItems] = useState<CostItem[]>([createEmptyItem()]);
   const [varianceExplanation, setVarianceExplanation] = useState("");
 
-  // Load projects on mount
-  useEffect(() => {
-    async function loadProjects() {
-      setIsLoadingProjects(true);
-      try {
-        const result = await getActiveProjects();
-        if (result.success && result.projects) {
-          setProjects(result.projects as Project[]);
-        }
-      } catch (e) {
-        console.error("Error loading projects:", e);
-      } finally {
-        setIsLoadingProjects(false);
-      }
-    }
-    loadProjects();
-  }, []);
+  // Load projects on mount - DISABLED
+  // useEffect(() => {
+  //   async function loadProjects() {
+  //     setIsLoadingProjects(true);
+  //     try {
+  //       const result = await getActiveProjects();
+  //       if (result.success && result.projects) {
+  //         setProjects(result.projects as Project[]);
+  //       }
+  //     } catch (e) {
+  //       console.error("Error loading projects:", e);
+  //     } finally {
+  //       setIsLoadingProjects(false);
+  //     }
+  //   }
+  //   loadProjects();
+  // }, []);
 
-  // Generate project code when new project mode is selected
-  useEffect(() => {
-    async function loadProjectCode() {
-      if (projectMode === "new" && !newProjectCode) {
-        try {
-          const code = await generateProjectCode();
-          setNewProjectCode(code);
-        } catch (e) {
-          console.error("Error generating project code:", e);
-        }
-      }
-    }
-    loadProjectCode();
-  }, [projectMode, newProjectCode]);
+  // Generate project code when new project mode is selected - DISABLED
+  // useEffect(() => {
+  //   async function loadProjectCode() {
+  //     if (projectMode === "new" && !newProjectCode) {
+  //       try {
+  //         const code = await generateProjectCode();
+  //         setNewProjectCode(code);
+  //       } catch (e) {
+  //         console.error("Error generating project code:", e);
+  //       }
+  //     }
+  //   }
+  //   loadProjectCode();
+  // }, [projectMode, newProjectCode]);
 
   // Load categories when budget type changes
   useEffect(() => {
@@ -175,9 +229,10 @@ export default function CreateBudgetPage() {
     );
   }, [budgetType]);
 
-  const selectedProject = useMemo(() => {
-    return projects.find((p) => p.id === selectedProjectId);
-  }, [projects, selectedProjectId]);
+  // DISABLED - Project feature not in use
+  // const selectedProject = useMemo(() => {
+  //   return projects.find((p) => p.id === selectedProjectId);
+  // }, [projects, selectedProjectId]);
 
   const addItem = () => {
     setItems([...items, createEmptyItem()]);
@@ -201,32 +256,33 @@ export default function CreateBudgetPage() {
     0,
   );
 
-  const handleProjectModeChange = useCallback((mode: "new" | "existing") => {
-    setProjectMode(mode);
-    setSelectedProjectId("");
-    setNewProjectName("");
-    setNewProjectDescription("");
-    setError(null);
-  }, []);
+  // DISABLED - Project feature not in use
+  // const handleProjectModeChange = useCallback((mode: "new" | "existing") => {
+  //   setProjectMode(mode);
+  //   setSelectedProjectId("");
+  //   setNewProjectName("");
+  //   setNewProjectDescription("");
+  //   setError(null);
+  // }, []);
 
   const persistBudget = async (mode: "draft" | "submit") => {
     setError(null);
 
-    // Validate project selection
-    if (!projectMode) {
-      setError("Please select whether this is for a new or existing project.");
-      return;
-    }
+    // Validate project selection - DISABLED (project feature not in use)
+    // if (!projectMode) {
+    //   setError("Please select whether this is for a new or existing project.");
+    //   return;
+    // }
 
-    if (projectMode === "existing" && !selectedProjectId) {
-      setError("Please select an existing project.");
-      return;
-    }
+    // if (projectMode === "existing" && !selectedProjectId) {
+    //   setError("Please select an existing project.");
+    //   return;
+    // }
 
-    if (projectMode === "new" && !newProjectName.trim()) {
-      setError("Please enter a project name.");
-      return;
-    }
+    // if (projectMode === "new" && !newProjectName.trim()) {
+    //   setError("Please enter a project name.");
+    //   return;
+    // }
 
     // Validate budget type
     if (!budgetTitle.trim()) {
@@ -253,26 +309,27 @@ export default function CreateBudgetPage() {
 
     setIsSaving(true);
     try {
-      let projectId: string | null = null;
+      // Project creation disabled - focusing on CapEx/OpEx only
+      // let projectId: string | null = null;
 
-      // Create new project if needed
-      if (projectMode === "new") {
-        const projectFd = new FormData();
-        projectFd.set("name", newProjectName.trim());
-        projectFd.set("projectCode", newProjectCode);
-        if (newProjectDescription.trim()) {
-          projectFd.set("description", newProjectDescription.trim());
-        }
+      // // Create new project if needed
+      // if (projectMode === "new") {
+      //   const projectFd = new FormData();
+      //   projectFd.set("name", newProjectName.trim());
+      //   projectFd.set("projectCode", newProjectCode);
+      //   if (newProjectDescription.trim()) {
+      //     projectFd.set("description", newProjectDescription.trim());
+      //   }
 
-        const projectRes = await createProject(projectFd);
-        if (!projectRes.success || !projectRes.project) {
-          setError(projectRes.message ?? "Failed to create project.");
-          return;
-        }
-        projectId = projectRes.project.id;
-      } else {
-        projectId = selectedProjectId;
-      }
+      //   const projectRes = await createProject(projectFd);
+      //   if (!projectRes.success || !projectRes.project) {
+      //     setError(projectRes.message ?? "Failed to create project.");
+      //     return;
+      //   }
+      //   projectId = projectRes.project.id;
+      // } else {
+      //   projectId = selectedProjectId;
+      // }
 
       // Create budget draft
       const draftFd = new FormData();
@@ -355,167 +412,11 @@ export default function CreateBudgetPage() {
         </div>
       )}
 
-      {/* Phase 1: Project Scope */}
-      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Building2 className="h-5 w-5" /> Project Scope
-        </h2>
-
-        <p className="text-gray-600 mb-4">
-          Is this budget for a new project or an existing one?
-        </p>
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <button
-            type="button"
-            onClick={() => handleProjectModeChange("new")}
-            className={`p-4 border-2 rounded-lg text-left transition-all flex items-center gap-3 ${
-              projectMode === "new"
-                ? "border-green-400 bg-green-50"
-                : "border-gray-200 bg-white hover:border-gray-300"
-            }`}
-          >
-            <FolderPlus
-              className={`h-6 w-6 ${projectMode === "new" ? "text-green-600" : "text-gray-400"}`}
-            />
-            <div>
-              <div
-                className={`font-semibold ${projectMode === "new" ? "text-green-700" : "text-gray-900"}`}
-              >
-                New Project
-              </div>
-              <div
-                className={`text-sm ${projectMode === "new" ? "text-green-600" : "text-gray-600"}`}
-              >
-                Create a new project for this budget
-              </div>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleProjectModeChange("existing")}
-            className={`p-4 border-2 rounded-lg text-left transition-all flex items-center gap-3 ${
-              projectMode === "existing"
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-200 bg-white hover:border-gray-300"
-            }`}
-          >
-            <Building2
-              className={`h-6 w-6 ${projectMode === "existing" ? "text-blue-600" : "text-gray-400"}`}
-            />
-            <div>
-              <div
-                className={`font-semibold ${projectMode === "existing" ? "text-blue-700" : "text-gray-900"}`}
-              >
-                Existing Project
-              </div>
-              <div
-                className={`text-sm ${projectMode === "existing" ? "text-blue-600" : "text-gray-600"}`}
-              >
-                Add to an existing project
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* New Project Form */}
-        {projectMode === "new" && (
-          <div className="space-y-4 pt-4 border-t border-gray-100">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-gray-700 font-medium mb-2 block">
-                  Project Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  placeholder="e.g., Bacolod Substation Rehab"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  className="border-gray-300"
-                />
-              </div>
-              <div>
-                <Label className="text-gray-700 font-medium mb-2 block">
-                  Project Code
-                </Label>
-                <Input
-                  value={newProjectCode}
-                  onChange={(e) => setNewProjectCode(e.target.value)}
-                  className="bg-gray-50 border-gray-300"
-                  placeholder="Auto-generated"
-                />
-              </div>
-            </div>
-            <div>
-              <Label className="text-gray-700 font-medium mb-2 block">
-                Project Description
-              </Label>
-              <Textarea
-                placeholder="Brief description of the project..."
-                value={newProjectDescription}
-                onChange={(e) => setNewProjectDescription(e.target.value)}
-                className="border-gray-300"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Existing Project Selection */}
-        {projectMode === "existing" && (
-          <div className="pt-4 border-t border-gray-100">
-            <Label className="text-gray-700 font-medium mb-2 block">
-              Select Project <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={selectedProjectId}
-              onValueChange={setSelectedProjectId}
-              disabled={isLoadingProjects}
-            >
-              <SelectTrigger className="border-gray-300">
-                <SelectValue
-                  placeholder={
-                    isLoadingProjects
-                      ? "Loading projects..."
-                      : "Select a project"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent position="popper" sideOffset={5}>
-                {projects.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    No projects available
-                  </SelectItem>
-                ) : (
-                  projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-gray-500">
-                          {project.project_code}
-                        </span>
-                        <span>{project.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-
-            {selectedProject && (
-              <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="text-sm">
-                  <span className="font-medium text-blue-800">Selected:</span>{" "}
-                  <span className="text-blue-700">{selectedProject.name}</span>
-                </div>
-                {selectedProject.description && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    {selectedProject.description}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+      {/* 
+        Phase 1: Project Scope Section - DISABLED 
+        This section is temporarily hidden as we're focusing on CapEx/OpEx ID system only.
+        The project grouping feature will be re-enabled in a future update.
+      */}
 
       {/* Budget Request Details */}
       <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
