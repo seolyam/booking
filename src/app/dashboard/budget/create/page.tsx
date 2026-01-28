@@ -1,11 +1,21 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { Bell, Trash2 } from "lucide-react";
+import {
+  Bell,
+  Calendar,
+  ChevronLeft,
+  FileText,
+  Info,
+  Trash2,
+  Save,
+  Send,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import {
   addBudgetItem,
@@ -25,6 +35,8 @@ export default function CreateBudgetPage() {
   const reactId = useId();
   const [budgetType, setBudgetType] = useState<"capex" | "opex" | "">("");
   const [projectTitle, setProjectTitle] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState([
@@ -58,11 +70,13 @@ export default function CreateBudgetPage() {
     setItems(updated);
   };
 
+
+
   const totalBudget = items.reduce(
     (sum, item) =>
       sum +
       (parseInt(item.quantity as string) || 0) *
-        (parseFloat(item.unitCost as string) || 0),
+      (parseFloat(item.unitCost as string) || 0),
     0,
   );
 
@@ -105,6 +119,8 @@ export default function CreateBudgetPage() {
       const draftFd = new FormData();
       draftFd.set("budgetType", selectedType);
       draftFd.set("fiscalYear", String(new Date().getFullYear()));
+      if (startDate) draftFd.set("startDate", startDate);
+      if (endDate) draftFd.set("endDate", endDate);
 
       const draftRes = await createBudgetDraft(null, draftFd);
       if (!draftRes?.budgetId) {
@@ -114,6 +130,7 @@ export default function CreateBudgetPage() {
 
       const budgetId = draftRes.budgetId;
 
+      // Save Items
       for (const item of items) {
         const desc = item.description.trim();
         if (
@@ -131,7 +148,7 @@ export default function CreateBudgetPage() {
         );
         itemFd.set("quantity", String(item.quantity));
         itemFd.set("unitCost", String(item.unitCost));
-        itemFd.set("quarter", "Q1");
+        itemFd.set("quarter", "Q1"); // Defaulting to Q1 as per current logic
 
         const itemRes = await addBudgetItem(null, itemFd);
         if (itemRes?.message && itemRes.message !== "Item added") {
@@ -139,6 +156,8 @@ export default function CreateBudgetPage() {
           return;
         }
       }
+
+
 
       if (mode === "submit") {
         const submitRes = await submitBudget(
@@ -153,6 +172,7 @@ export default function CreateBudgetPage() {
 
       router.push("/dashboard/requests");
     } catch (e) {
+      console.error(e);
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setIsSaving(false);
@@ -160,313 +180,350 @@ export default function CreateBudgetPage() {
   };
 
   return (
-    <div className="w-full">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+    <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
+      {/* Top Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900">
             Create Budget Request
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-500 mt-1">
             Fill in the details below to create your budget request
           </p>
         </div>
         <Bell className="h-6 w-6 text-gray-400" />
       </div>
+
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
-      {/* Project Information Section */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>📋</span> Project Information
-        </h2>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <Label
-              htmlFor="projectTitle"
-              className="text-gray-700 font-medium mb-2 block"
-            >
-              Project Title <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="projectTitle"
-              placeholder="Enter project name"
-              value={projectTitle}
-              onChange={(e) => setProjectTitle(e.target.value)}
-              className="mt-2 border-gray-300"
-            />
-          </div>
+      <Card className="border-none shadow-sm bg-white">
+        <CardContent className="p-8 space-y-8">
+          {/* Project Information Section */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Project Information
+            </h2>
 
-          <div>
-            <Label className="text-gray-700 font-medium mb-2 block">
-              Project ID
-            </Label>
-            <Input
-              value={projectId}
-              disabled
-              className="mt-2 bg-gray-50 border-gray-300 text-gray-600"
-            />
-          </div>
-        </div>
-
-        {/* Budget Type */}
-        <div className="mt-6">
-          <Label className="text-gray-700 font-medium mb-3 block">
-            Budget Type <span className="text-red-500">*</span>
-          </Label>
-          <div className="grid grid-cols-2 gap-4">
-            {/* CapEx */}
-            <button
-              type="button"
-              onClick={() => setBudgetType("capex")}
-              className={`p-4 border-2 rounded-lg text-left transition-all ${
-                budgetType === "capex"
-                  ? "border-blue-400 bg-blue-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
-              }`}
-            >
-              <div
-                className={`font-semibold ${
-                  budgetType === "capex" ? "text-blue-700" : "text-gray-900"
-                }`}
-              >
-                CapEx
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="projectTitle"
+                  className="text-gray-700 font-medium"
+                >
+                  Project Title <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="projectTitle"
+                  placeholder="Enter project name"
+                  value={projectTitle}
+                  onChange={(e) => setProjectTitle(e.target.value)}
+                  className="h-11"
+                />
               </div>
-              <div
-                className={`text-sm mt-1 ${
-                  budgetType === "capex" ? "text-blue-600" : "text-gray-600"
-                }`}
-              >
-                Capital Expenditure - Long term assets and infrastructure
-              </div>
-            </button>
 
-            {/* OpEx */}
-            <button
-              type="button"
-              onClick={() => setBudgetType("opex")}
-              className={`p-4 border-2 rounded-lg text-left transition-all ${
-                budgetType === "opex"
-                  ? "border-purple-400 bg-purple-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
-              }`}
-            >
-              <div
-                className={`font-semibold ${
-                  budgetType === "opex" ? "text-purple-700" : "text-gray-900"
-                }`}
-              >
-                OpEx
+              <div className="space-y-2">
+                <Label className="text-gray-700 font-medium">Project ID</Label>
+                <Input
+                  value={projectId}
+                  disabled
+                  className="h-11 bg-gray-50 text-gray-500 font-medium"
+                />
               </div>
-              <div
-                className={`text-sm mt-1 ${
-                  budgetType === "opex" ? "text-purple-600" : "text-gray-600"
-                }`}
-              >
-                Operating Expenditure - Day-to-day operational costs
-              </div>
-            </button>
-          </div>
-        </div>
-      </section>
-      {/* Cost Items Section */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span>₱</span> Cost Items <span className="text-red-500">*</span>
-          </h2>
-          <Button
-            type="button"
-            onClick={addItem}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            Add item +
-          </Button>
-        </div>
+            </div>
 
-        {/* Cost Items Table */}
-        <div className="border border-gray-200 rounded-lg">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Category
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Description
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Quantity
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Unit Cost
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Total Cost
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <tr
-                    key={index}
-                    className="border-b border-gray-200 hover:bg-gray-50"
+            {/* Budget Type */}
+            <div className="mt-6">
+              <Label className="text-gray-700 font-medium mb-3 block">
+                Budget Type <span className="text-red-500">*</span>
+              </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* CapEx */}
+                <button
+                  type="button"
+                  onClick={() => setBudgetType("capex")}
+                  className={`p-6 border rounded-xl text-left transition-all ${budgetType === "capex"
+                      ? "border-blue-200 bg-blue-100 ring-1 ring-blue-300"
+                      : "border-gray-300 bg-white hover:border-gray-400"
+                    }`}
+                >
+                  <div
+                    className={`font-bold text-lg mb-1 ${budgetType === "capex" ? "text-blue-700" : "text-gray-900"
+                      }`}
                   >
-                    <td className="px-4 py-3">
-                      <Select
-                        value={item.category}
-                        onValueChange={(val) =>
-                          updateItem(index, "category", val)
-                        }
-                      >
-                        <SelectTrigger className="border-gray-300">
-                          <SelectValue placeholder="Select Category" />
-                        </SelectTrigger>
-                        <SelectContent position="popper" sideOffset={5}>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        placeholder="Item Description"
-                        value={item.description}
-                        onChange={(e) =>
-                          updateItem(index, "description", e.target.value)
-                        }
-                        className="border-gray-300"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        type="number"
-                        min="1"
-                        placeholder="0"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateItem(index, "quantity", e.target.value)
-                        }
-                        className="border-gray-300 w-20"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.unitCost}
-                        onChange={(e) =>
-                          updateItem(index, "unitCost", e.target.value)
-                        }
-                        className="border-gray-300 w-24"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        value={`₱ ${(
-                          (parseInt(item.quantity as string) || 0) *
-                          (parseFloat(item.unitCost as string) || 0)
-                        ).toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`}
-                        disabled
-                        className="bg-gray-50 border-gray-300 text-gray-700 w-40"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {items.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeItem(index)}
-                          className="text-red-500 hover:text-red-700 inline-flex"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                    CapEx
+                  </div>
+                  <div
+                    className={`text-sm ${budgetType === "capex" ? "text-blue-600" : "text-gray-500"
+                      }`}
+                  >
+                    Capital Expenditure - Long term assets and infrastructure
+                  </div>
+                </button>
 
-        {/* Total Budget */}
-        <div className="flex justify-end mt-4">
-          <div className="text-right">
-            <div className="text-sm text-gray-600">Total Budget:</div>
-            <div className="text-2xl font-bold text-gray-900">
-              ₱
-              {totalBudget.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+                {/* OpEx */}
+                <button
+                  type="button"
+                  onClick={() => setBudgetType("opex")}
+                  className={`p-6 border rounded-xl text-left transition-all ${budgetType === "opex"
+                    ? "border-purple-600 bg-purple-50 ring-1 ring-purple-600"
+                    : "border-gray-300 bg-white hover:border-gray-400"
+                    }`}
+                >
+                  <div
+                    className={`font-bold text-lg mb-1 ${budgetType === "opex" ? "text-purple-700" : "text-gray-900"
+                      }`}
+                  >
+                    OpEx
+                  </div>
+                  <div
+                    className={`text-sm ${budgetType === "opex" ? "text-purple-600" : "text-gray-500"
+                      }`}
+                  >
+                    Operating Expenditure - Day-to-day operational costs
+                  </div>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Cost Items Section */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <span>₱</span> Cost Items <span className="text-red-500">*</span>
+              </h2>
+              <Button
+                type="button"
+                onClick={addItem}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Add item +
+              </Button>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-white border-b border-gray-200">
+                      <th className="px-4 py-4 text-left text-sm font-medium text-gray-900 w-[20%]">
+                        Category
+                      </th>
+                      <th className="px-4 py-4 text-left text-sm font-medium text-gray-900 w-[30%]">
+                        Description
+                      </th>
+                      <th className="px-4 py-4 text-left text-sm font-medium text-gray-900 w-[10%]">
+                        Quantity
+                      </th>
+                      <th className="px-4 py-4 text-left text-sm font-medium text-gray-900 w-[15%]">
+                        Unit Cost
+                      </th>
+                      <th className="px-4 py-4 text-left text-sm font-medium text-gray-900 w-[15%]">
+                        Total Cost
+                      </th>
+                      <th className="px-4 py-4 text-center text-sm font-medium text-gray-900 w-[10%]">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {items.map((item, index) => (
+                      <tr key={index} className="bg-white hover:bg-gray-50/50">
+                        <td className="px-4 py-3">
+                          <Select
+                            value={item.category}
+                            onValueChange={(val) =>
+                              updateItem(index, "category", val)
+                            }
+                          >
+                            <SelectTrigger className="border-gray-300 h-10">
+                              <SelectValue placeholder="Select Category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat} value={cat}>
+                                  {cat}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            placeholder="Item Description"
+                            value={item.description}
+                            onChange={(e) =>
+                              updateItem(index, "description", e.target.value)
+                            }
+                            className="border-gray-300 h-10"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="1"
+                              placeholder="0"
+                              value={item.quantity}
+                              onChange={(e) =>
+                                updateItem(index, "quantity", e.target.value)
+                              }
+                              className="border-gray-300 h-10 pr-8"
+                            />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                              <span className="text-xs">↕</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={item.unitCost}
+                            onChange={(e) =>
+                              updateItem(index, "unitCost", e.target.value)
+                            }
+                            className="border-gray-300 h-10"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            value={`₱ ${(
+                              (parseInt(item.quantity as string) || 0) *
+                              (parseFloat(item.unitCost as string) || 0)
+                            ).toLocaleString("en-US", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            })}`}
+                            disabled
+                            className="bg-gray-50 border-gray-300 text-gray-700 h-10 font-medium"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => removeItem(index)}
+                            className="text-orange-500 hover:text-orange-700 inline-flex items-center justify-center h-10 w-10 hover:bg-orange-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6 items-baseline gap-4">
+              <span className="text-gray-700 font-semibold">Total Budget:</span>
+              <span className="text-3xl font-bold text-gray-900">
+                ₱{totalBudget.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+          </section>
+
+          {/* Timeline Section */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Timeline
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+              <div className="space-y-2">
+                <Label className="text-gray-700 font-medium">
+                  Start Date <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-11 border-gray-300"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-700 font-medium">
+                  End Date <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-11 border-gray-300"
+                />
+              </div>
+            </div>
+
+
+          </section>
+
+          {/* Variance Explanation Section */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+              <Info className="h-5 w-5" />
+              Variance Explanation
+            </h2>
+
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">
+                Explain any variances from forecast or previous budgets{" "}
+                <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                placeholder="Explain why this budget differs from forecasted amounts, previous similar projects, or standard costs..."
+                value={varianceExplanation}
+                onChange={(e) => setVarianceExplanation(e.target.value)}
+                className="min-h-[120px] border-gray-300 resize-none p-4"
+              />
+            </div>
+          </section>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-4">
+            <Button
+              type="button"
+              className="bg-orange-600 hover:bg-orange-700 text-white h-11 px-6 text-base font-medium"
+              onClick={() => router.push("/dashboard/requests")}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+
+            <div className="flex items-center gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 px-6 text-base font-medium border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                onClick={() => persistBudget("draft")}
+                disabled={isSaving}
+              >
+                <Save className="h-5 w-5" /> Save as draft
+              </Button>
+
+              <Button
+                type="button"
+                className="bg-green-600 hover:bg-green-700 text-white h-11 px-6 text-base font-medium flex items-center gap-2"
+                onClick={() => persistBudget("submit")}
+                disabled={isSaving}
+              >
+                <Send className="h-5 w-5" />{" "}
+                {isSaving ? "Submitting…" : "Submit request"}
+              </Button>
             </div>
           </div>
-        </div>
-      </section>
-      {/* Variance Explanation Section */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>ⓘ</span> Variance Explanation
-        </h2>
-
-        <div>
-          <Label className="text-gray-700 font-medium mb-2 block">
-            Explain any variances from forecast or previous budgets{" "}
-            <span className="text-red-500">*</span>
-          </Label>
-          <Textarea
-            placeholder="Explain why this budget differs from forecasted amounts, previous similar projects, or standard costs..."
-            value={varianceExplanation}
-            onChange={(e) => setVarianceExplanation(e.target.value)}
-            className="border-gray-300 min-h-30"
-          />
-        </div>
-      </section>
-      {/* Actions */}
-      <div className="flex items-center gap-4">
-        <Button
-          type="button"
-          className="bg-orange-600 hover:bg-orange-700 text-white"
-          onClick={() => router.push("/dashboard/requests")}
-          disabled={isSaving}
-        >
-          Cancel
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          onClick={() => persistBudget("draft")}
-          disabled={isSaving}
-        >
-          📄 Save as draft
-        </Button>
-
-        <Button
-          type="button"
-          className="bg-green-600 hover:bg-green-700 text-white ml-auto"
-          onClick={() => persistBudget("submit")}
-          disabled={isSaving}
-        >
-          {isSaving ? "Submitting…" : "✓ Submit request"}
-        </Button>
-      </div>{" "}
+        </CardContent>
+      </Card>
     </div>
   );
 }

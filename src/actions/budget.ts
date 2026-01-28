@@ -11,6 +11,7 @@ import {
   archivedBudgets,
   archivedBudgetItems,
   archivedAuditLogs,
+  budgetMilestones,
 } from "@/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
@@ -658,6 +659,76 @@ const AddItemSchema = z.object({
   unitCost: z.number().positive().max(9_999_999_999_999.99),
   quarter: z.string(), // e.g. Q1
 });
+
+// Add Milestone Action
+const AddMilestoneSchema = z.object({
+  budgetId: z.string().uuid(),
+  description: z.string().min(1),
+  targetQuarter: z.string().optional(),
+});
+
+export async function addBudgetMilestone(
+  prevState: unknown,
+  formData: FormData,
+) {
+  const user = await getUser();
+  if (!user) return { message: "Unauthorized" };
+
+  const appUser = await ensureAppUser(user.id);
+  if (!appUser) {
+    return {
+      message:
+        "Your account is not yet provisioned in the app. Ask an admin to create your profile (role/department).",
+    };
+  }
+
+  const budgetId = formData.get("budgetId") as string;
+  const description = formData.get("description") as string;
+  // Use 'targetQuarter' if you plan to capture it, but for now we just capture description
+  // As per UI mockup, it's just a text field "Milestone", so we treat it as description-only or description + inferred quarter.
+  // The schema supports targetQuarter, so we can pass it if we want.
+  const targetQuarter = (formData.get("targetQuarter") as string) || undefined;
+
+  const validated = AddMilestoneSchema.safeParse({
+    budgetId,
+    description,
+    targetQuarter,
+  });
+
+  if (!validated.success) {
+    return { message: "Invalid Milestone Data" };
+  }
+
+  const existingBudget = await db.query.budgets.findFirst({
+    where: eq(budgets.id, budgetId),
+  });
+
+  if (!existingBudget) {
+    return { message: "Budget not found" };
+  }
+
+  if (existingBudget.user_id !== user.id) {
+    return { message: "Unauthorized" };
+  }
+
+  try {
+    // Assuming budgetMilestones is imported from schema (I saw it is exported in schema.ts)
+    // I need to make sure it's imported in this file. It is NOT currently imported in the lines I saw.
+    // Wait, I saw lines 1-14 of `src/actions/budget.ts` and `budgetMilestones` was NOT in the import list.
+    // I need/must add it to the import list first!
+    await db.insert(budgetMilestones).values({
+      budget_id: budgetId,
+      description: validated.data.description,
+      target_quarter: validated.data.targetQuarter,
+    });
+  } catch (e) {
+    console.error(e);
+    return { message: "Failed to add milestone" };
+  }
+
+  revalidatePath(`/dashboard/budget/create`);
+  return { message: "Milestone added" };
+}
 
 export async function addBudgetItem(prevState: unknown, formData: FormData) {
   const user = await getUser();
