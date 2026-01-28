@@ -395,7 +395,7 @@ export default async function BudgetDetailPage({
         {(budget.start_date || budget.end_date) && (
           <div className="mt-4 rounded-xl bg-blue-50 p-4">
             <div className="text-sm font-semibold text-gray-900 mb-2">
-              📅 Timeline
+              Timeline
             </div>
             <div className="grid grid-cols-2 gap-4">
               {budget.start_date && (
