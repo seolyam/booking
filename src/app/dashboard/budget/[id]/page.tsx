@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import ApprovalDecisionButton from "@/app/dashboard/_components/ApprovalDecisionButton";
 import WorkflowProgress, {
   type WorkflowEvent,
@@ -176,10 +177,13 @@ function computeSteps(status: string): WorkflowStep[] {
 
 export default async function BudgetDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const { id } = await params;
+  const { error, success } = await searchParams;
 
   const decodedId = decodeURIComponent(id);
   const looksLikeProjectCode = /^(CapEx|OpEx)-\d+$/i.test(decodedId);
@@ -296,6 +300,19 @@ export default async function BudgetDetailPage({
 
   return (
     <div className="space-y-6">
+      {error ? (
+        <Alert variant="destructive">
+          <AlertTitle>Action blocked</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+      {success ? (
+        <Alert>
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">

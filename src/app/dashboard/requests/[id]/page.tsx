@@ -245,6 +245,7 @@ export default async function RequestViewPage({
 
   const projectName = items[0]?.description ?? "Budget Request";
   const displayId = budget.project_code ?? `BUD-${budget.budget_number}`;
+  const displayTitle = projectName;
   const projectSub = `${displayId} • ${requester?.department ?? ""}`.trim();
 
   const status = statusMeta(budget.status);
@@ -302,7 +303,7 @@ export default async function RequestViewPage({
           <div className="min-w-0">
             <div className="flex items-center gap-3">
               <div className="text-lg font-semibold text-gray-900 truncate">
-                {projectName}
+                {displayTitle}
               </div>
               <span className={typePill(budget.budget_type)}>
                 {budget.budget_type === "capex" ? "CapEx" : "OpEx"}
