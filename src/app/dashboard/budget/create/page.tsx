@@ -744,9 +744,19 @@ export default function CreateBudgetPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-gray-700 font-medium mb-2 block">
-              Start Date
-            </Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-gray-700 font-medium">Start Date</Label>
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date().toISOString().split("T")[0];
+                  setStartDate(today);
+                }}
+                className="text-xs text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+              >
+                Current Date Today
+              </button>
+            </div>
             <Input
               type="date"
               value={startDate}
