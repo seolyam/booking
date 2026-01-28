@@ -92,10 +92,10 @@ export default async function ApproverReviewDetailPage({
   let budgetData =
     budgetNumber !== null
       ? await db
-          .select(budgetSelect)
-          .from(budgets)
-          .where(eq(budgets.budget_number, budgetNumber))
-          .limit(1)
+        .select(budgetSelect)
+        .from(budgets)
+        .where(eq(budgets.budget_number, budgetNumber))
+        .limit(1)
       : [];
 
   if (!budgetData || budgetData.length === 0) {
@@ -290,7 +290,7 @@ export default async function ApproverReviewDetailPage({
             <div className="space-y-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-3xl font-black text-gray-900 leading-tight">
+                  <h2 className="text-3xl font-bold text-gray-900 leading-tight">
                     {items[0]?.description || "Substation Transformer Upgrade"}
                   </h2>
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
@@ -316,7 +316,7 @@ export default async function ApproverReviewDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Total amount
                   </p>
-                  <p className="text-3xl font-black text-gray-900">
+                  <p className="text-3xl font-bold text-gray-900">
                     {formatPhp(budget.total_amount)}
                   </p>
                 </div>
@@ -355,7 +355,7 @@ export default async function ApproverReviewDetailPage({
           {/* Cost Breakdown */}
           <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-black text-gray-900">
+              <span className="text-2xl font-bold text-gray-900">
                 ₱ Cost Breakdown
               </span>
             </div>
@@ -375,7 +375,7 @@ export default async function ApproverReviewDetailPage({
                         Equipment | Qty: {item.quantity}
                       </p>
                     </div>
-                    <p className="text-lg font-black text-gray-900">
+                    <p className="text-lg font-bold text-gray-900">
                       {formatPhp(item.total_cost)}
                     </p>
                   </div>
@@ -383,7 +383,7 @@ export default async function ApproverReviewDetailPage({
                 <div className="flex justify-end pt-6 border-t border-gray-100">
                   <p className="text-2xl font-bold text-gray-900">
                     Total:{" "}
-                    <span className="font-black ml-2 text-3xl">
+                    <span className="font-bold ml-2 text-3xl">
                       {formatPhp(budget.total_amount)}
                     </span>
                   </p>

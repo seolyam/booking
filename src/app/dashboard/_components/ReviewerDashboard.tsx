@@ -260,17 +260,16 @@ export default function ReviewerDashboard({
                   rows.map((r) => (
                     <tr
                       key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${
-                        r.statusLabel === "Rejected"
+                      className={`group hover:bg-gray-50/50 transition-colors ${r.statusLabel === "Rejected"
                           ? "opacity-60 bg-gray-50/30"
                           : ""
-                      }`}
+                        }`}
                     >
                       <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
                         {r.displayId}
                       </td>
                       <td className="py-5 pr-4">
-                        <div className="font-bold text-gray-900 leading-tight">
+                        <div className="font-medium text-gray-900 leading-tight">
                           {r.projectName}
                         </div>
                         <div className="text-xs font-semibold text-gray-400 mt-0.5">
@@ -278,7 +277,7 @@ export default function ReviewerDashboard({
                         </div>
                       </td>
                       <td className="py-5 pr-4">{typePill(r.type)}</td>
-                      <td className="py-5 pr-4 text-gray-900 font-bold">
+                      <td className="py-5 pr-4 text-gray-900 font-medium">
                         {r.amount}
                       </td>
                       <td className="py-5 pr-4">{statusPill(r.statusLabel)}</td>

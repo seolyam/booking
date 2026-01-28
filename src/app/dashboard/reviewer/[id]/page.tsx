@@ -169,18 +169,18 @@ export default async function ReviewBudgetDetailPage({
   const similarUsers =
     similarActorIds.length > 0
       ? await db
-          .select({
-            id: users.id,
-            full_name: users.full_name,
-            department: users.department,
-          })
-          .from(users)
-          .where(
-            and(
-              inArray(users.id, similarActorIds),
-              eq(users.department, requester?.department || "Finance"),
-            ),
-          )
+        .select({
+          id: users.id,
+          full_name: users.full_name,
+          department: users.department,
+        })
+        .from(users)
+        .where(
+          and(
+            inArray(users.id, similarActorIds),
+            eq(users.department, requester?.department || "Finance"),
+          ),
+        )
       : [];
 
   const similarUserMap = new Map(similarUsers.map((u) => [u.id, u]));
@@ -193,12 +193,12 @@ export default async function ReviewBudgetDetailPage({
   const similarItems =
     similarBudgetIds.length > 0
       ? await db
-          .select({
-            budget_id: budgetItems.budget_id,
-            description: budgetItems.description,
-          })
-          .from(budgetItems)
-          .where(inArray(budgetItems.budget_id, similarBudgetIds))
+        .select({
+          budget_id: budgetItems.budget_id,
+          description: budgetItems.description,
+        })
+        .from(budgetItems)
+        .where(inArray(budgetItems.budget_id, similarBudgetIds))
       : [];
 
   const similarItemsMap = new Map();
@@ -294,7 +294,7 @@ export default async function ReviewBudgetDetailPage({
             <div className="space-y-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-3xl font-black text-gray-900 leading-tight">
+                  <h2 className="text-3xl font-bold text-gray-900 leading-tight">
                     {items[0]?.description || "Budget Request"}
                   </h2>
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
@@ -320,7 +320,7 @@ export default async function ReviewBudgetDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Total amount
                   </p>
-                  <p className="text-3xl font-black text-gray-900">
+                  <p className="text-3xl font-bold text-gray-900">
                     {formatPhp(budget.total_amount)}
                   </p>
                 </div>
@@ -387,7 +387,7 @@ export default async function ReviewBudgetDetailPage({
                 <div className="flex justify-end pt-4 mt-2">
                   <p className="text-lg font-bold text-gray-900">
                     Total:{" "}
-                    <span className="font-black ml-1">
+                    <span className="font-bold ml-1">
                       {formatPhp(budget.total_amount)}
                     </span>
                   </p>

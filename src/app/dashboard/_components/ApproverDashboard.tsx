@@ -152,17 +152,16 @@ export default function ApproverDashboard({
                   rows.map((r) => (
                     <tr
                       key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${
-                        r.statusLabel === "Rejected"
+                      className={`group hover:bg-gray-50/50 transition-colors ${r.statusLabel === "Rejected"
                           ? "opacity-60 bg-gray-50/30"
                           : ""
-                      }`}
+                        }`}
                     >
                       <td className="py-5 pr-4 font-bold text-gray-400 text-xs">
                         {r.displayId}
                       </td>
                       <td className="py-5 pr-4">
-                        <div className="font-bold text-gray-900 leading-tight">
+                        <div className="font-medium text-gray-900 leading-tight">
                           {r.projectName}
                         </div>
                         <div className="text-xs font-semibold text-gray-400 mt-0.5">
@@ -170,7 +169,7 @@ export default function ApproverDashboard({
                         </div>
                       </td>
                       <td className="py-5 pr-4">{typePill(r.type)}</td>
-                      <td className="py-5 pr-4 text-gray-900 font-bold text-center">
+                      <td className="py-5 pr-4 text-gray-900 font-medium text-center">
                         {r.amount}
                       </td>
                       <td className="py-5 pr-4 text-center">
@@ -189,11 +188,10 @@ export default function ApproverDashboard({
                           return (
                             <Link
                               href={href}
-                              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
-                                isPending
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors shadow-sm ${isPending
                                   ? "bg-orange-500 text-white hover:bg-orange-600"
                                   : "bg-gray-700 text-white hover:bg-gray-800"
-                              }`}
+                                }`}
                             >
                               {isPending ? "Review" : "View"}{" "}
                               {isPending ? (
