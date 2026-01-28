@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import ApprovalDecisionButton from "@/app/dashboard/_components/ApprovalDecisionButton";
 import WorkflowProgress, {
   type WorkflowEvent,

@@ -400,7 +400,7 @@ export default async function ApproverReviewDetailPage({
           <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
             <div className="flex items-center gap-3">
               <Calendar className="w-6 h-6 text-gray-900" />
-              <h2 classNamhttps://github.com/seolyam/budget/pull/47/conflict?name=src%252Fapp%252Fdashboard%252Fbudget%252F%255Bid%255D%252Fpage.tsx&ancestor_oid=818653b470725d510ea9fb81c7e1a093c9641c88&base_oid=baee2e8828712a2fbda000e6b42fcd19a9020f71&head_oid=34d20bec46e2953fe3b42ea394fe90dd01a58dbbe="text-2xl font-black text-gray-900">
+              <h2 className="text-2xl font-black text-gray-900">
                 Project timeline
               </h2>
             </div>

@@ -191,7 +191,7 @@ export default function ReviewerDashboard({
       <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-4 md:p-8">
           {(activeFilter !== undefined || searchQuery !== undefined) && (
-            <div className="mb-6 md:mb-8 flex flex-col gap-4">
+            <div className="mb-6 md:mb-8 flex flex-col md:flex-row gap-4 md:items-center">
               <form
                 action="/dashboard/reviewer/review"
                 method="GET"
