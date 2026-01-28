@@ -59,7 +59,7 @@ export default function ApproverApprovalsList({
   const filterBtn = (status: ApproverDashboardRow["statusLabel"]) => (
     <button
       onClick={() => setCurrentStatus(status)}
-      className={`px-6 py-1.5 rounded-lg text-sm font-bold transition-all border ${
+      className={`px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 ${
         currentStatus === status
           ? status === "Approved"
             ? "bg-green-50 text-green-600 border-green-200 ring-2 ring-green-400"
@@ -76,38 +76,38 @@ export default function ApproverApprovalsList({
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-4xl font-black text-gray-900">
+        <h1 className="text-2xl md:text-4xl font-black text-gray-900">
           List of budget proposals
         </h1>
-        <p className="text-gray-500 mt-2 font-medium">
+        <p className="text-gray-500 mt-1 md:mt-2 font-medium text-sm md:text-base">
           Review and verify budget details before forwarding to approver
         </p>
       </div>
 
-      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
-        <div className="p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <div className="relative flex-1 max-w-md">
+      <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+        <div className="p-4 md:p-8">
+          <div className="flex flex-col gap-4 md:gap-6 mb-6 md:mb-10">
+            <div className="relative w-full md:max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search Department & Budget Type"
-                className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334] transition-all text-sm font-medium"
+                className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334] transition-all text-sm font-medium min-h-[44px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2 md:gap-3">
               {filterBtn("Approved")}
               {filterBtn("Pending")}
               {filterBtn("Rejected")}
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
                   <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
