@@ -65,15 +65,17 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow group"
+      className="rounded-xl md:rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow group"
     >
-      <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-blue-50 transition-transform group-hover:scale-110">
+      <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl flex items-center justify-center bg-blue-50 transition-transform group-hover:scale-110">
         {icon}
       </div>
-      <div className="mt-6 text-4xl font-bold text-gray-900 tracking-tight">
+      <div className="mt-3 md:mt-6 text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
         {value}
       </div>
-      <div className="mt-1 text-sm font-medium text-gray-500">{label}</div>
+      <div className="mt-0.5 md:mt-1 text-[10px] md:text-sm font-medium text-gray-500">
+        {label}
+      </div>
     </Link>
   );
 }
@@ -109,8 +111,8 @@ function BudgetTable({ rows }: { rows: SuperadminDashboardRow[] }) {
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+      <table className="w-full text-sm min-w-[700px]">
         <thead>
           <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
             <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
@@ -199,20 +201,20 @@ export default function SuperadminDashboard({
   const [activeTab, setActiveTab] = React.useState("overview");
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
       {/* Overview Section */}
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <div>
-          <h1 className="text-4xl font-black text-gray-900">
+          <h1 className="text-2xl md:text-4xl font-black text-gray-900">
             Superadmin Dashboard
           </h1>
-          <p className="text-gray-500 mt-2 font-medium">
+          <p className="text-gray-500 mt-1 md:mt-2 font-medium text-sm md:text-base">
             Manage all budgets, reviews, approvals, and users
           </p>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:gap-6 md:grid-cols-5">
           <StatCard
             icon={<FileText className="h-6 w-6 text-blue-500" />}
             value={requesterStats.totalSubmitted}
@@ -247,43 +249,46 @@ export default function SuperadminDashboard({
       </div>
 
       {/* Tabbed Interface for All Roles */}
-      <div className="rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+      <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start rounded-none border-b border-gray-100 bg-gray-50/50 p-0">
+          <TabsList className="w-full justify-start rounded-none border-b border-gray-100 bg-gray-50/50 p-0 overflow-x-auto flex-nowrap">
             <TabsTrigger
               value="overview"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 data-[state=active]:border-[#358334] data-[state=active]:bg-white"
+              className="rounded-none border-b-2 border-transparent px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm whitespace-nowrap data-[state=active]:border-[#358334] data-[state=active]:bg-white"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="requester"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 data-[state=active]:border-[#358334] data-[state=active]:bg-white"
+              className="rounded-none border-b-2 border-transparent px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm whitespace-nowrap data-[state=active]:border-[#358334] data-[state=active]:bg-white"
             >
               My Budgets
             </TabsTrigger>
             <TabsTrigger
               value="reviewer"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 data-[state=active]:border-[#358334] data-[state=active]:bg-white"
+              className="rounded-none border-b-2 border-transparent px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm whitespace-nowrap data-[state=active]:border-[#358334] data-[state=active]:bg-white"
             >
               Review Queue
             </TabsTrigger>
             <TabsTrigger
               value="approver"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 data-[state=active]:border-[#358334] data-[state=active]:bg-white"
+              className="rounded-none border-b-2 border-transparent px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm whitespace-nowrap data-[state=active]:border-[#358334] data-[state=active]:bg-white"
             >
               Approvals
             </TabsTrigger>
             <TabsTrigger
               value="users"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 data-[state=active]:border-[#358334] data-[state=active]:bg-white"
+              className="rounded-none border-b-2 border-transparent px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm whitespace-nowrap data-[state=active]:border-[#358334] data-[state=active]:bg-white"
             >
               Users
             </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="p-8 space-y-8">
+          <TabsContent
+            value="overview"
+            className="p-4 md:p-8 space-y-6 md:space-y-8"
+          >
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900">
                 Recent Activity
@@ -304,7 +309,10 @@ export default function SuperadminDashboard({
           </TabsContent>
 
           {/* Requester Tab */}
-          <TabsContent value="requester" className="p-8 space-y-8">
+          <TabsContent
+            value="requester"
+            className="p-4 md:p-8 space-y-6 md:space-y-8"
+          >
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-bold text-gray-900">
@@ -355,7 +363,10 @@ export default function SuperadminDashboard({
           </TabsContent>
 
           {/* Reviewer Tab */}
-          <TabsContent value="reviewer" className="p-8 space-y-8">
+          <TabsContent
+            value="reviewer"
+            className="p-4 md:p-8 space-y-6 md:space-y-8"
+          >
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900">
                 Budgets for Review
@@ -391,7 +402,10 @@ export default function SuperadminDashboard({
           </TabsContent>
 
           {/* Approver Tab */}
-          <TabsContent value="approver" className="p-8 space-y-8">
+          <TabsContent
+            value="approver"
+            className="p-4 md:p-8 space-y-6 md:space-y-8"
+          >
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900">
                 Budget Approvals
@@ -435,7 +449,10 @@ export default function SuperadminDashboard({
           </TabsContent>
 
           {/* Users Tab */}
-          <TabsContent value="users" className="p-8 space-y-8">
+          <TabsContent
+            value="users"
+            className="p-4 md:p-8 space-y-6 md:space-y-8"
+          >
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900">
                 User Management

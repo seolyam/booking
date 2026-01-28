@@ -16,6 +16,7 @@ import { signOut } from "@/actions/auth";
 import { usePathname } from "next/navigation";
 
 import { buildNav, type NavItem, type Role } from "./nav";
+import MobileNavbar from "./MobileNavbar";
 
 type Profile = { fullName: string; departmentLine: string; initials: string };
 
@@ -634,306 +635,62 @@ export default function DashboardShell({
   };
 
   return (
-    <div className="h-dvh overflow-hidden bg-linear-to-b from-[#C7C800] to-[#2F5E3D] p-6">
-      <div
-        className={
-          "mx-auto h-full w-full " +
-          (mode === "floating" ? "max-w-none" : "max-w-6xl")
-        }
-      >
-        <div ref={containerRef} className="relative h-full overflow-hidden">
-          {mode === "floating" ? (
-            <>
-              {/* Sidebar window */}
-              <aside
-                className="rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden md:absolute flex flex-col"
-                style={
-                  {
-                    left: floating.sidebar.x,
-                    top: floating.sidebar.y,
-                    width: floating.sidebar.width,
-                    height: floating.sidebar.height,
-                    zIndex: floating.sidebar.z,
-                  } as React.CSSProperties
-                }
-                onPointerDown={() => bringPanelToFront("sidebar")}
-              >
-                <div className="relative flex items-center justify-between gap-3 border-b border-black/10 bg-white/70 px-4 py-3">
-                  <div
-                    className="flex items-center gap-3 min-w-0 cursor-move"
-                    onPointerDown={(e) =>
-                      startFloatingDrag(e, "sidebar", "move")
-                    }
-                    onPointerMove={onFloatingPointerMove}
-                    onPointerUp={endFloatingDrag}
-                    onPointerCancel={endFloatingDrag}
-                    title="Drag to move"
-                  >
-                    <div className="h-9 w-9 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
-                      {profile.initials}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {profile.fullName}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {profile.departmentLine
-                          ? `${roleLabel(role)} • ${profile.departmentLine}`
-                          : roleLabel(role)}
-                      </div>
-                    </div>
-                  </div>
+    <>
+      {/* Mobile Navigation - only visible on small screens */}
+      <MobileNavbar profile={profile} role={role} />
 
-                  <div className="ml-auto shrink-0">
-                    <button
-                      ref={sidebarMenuButtonRef}
-                      type="button"
-                      className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 hover:bg-black/5"
-                      aria-label="Layout options"
-                      aria-haspopup="menu"
-                      aria-expanded={sidebarMenuOpen}
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                      }}
-                      onClick={() => setSidebarMenuOpen((v) => !v)}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {sidebarMenuOpen && (
+      {/* Desktop Layout - hidden on mobile, visible on md+ */}
+      <div className="hidden md:block h-dvh overflow-hidden bg-linear-to-b from-[#C7C800] to-[#2F5E3D] p-6">
+        <div
+          className={
+            "mx-auto h-full w-full " +
+            (mode === "floating" ? "max-w-none" : "max-w-6xl")
+          }
+        >
+          <div ref={containerRef} className="relative h-full overflow-hidden">
+            {mode === "floating" ? (
+              <>
+                {/* Sidebar window */}
+                <aside
+                  className="rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden md:absolute flex flex-col"
+                  style={
+                    {
+                      left: floating.sidebar.x,
+                      top: floating.sidebar.y,
+                      width: floating.sidebar.width,
+                      height: floating.sidebar.height,
+                      zIndex: floating.sidebar.z,
+                    } as React.CSSProperties
+                  }
+                  onPointerDown={() => bringPanelToFront("sidebar")}
+                >
+                  <div className="relative flex items-center justify-between gap-3 border-b border-black/10 bg-white/70 px-4 py-3">
                     <div
-                      ref={sidebarMenuRef}
-                      role="menu"
-                      className="absolute right-3 top-11.5 z-50 w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/10 p-1"
-                      onPointerDown={(e) => e.stopPropagation()}
+                      className="flex items-center gap-3 min-w-0 cursor-move"
+                      onPointerDown={(e) =>
+                        startFloatingDrag(e, "sidebar", "move")
+                      }
+                      onPointerMove={onFloatingPointerMove}
+                      onPointerUp={endFloatingDrag}
+                      onPointerCancel={endFloatingDrag}
+                      title="Drag to move"
                     >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
-                        onClick={() => onSidebarMenuAction(toggleMode)}
-                      >
-                        <ArrowLeftRight className="h-4 w-4 text-gray-600" />
-                        Switch to Split
-                      </button>
-
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
-                        onClick={() => onSidebarMenuAction(tilePanels)}
-                      >
-                        <LayoutGrid className="h-4 w-4 text-gray-600" />
-                        Tile panels
-                      </button>
-
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
-                        onClick={() => onSidebarMenuAction(resetLayout)}
-                      >
-                        <RotateCcw className="h-4 w-4 text-gray-600" />
-                        Reset layout
-                      </button>
-
-                      <div className="my-1 h-px bg-black/10" />
-
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
-                        onClick={() =>
-                          onSidebarMenuAction(() =>
-                            isMaximized("sidebar")
-                              ? restorePanel("sidebar")
-                              : maximizePanel("sidebar"),
-                          )
-                        }
-                      >
-                        {isMaximized("sidebar") ? (
-                          <Minimize2 className="h-4 w-4 text-gray-600" />
-                        ) : (
-                          <Maximize2 className="h-4 w-4 text-gray-600" />
-                        )}
-                        {isMaximized("sidebar")
-                          ? "Restore sidebar"
-                          : "Maximize sidebar"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-auto">
-                  <nav className="px-4 py-4 space-y-4">
-                    {sections.map((section, idx) => (
-                      <div key={idx}>
-                        {section.title && (
-                          <div className="px-4 pb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                            {section.title}
-                          </div>
-                        )}
-                        <div className="space-y-1">
-                          {section.items.map(navItem)}
+                      <div className="h-9 w-9 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
+                        {profile.initials}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">
+                          {profile.fullName}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {profile.departmentLine
+                            ? `${roleLabel(role)} • ${profile.departmentLine}`
+                            : roleLabel(role)}
                         </div>
                       </div>
-                    ))}
-                  </nav>
-                </div>
-
-                <div className="border-t border-black/10">
-                  <div className="p-4">
-                    <form action={signOut}>
-                      <button
-                        type="submit"
-                        className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Logout
-                      </button>
-                    </form>
-                  </div>
-                </div>
-
-                {/* Resize handle */}
-                <div
-                  className="absolute bottom-1 right-1 h-6 w-6 cursor-nwse-resize rounded-md hover:bg-black/5"
-                  onPointerDown={(e) =>
-                    startFloatingDrag(e, "sidebar", "resize")
-                  }
-                  onPointerMove={onFloatingPointerMove}
-                  onPointerUp={endFloatingDrag}
-                  onPointerCancel={endFloatingDrag}
-                  title="Drag to resize"
-                >
-                  <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-black/20" />
-                </div>
-              </aside>
-
-              {/* Main window */}
-              <section
-                className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 md:absolute flex flex-col overflow-hidden"
-                style={
-                  {
-                    left: floating.main.x,
-                    top: floating.main.y,
-                    width: floating.main.width,
-                    height: floating.main.height,
-                    zIndex: floating.main.z,
-                  } as React.CSSProperties
-                }
-                onPointerDown={() => bringPanelToFront("main")}
-              >
-                <div
-                  className="flex items-center justify-between gap-3 border-b border-black/10 bg-white/40 px-4 py-3 cursor-move"
-                  onPointerDown={(e) => startFloatingDrag(e, "main", "move")}
-                  onPointerMove={onFloatingPointerMove}
-                  onPointerUp={endFloatingDrag}
-                  onPointerCancel={endFloatingDrag}
-                  title="Drag to move"
-                >
-                  <div className="flex-1" />
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
-                      onClick={() =>
-                        isMaximized("main")
-                          ? restorePanel("main")
-                          : maximizePanel("main")
-                      }
-                      title={isMaximized("main") ? "Restore" : "Maximize"}
-                      aria-label={isMaximized("main") ? "Restore" : "Maximize"}
-                    >
-                      {isMaximized("main") ? (
-                        <Minimize2 className="h-4 w-4" />
-                      ) : (
-                        <Maximize2 className="h-4 w-4" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Notifications"
-                      className="rounded-lg p-2 text-gray-700 hover:bg-black/5"
-                    >
-                      <Bell className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-auto p-8">
-                  {children}
-                </div>
-
-                {/* Resize handle */}
-                <div
-                  className="absolute bottom-1 right-1 h-6 w-6 cursor-nwse-resize rounded-md hover:bg-black/5"
-                  onPointerDown={(e) => startFloatingDrag(e, "main", "resize")}
-                  onPointerMove={onFloatingPointerMove}
-                  onPointerUp={endFloatingDrag}
-                  onPointerCancel={endFloatingDrag}
-                  title="Drag to resize"
-                >
-                  <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-black/20" />
-                </div>
-              </section>
-            </>
-          ) : (
-            <div
-              className={
-                "flex flex-col gap-6 md:flex-row md:gap-0 md:h-full md:min-h-0" +
-                (sidebarSide === "right" ? " md:flex-row-reverse" : "")
-              }
-              style={
-                {
-                  ["--sidebar-width" as never]: `${sidebarWidth}px`,
-                } as React.CSSProperties
-              }
-            >
-              {/* Sidebar */}
-              <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col">
-                <div className="p-6 shrink-0">
-                  <div className="relative flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
-                      {profile.initials}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {profile.fullName}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {profile.departmentLine
-                          ? `${roleLabel(role)} • ${profile.departmentLine}`
-                          : roleLabel(role)}
-                      </div>
                     </div>
 
-                    <div className="ml-auto flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
-                        aria-label={
-                          sidebarSide === "left"
-                            ? "Dock sidebar to the right"
-                            : "Dock sidebar to the left"
-                        }
-                        title={
-                          sidebarSide === "left"
-                            ? "Dock sidebar to the right"
-                            : "Dock sidebar to the left"
-                        }
-                        onClick={() =>
-                          setLayout((prev) => ({
-                            ...prev,
-                            sidebarSide:
-                              prev.sidebarSide === "left" ? "right" : "left",
-                          }))
-                        }
-                      >
-                        <ArrowLeftRight className="h-4 w-4" />
-                      </button>
-
+                    <div className="ml-auto shrink-0">
                       <button
                         ref={sidebarMenuButtonRef}
                         type="button"
@@ -941,6 +698,9 @@ export default function DashboardShell({
                         aria-label="Layout options"
                         aria-haspopup="menu"
                         aria-expanded={sidebarMenuOpen}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                        }}
                         onClick={() => setSidebarMenuOpen((v) => !v)}
                       >
                         <MoreVertical className="h-4 w-4" />
@@ -951,7 +711,7 @@ export default function DashboardShell({
                       <div
                         ref={sidebarMenuRef}
                         role="menu"
-                        className="absolute right-0 top-13 z-50 w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/10 p-1"
+                        className="absolute right-3 top-11.5 z-50 w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/10 p-1"
                         onPointerDown={(e) => e.stopPropagation()}
                       >
                         <button
@@ -961,7 +721,17 @@ export default function DashboardShell({
                           onClick={() => onSidebarMenuAction(toggleMode)}
                         >
                           <ArrowLeftRight className="h-4 w-4 text-gray-600" />
-                          Switch to Float
+                          Switch to Split
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                          onClick={() => onSidebarMenuAction(tilePanels)}
+                        >
+                          <LayoutGrid className="h-4 w-4 text-gray-600" />
+                          Tile panels
                         </button>
 
                         <button
@@ -973,84 +743,334 @@ export default function DashboardShell({
                           <RotateCcw className="h-4 w-4 text-gray-600" />
                           Reset layout
                         </button>
+
+                        <div className="my-1 h-px bg-black/10" />
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                          onClick={() =>
+                            onSidebarMenuAction(() =>
+                              isMaximized("sidebar")
+                                ? restorePanel("sidebar")
+                                : maximizePanel("sidebar"),
+                            )
+                          }
+                        >
+                          {isMaximized("sidebar") ? (
+                            <Minimize2 className="h-4 w-4 text-gray-600" />
+                          ) : (
+                            <Maximize2 className="h-4 w-4 text-gray-600" />
+                          )}
+                          {isMaximized("sidebar")
+                            ? "Restore sidebar"
+                            : "Maximize sidebar"}
+                        </button>
                       </div>
                     )}
                   </div>
-                </div>
 
-                <div className="flex-1 min-h-0 overflow-auto">
-                  <nav className="px-4 pb-4 space-y-4">
-                    {sections.map((section, idx) => (
-                      <div key={idx}>
-                        {section.title && (
-                          <div className="px-4 pb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                            {section.title}
+                  <div className="flex-1 min-h-0 overflow-auto">
+                    <nav className="px-4 py-4 space-y-4">
+                      {sections.map((section, idx) => (
+                        <div key={idx}>
+                          {section.title && (
+                            <div className="px-4 pb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                              {section.title}
+                            </div>
+                          )}
+                          <div className="space-y-1">
+                            {section.items.map(navItem)}
                           </div>
+                        </div>
+                      ))}
+                    </nav>
+                  </div>
+
+                  <div className="border-t border-black/10">
+                    <div className="p-4">
+                      <form action={signOut}>
+                        <button
+                          type="submit"
+                          className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Logout
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  {/* Resize handle */}
+                  <div
+                    className="absolute bottom-1 right-1 h-6 w-6 cursor-nwse-resize rounded-md hover:bg-black/5"
+                    onPointerDown={(e) =>
+                      startFloatingDrag(e, "sidebar", "resize")
+                    }
+                    onPointerMove={onFloatingPointerMove}
+                    onPointerUp={endFloatingDrag}
+                    onPointerCancel={endFloatingDrag}
+                    title="Drag to resize"
+                  >
+                    <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-black/20" />
+                  </div>
+                </aside>
+
+                {/* Main window */}
+                <section
+                  className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 md:absolute flex flex-col overflow-hidden"
+                  style={
+                    {
+                      left: floating.main.x,
+                      top: floating.main.y,
+                      width: floating.main.width,
+                      height: floating.main.height,
+                      zIndex: floating.main.z,
+                    } as React.CSSProperties
+                  }
+                  onPointerDown={() => bringPanelToFront("main")}
+                >
+                  <div
+                    className="flex items-center justify-between gap-3 border-b border-black/10 bg-white/40 px-4 py-3 cursor-move"
+                    onPointerDown={(e) => startFloatingDrag(e, "main", "move")}
+                    onPointerMove={onFloatingPointerMove}
+                    onPointerUp={endFloatingDrag}
+                    onPointerCancel={endFloatingDrag}
+                    title="Drag to move"
+                  >
+                    <div className="flex-1" />
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
+                        onClick={() =>
+                          isMaximized("main")
+                            ? restorePanel("main")
+                            : maximizePanel("main")
+                        }
+                        title={isMaximized("main") ? "Restore" : "Maximize"}
+                        aria-label={
+                          isMaximized("main") ? "Restore" : "Maximize"
+                        }
+                      >
+                        {isMaximized("main") ? (
+                          <Minimize2 className="h-4 w-4" />
+                        ) : (
+                          <Maximize2 className="h-4 w-4" />
                         )}
-                        <div className="space-y-1">
-                          {section.items.map(navItem)}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Notifications"
+                        className="rounded-lg p-2 text-gray-700 hover:bg-black/5"
+                      >
+                        <Bell className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-h-0 overflow-auto p-8">
+                    {children}
+                  </div>
+
+                  {/* Resize handle */}
+                  <div
+                    className="absolute bottom-1 right-1 h-6 w-6 cursor-nwse-resize rounded-md hover:bg-black/5"
+                    onPointerDown={(e) =>
+                      startFloatingDrag(e, "main", "resize")
+                    }
+                    onPointerMove={onFloatingPointerMove}
+                    onPointerUp={endFloatingDrag}
+                    onPointerCancel={endFloatingDrag}
+                    title="Drag to resize"
+                  >
+                    <div className="absolute bottom-2 right-2 h-3 w-3 border-b-2 border-r-2 border-black/20" />
+                  </div>
+                </section>
+              </>
+            ) : (
+              <div
+                className={
+                  "flex flex-col gap-6 md:flex-row md:gap-0 md:h-full md:min-h-0" +
+                  (sidebarSide === "right" ? " md:flex-row-reverse" : "")
+                }
+                style={
+                  {
+                    ["--sidebar-width" as never]: `${sidebarWidth}px`,
+                  } as React.CSSProperties
+                }
+              >
+                {/* Sidebar */}
+                <aside className="w-full md:w-(--sidebar-width) md:shrink-0 md:h-full md:min-h-0 rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col">
+                  <div className="p-6 shrink-0">
+                    <div className="relative flex items-center gap-3">
+                      <div className="h-11 w-11 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold">
+                        {profile.initials}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">
+                          {profile.fullName}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {profile.departmentLine
+                            ? `${roleLabel(role)} • ${profile.departmentLine}`
+                            : roleLabel(role)}
                         </div>
                       </div>
-                    ))}
-                  </nav>
+
+                      <div className="ml-auto flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
+                          aria-label={
+                            sidebarSide === "left"
+                              ? "Dock sidebar to the right"
+                              : "Dock sidebar to the left"
+                          }
+                          title={
+                            sidebarSide === "left"
+                              ? "Dock sidebar to the right"
+                              : "Dock sidebar to the left"
+                          }
+                          onClick={() =>
+                            setLayout((prev) => ({
+                              ...prev,
+                              sidebarSide:
+                                prev.sidebarSide === "left" ? "right" : "left",
+                            }))
+                          }
+                        >
+                          <ArrowLeftRight className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          ref={sidebarMenuButtonRef}
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 hover:bg-black/5"
+                          aria-label="Layout options"
+                          aria-haspopup="menu"
+                          aria-expanded={sidebarMenuOpen}
+                          onClick={() => setSidebarMenuOpen((v) => !v)}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {sidebarMenuOpen && (
+                        <div
+                          ref={sidebarMenuRef}
+                          role="menu"
+                          className="absolute right-0 top-13 z-50 w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/10 p-1"
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                            onClick={() => onSidebarMenuAction(toggleMode)}
+                          >
+                            <ArrowLeftRight className="h-4 w-4 text-gray-600" />
+                            Switch to Float
+                          </button>
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-black/5"
+                            onClick={() => onSidebarMenuAction(resetLayout)}
+                          >
+                            <RotateCcw className="h-4 w-4 text-gray-600" />
+                            Reset layout
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-h-0 overflow-auto">
+                    <nav className="px-4 pb-4 space-y-4">
+                      {sections.map((section, idx) => (
+                        <div key={idx}>
+                          {section.title && (
+                            <div className="px-4 pb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                              {section.title}
+                            </div>
+                          )}
+                          <div className="space-y-1">
+                            {section.items.map(navItem)}
+                          </div>
+                        </div>
+                      ))}
+                    </nav>
+                  </div>
+
+                  <div className="border-t border-black/10 shrink-0">
+                    <div className="p-4">
+                      <form action={signOut}>
+                        <button
+                          type="submit"
+                          className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Logout
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </aside>
+
+                {/* Divider (drag to resize) */}
+                <div
+                  role="separator"
+                  aria-orientation="vertical"
+                  tabIndex={0}
+                  className="hidden md:flex w-6 shrink-0 cursor-col-resize items-stretch select-none touch-none group"
+                  onPointerDown={onDividerPointerDown}
+                  onPointerMove={onDividerPointerMove}
+                  onPointerUp={onDividerPointerUpOrCancel}
+                  onPointerCancel={onDividerPointerUpOrCancel}
+                  onDoubleClick={() =>
+                    setLayout((prev) => ({
+                      ...prev,
+                      sidebarWidth: DEFAULT_LAYOUT.sidebarWidth,
+                    }))
+                  }
+                  onKeyDown={onDividerKeyDown}
+                >
+                  <div className="mx-auto w-px bg-black/10 group-hover:bg-black/25 group-focus-visible:bg-black/25" />
                 </div>
 
-                <div className="border-t border-black/10 shrink-0">
-                  <div className="p-4">
-                    <form action={signOut}>
+                {/* Main */}
+                <section className="flex-1 min-w-0 md:h-full md:min-h-0 rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden">
+                  <div className="h-full overflow-auto p-8">
+                    <div className="flex justify-end mb-4">
                       <button
-                        type="submit"
-                        className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10"
+                        type="button"
+                        aria-label="Notifications"
+                        className="rounded-full p-2 text-gray-700 hover:bg-black/5"
                       >
-                        <LogOut className="h-4 w-4" />
-                        Logout
+                        <Bell className="h-5 w-5" />
                       </button>
-                    </form>
-                  </div>
-                </div>
-              </aside>
+                    </div>
 
-              {/* Divider (drag to resize) */}
-              <div
-                role="separator"
-                aria-orientation="vertical"
-                tabIndex={0}
-                className="hidden md:flex w-6 shrink-0 cursor-col-resize items-stretch select-none touch-none group"
-                onPointerDown={onDividerPointerDown}
-                onPointerMove={onDividerPointerMove}
-                onPointerUp={onDividerPointerUpOrCancel}
-                onPointerCancel={onDividerPointerUpOrCancel}
-                onDoubleClick={() =>
-                  setLayout((prev) => ({
-                    ...prev,
-                    sidebarWidth: DEFAULT_LAYOUT.sidebarWidth,
-                  }))
-                }
-                onKeyDown={onDividerKeyDown}
-              >
-                <div className="mx-auto w-px bg-black/10 group-hover:bg-black/25 group-focus-visible:bg-black/25" />
+                    {children}
+                  </div>
+                </section>
               </div>
-
-              {/* Main */}
-              <section className="flex-1 min-w-0 md:h-full md:min-h-0 rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden">
-                <div className="h-full overflow-auto p-8">
-                  <div className="flex justify-end mb-4">
-                    <button
-                      type="button"
-                      aria-label="Notifications"
-                      className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-                    >
-                      <Bell className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  {children}
-                </div>
-              </section>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Mobile Content Area - only visible on small screens */}
+      <div className="md:hidden min-h-dvh pt-[60px] bg-linear-to-b from-[#C7C800] to-[#2F5E3D]">
+        <div className="p-4 min-h-[calc(100dvh-60px)]">
+          <div className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden min-h-full">
+            <div className="p-4 overflow-x-auto">{children}</div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

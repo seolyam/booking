@@ -139,32 +139,35 @@ export default async function DashboardPage() {
     });
 
     // Approver rows
-    const approverRows: ApproverDashboardRow[] =
-      data.approverData.recentProposals.map((b) => {
-        const type =
-          b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
-        const statusLabel =
-          b.status === "approved"
-            ? ("Approved" as const)
-            : b.status === "rejected"
-              ? ("Rejected" as const)
-              : ("Pending" as const);
+    const approverRows = data.approverData.recentProposals.map((b) => {
+      const type =
+        b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
+      const statusLabel =
+        b.status === "approved"
+          ? ("Approved" as const)
+          : b.status === "rejected"
+            ? ("Rejected" as const)
+            : ("Pending" as const);
+      const displayId =
+        (b as { project_code?: string | null }).project_code ??
+        `BUD-${String(b.budget_number).padStart(3, "0")}`;
+      const isPending = statusLabel === "Pending";
 
-        return {
-          budgetId: b.id,
-          budgetNumber: b.budget_number,
-          displayId:
-            (b as { project_code?: string | null }).project_code ??
-            `BUD-${String(b.budget_number).padStart(3, "0")}`,
-          projectName:
-            approverFirstItemByBudgetId.get(b.id) ?? "Budget Request",
-          projectSub: b.department ?? "",
-          type,
-          amount: formatPhp(b.total_amount),
-          statusLabel,
-          dateLabel: formatDateShort(b.created_at),
-        };
-      });
+      return {
+        budgetId: b.id,
+        budgetNumber: b.budget_number,
+        displayId,
+        projectName: approverFirstItemByBudgetId.get(b.id) ?? "Budget Request",
+        projectSub: b.department ?? "",
+        type,
+        amount: formatPhp(b.total_amount),
+        statusLabel,
+        dateLabel: formatDateShort(b.created_at),
+        actionHref: isPending
+          ? `/dashboard/approver/approvals/${encodeURIComponent(displayId)}`
+          : `/dashboard/budget/${encodeURIComponent(displayId)}`,
+      };
+    });
 
     return (
       <SuperadminDashboard

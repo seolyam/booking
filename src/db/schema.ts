@@ -10,8 +10,9 @@ import {
   boolean,
   primaryKey,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 
 // Enums
 export const departmentEnum = pgEnum("department", [
@@ -52,7 +53,53 @@ export const budgetStatusEnum = pgEnum("budget_status", [
   "rejected",
 ]);
 
+// Category type enum for budget categories
+export const budgetCategoryTypeEnum = pgEnum("budget_category_type", [
+  "CAPEX",
+  "OPEX",
+  "BOTH",
+]);
+
 // Tables
+
+// Projects table - groups budget requests
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    project_code: text("project_code").notNull().unique(),
+    name: text("name").notNull(),
+    department: text("department").notNull(),
+    description: text("description"),
+    created_by: uuid("created_by").references(() => users.id),
+    is_active: boolean("is_active").default(true).notNull(),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_projects_project_code").on(table.project_code),
+    index("idx_projects_department").on(table.department),
+    index("idx_projects_created_by").on(table.created_by),
+  ],
+);
+
+// Budget categories with allowed type
+export const budgetCategories = pgTable("budget_categories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  allowed_type: budgetCategoryTypeEnum("allowed_type")
+    .notNull()
+    .default("BOTH"),
+  is_active: boolean("is_active").default(true).notNull(),
+  created_at: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey(), // Links to Supabase Auth User ID
@@ -248,3 +295,61 @@ export const reviewChecklists = pgTable("review_checklists", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ============================================================================
+// Relations
+// ============================================================================
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [projects.created_by],
+    references: [users.id],
+  }),
+  budgets: many(budgets),
+}));
+
+export const budgetsRelations = relations(budgets, ({ one, many }) => ({
+  user: one(users, {
+    fields: [budgets.user_id],
+    references: [users.id],
+  }),
+  items: many(budgetItems),
+  milestones: many(budgetMilestones),
+  auditLogs: many(auditLogs),
+}));
+
+export const budgetItemsRelations = relations(budgetItems, ({ one }) => ({
+  budget: one(budgets, {
+    fields: [budgetItems.budget_id],
+    references: [budgets.id],
+  }),
+}));
+
+export const budgetMilestonesRelations = relations(
+  budgetMilestones,
+  ({ one }) => ({
+    budget: one(budgets, {
+      fields: [budgetMilestones.budget_id],
+      references: [budgets.id],
+    }),
+  }),
+);
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  budget: one(budgets, {
+    fields: [auditLogs.budget_id],
+    references: [budgets.id],
+  }),
+  actor: one(users, {
+    fields: [auditLogs.actor_id],
+    references: [users.id],
+  }),
+}));
+
+// Type exports for convenience
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
+export type Budget = typeof budgets.$inferSelect;
+export type NewBudget = typeof budgets.$inferInsert;
+export type BudgetCategory = typeof budgetCategories.$inferSelect;
+export type BudgetItem = typeof budgetItems.$inferSelect;
