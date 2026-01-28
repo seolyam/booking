@@ -98,12 +98,12 @@ export default async function BudgetTrackingPage({
     actorIds.length === 0
       ? []
       : await db
-          .select({
-            id: users.id,
-            full_name: users.full_name,
-          })
-          .from(users)
-          .where(inArray(users.id, actorIds));
+        .select({
+          id: users.id,
+          full_name: users.full_name,
+        })
+        .from(users)
+        .where(inArray(users.id, actorIds));
 
   const actorMap = new Map(actorsData.map((a) => [a.id, a.full_name]));
 

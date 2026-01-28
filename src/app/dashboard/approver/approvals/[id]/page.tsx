@@ -256,7 +256,7 @@ export default async function ApproverReviewDetailPage({
             >
               <ChevronLeft className="w-6 h-6 text-gray-900" />
             </Link>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
               Budget approval review
             </h1>
           </div>
@@ -293,11 +293,11 @@ export default async function ApproverReviewDetailPage({
                   <h2 className="text-3xl font-bold text-gray-900 leading-tight">
                     {items[0]?.description || "Substation Transformer Upgrade"}
                   </h2>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
                     {typeLabel}
                   </span>
                 </div>
-                <p className="text-gray-400 font-bold text-sm tracking-wide">
+                <p className="text-gray-400 font-medium text-sm tracking-wide">
                   PROJ-{budget.id.slice(0, 8).toUpperCase()} -{" "}
                   {requester?.department || "Infrastructure Department"}
                 </p>
@@ -308,7 +308,7 @@ export default async function ApproverReviewDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Requester
                   </p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-xl font-semibold text-gray-900">
                     {requester?.full_name || "Lebron James"}
                   </p>
                 </div>
@@ -324,7 +324,7 @@ export default async function ApproverReviewDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Submitted
                   </p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-xl font-semibold text-gray-900">
                     {formatDate(budget.created_at)}
                   </p>
                 </div>
@@ -332,7 +332,7 @@ export default async function ApproverReviewDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Timeline
                   </p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-xl font-semibold text-gray-900">
                     {budget.start_date || budget.end_date ? (
                       <>
                         {budget.start_date
@@ -355,7 +355,7 @@ export default async function ApproverReviewDetailPage({
           {/* Cost Breakdown */}
           <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="text-xl font-bold text-gray-900">
                 ₱ Cost Breakdown
               </span>
             </div>
@@ -368,22 +368,22 @@ export default async function ApproverReviewDetailPage({
                     className="p-6 bg-gray-50/50 rounded-2xl flex justify-between items-center border border-gray-100/50"
                   >
                     <div className="space-y-1">
-                      <p className="text-lg font-bold text-gray-900">
+                      <p className="text-base font-semibold text-gray-900">
                         {item.description}
                       </p>
                       <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">
                         Equipment | Qty: {item.quantity}
                       </p>
                     </div>
-                    <p className="text-lg font-bold text-gray-900">
+                    <p className="text-base font-bold text-gray-900">
                       {formatPhp(item.total_cost)}
                     </p>
                   </div>
                 ))}
                 <div className="flex justify-end pt-6 border-t border-gray-100">
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-xl font-bold text-gray-900">
                     Total:{" "}
-                    <span className="font-bold ml-2 text-3xl">
+                    <span className="font-bold ml-2 text-2xl">
                       {formatPhp(budget.total_amount)}
                     </span>
                   </p>
@@ -400,7 +400,7 @@ export default async function ApproverReviewDetailPage({
           <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
             <div className="flex items-center gap-3">
               <Calendar className="w-6 h-6 text-gray-900" />
-              <h2 className="text-2xl font-black text-gray-900">
+              <h2 className="text-xl font-bold text-gray-900">
                 Project timeline
               </h2>
             </div>
@@ -410,7 +410,7 @@ export default async function ApproverReviewDetailPage({
                 <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">
                   Start Date
                 </span>
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-base font-semibold text-gray-900">
                   {budget.start_date
                     ? formatDate(budget.start_date)
                     : "Not set"}
@@ -420,7 +420,7 @@ export default async function ApproverReviewDetailPage({
                 <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">
                   End Date
                 </span>
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-base font-semibold text-gray-900">
                   {budget.end_date ? formatDate(budget.end_date) : "Not set"}
                 </span>
               </div>
@@ -432,7 +432,7 @@ export default async function ApproverReviewDetailPage({
             <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
               <div className="flex items-center gap-3">
                 <AlertCircle className="w-6 h-6 text-gray-900" />
-                <h2 className="text-2xl font-black text-gray-900">
+                <h2 className="text-xl font-bold text-gray-900">
                   Variance Explanation
                 </h2>
               </div>
