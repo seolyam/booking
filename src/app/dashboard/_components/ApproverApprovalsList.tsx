@@ -162,10 +162,14 @@ export default function ApproverApprovalsList({
                       </td>
                       <td className="py-5 pr-0 text-center">
                         {(() => {
-                          const href = `/dashboard/approver/approvals/${encodeURIComponent(
-                            r.displayId,
-                          )}`;
                           const isPending = r.statusLabel === "Pending";
+                          const href = isPending
+                            ? `/dashboard/approver/approvals/${encodeURIComponent(
+                                r.displayId,
+                              )}`
+                            : `/dashboard/budget/${encodeURIComponent(
+                                r.displayId,
+                              )}`;
 
                           return (
                             <Link
