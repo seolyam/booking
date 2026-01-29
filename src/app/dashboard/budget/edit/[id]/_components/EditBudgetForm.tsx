@@ -586,9 +586,19 @@ export default function EditBudgetForm({
           <Textarea
             placeholder="Explain what changes you've made and why..."
             value={varianceExplanation}
-            onChange={(e) => setVarianceExplanation(e.target.value)}
+            onChange={(e) => {
+              const text = e.target.value;
+              const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+              if (wordCount <= 120) {
+                setVarianceExplanation(text);
+              }
+            }}
             className="border-gray-300 min-h-30"
           />
+          <div className="text-right text-xs text-gray-400 mt-1">
+            {varianceExplanation.trim().split(/\s+/).filter(Boolean).length}/120
+            words
+          </div>
         </div>
       </section>
 

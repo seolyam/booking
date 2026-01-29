@@ -440,7 +440,7 @@ export default async function ApproverReviewDetailPage({
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                   Requested by {requester?.full_name || "Lebron James"}
                 </p>
-                <p className="text-lg text-gray-700 font-medium leading-relaxed italic">
+                <p className="text-lg text-gray-700 font-medium leading-relaxed italic break-words whitespace-pre-wrap">
                   &ldquo;{budget.variance_explanation}&rdquo;
                 </p>
               </div>
