@@ -411,12 +411,6 @@ export default async function RequestsPage({
           </table>
         </div>
 
-        {/* Footer Link */}
-        <div className="border-t border-gray-100 px-8 py-5 flex justify-end">
-          <Link href="#" className="text-sm font-semibold text-gray-600 hover:text-gray-900 hover:underline">
-            View all
-          </Link>
-        </div>
       </div>
     </div>
   );
