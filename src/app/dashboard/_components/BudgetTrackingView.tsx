@@ -4,17 +4,16 @@ import React from "react";
 import {
   ArrowLeft,
   Bell,
-  Check,
-  Clock,
-  BadgeCheck,
-  AlertCircle,
-  Calendar,
-  X,
-  CircleDashed,
+  CheckCircle2,
   XCircle,
+  Wallet,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import WorkflowProgress, {
+  type WorkflowEvent,
+  type WorkflowStep,
+} from "@/app/dashboard/requests/[id]/_components/WorkflowProgress";
 
 interface Item {
   id: string;
@@ -38,6 +37,7 @@ interface BudgetDetails {
   status: string;
   startDate: string | null;
   endDate: string | null;
+  variance_explanation?: string | null;
 }
 
 interface AuditLog {
@@ -56,427 +56,316 @@ interface BudgetTrackingViewProps {
   backHref: string;
 }
 
+function typePill(type: string) {
+  const base =
+    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
+  return type.toLowerCase() === "capex"
+    ? `${base} bg-blue-100 text-blue-700`
+    : `${base} bg-purple-100 text-purple-700`;
+}
+
+function statusMeta(status: string) {
+  if (status === "approved") {
+    return {
+      label: "Approved",
+      cls: "bg-green-100 text-green-700",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+    };
+  }
+  if (status === "rejected") {
+    return {
+      label: "Rejected",
+      cls: "bg-red-100 text-red-700",
+      icon: <XCircle className="h-4 w-4" />,
+    };
+  }
+  if (status === "revision_requested") {
+    return {
+      label: "Needs Revision",
+      cls: "bg-orange-100 text-orange-700",
+      icon: <XCircle className="h-4 w-4" />,
+    };
+  }
+  if (status === "verified") {
+    return {
+      label: "Verified",
+      cls: "bg-green-100 text-green-700",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+    };
+  }
+  if (status === "verified_by_reviewer") {
+    return {
+      label: "Reviewed",
+      cls: "bg-yellow-100 text-yellow-800",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+    };
+  }
+  if (status === "submitted") {
+    return {
+      label: "Submitted",
+      cls: "bg-yellow-100 text-yellow-700",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+    };
+  }
+  return {
+    label: "Created",
+    cls: "bg-gray-100 text-gray-700",
+    icon: <CheckCircle2 className="h-4 w-4" />,
+  };
+}
+
+function actionLabel(action: string) {
+  if (action === "create_draft") return "Created";
+  if (action === "submit") return "Submitted";
+  if (action === "reviewed") return "Reviewed";
+  if (action === "verify") return "Verified";
+  if (action === "request_revision") return "Revision requested";
+  if (action === "approve") return "Approved";
+  if (action === "reject") return "Rejected";
+  if (action === "revoke") return "Revoked";
+  return action
+    .split("_")
+    .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
+function computeSteps(status: string): WorkflowStep[] {
+  const steps: Array<{ key: string; label: string }> = [
+    { key: "created", label: "Created" },
+    { key: "submitted", label: "Submitted" },
+    { key: "reviewed", label: "Review" },
+    { key: "verified", label: "Verified" },
+    { key: "approved", label: "Approved" },
+  ];
+
+  const activeIndex = (() => {
+    if (status === "draft") return 0;
+    if (status === "submitted") return 1;
+    if (
+      status === "revision_requested" ||
+      status === "verified_by_reviewer" ||
+      status === "rejected"
+    )
+      return 2;
+    if (status === "verified") return 3;
+    if (status === "approved") return 4;
+    return 0;
+  })();
+
+  if (status === "revision_requested" && activeIndex === 2) {
+    steps[2] = { ...steps[2], label: "Revision" };
+  } else if (status === "rejected" && activeIndex === 2) {
+    steps[2] = { ...steps[2], label: "Rejected" };
+  }
+
+  return steps.map((s, idx) => {
+    if (idx < activeIndex) return { ...s, state: "done" as const };
+    if (idx === activeIndex) {
+      return {
+        ...s,
+        state: "current" as const,
+        statusType: status as string,
+      };
+    }
+    return { ...s, state: "todo" as const };
+  });
+}
+
+function formatPhp(amount: string) {
+  const n = Number(amount.replace(/[^0-9.-]+/g, ""));
+  if (!Number.isFinite(n)) return amount;
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
 export default function BudgetTrackingView({
   budget,
   items,
   auditHistory,
   backHref,
 }: BudgetTrackingViewProps) {
-  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const status = statusMeta(budget.status);
+  const steps = computeSteps(budget.status);
 
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case "revision_requested":
-        return {
-          label: "Revision Needed",
-          color: "bg-orange-50 text-orange-600 border-orange-100",
-          icon: <AlertCircle className="w-4 h-4" />,
-        };
-      case "rejected":
-        return {
-          label: "Rejected",
-          color: "bg-red-50 text-red-600 border-red-100",
-          icon: <XCircle className="w-4 h-4" />,
-        };
-      case "approved":
-        return {
-          label: "Approved",
-          color: "bg-green-50 text-green-600 border-green-100",
-          icon: <BadgeCheck className="w-4 h-4" />,
-        };
-      case "verified":
-        return {
-          label: "Verified",
-          color: "bg-green-50 text-green-600 border-green-100",
-          icon: <Check className="w-4 h-4" />,
-        };
-      case "verified_by_reviewer":
-        return {
-          label: "Reviewed",
-          color: "bg-yellow-50 text-yellow-700 border-yellow-200",
-          icon: <Clock className="w-4 h-4" />,
-        };
-      case "submitted":
-        return {
-          label: "Submitted",
-          color: "bg-gray-50 text-gray-700 border-gray-100",
-          icon: <Clock className="w-4 h-4" />,
-        };
-      default:
-        return {
-          label: "Draft",
-          color: "bg-gray-50 text-gray-600 border-gray-100",
-          icon: <CircleDashed className="w-4 h-4" />,
-        };
-    }
-  };
-
-  const statusConfig = getStatusConfig(budget.status);
-
-  const getSteps = (status: string) => {
-    const steps = [
-      { id: "draft", label: "Created" },
-      { id: "submitted", label: "Submitted" },
-      { id: "review", label: "Review" },
-      { id: "verified", label: "Verified" },
-      { id: "approved", label: "Approved" },
-    ];
-
-    const currentIndex = (() => {
-      if (status === "draft") return 0;
-      if (status === "submitted") return 1;
-      if (
-        status === "revision_requested" ||
-        status === "verified_by_reviewer" ||
-        status === "rejected"
-      )
-        return 2;
-      if (status === "verified") return 3;
-      if (status === "approved") return 4;
-      return 0;
-    })();
-
-    // Adjust labels for terminal review outcomes
-    if (status === "revision_requested") {
-      steps[2] = { ...steps[2], label: "Revision" };
-    } else if (status === "rejected") {
-      steps[2] = { ...steps[2], label: "Rejected" };
-    } else if (status === "verified_by_reviewer") {
-      steps[2] = { ...steps[2], label: "Reviewed" };
-    }
-
-    return steps.map((s, idx) => {
-      const isDone = idx < currentIndex;
-      const isCurrent = idx === currentIndex;
-
-      let icon: React.ReactNode = null;
-      let color = "bg-gray-50 text-gray-400 border-gray-300";
-      let lineColor = "bg-gray-200";
-
-      if (isDone) {
-        // Check if we're looking at a step before a revision/rejected status
-        // If the current status is revision or rejected, don't color previous steps green past submitted
-        if (
-          (status === "revision_requested" || status === "rejected") &&
-          idx >= 2
-        ) {
-          // Steps at or after review should not be green if revision/rejected
-          icon = null;
-          color = "bg-gray-50 text-gray-400 border-gray-300";
-          lineColor = "bg-gray-200";
-        } else {
-          icon = <Check className="w-4 h-4" />;
-          color = "bg-green-100 text-green-600 border-green-500";
-          lineColor = "bg-green-500";
-        }
-      } else if (isCurrent) {
-        if (status === "revision_requested") {
-          icon = <AlertCircle className="w-4 h-4" />;
-          color = "bg-orange-100 text-orange-600 border-orange-500";
-        } else if (status === "rejected") {
-          icon = <XCircle className="w-4 h-4" />;
-          color = "bg-red-100 text-red-600 border-red-500";
-        } else if (status === "verified_by_reviewer") {
-          icon = <Clock className="w-4 h-4" />;
-          color = "bg-yellow-100 text-yellow-700 border-yellow-500";
-        } else {
-          icon = <Clock className="w-4 h-4" />;
-          color = "bg-blue-100 text-blue-600 border-blue-500";
-        }
-        lineColor = "bg-gray-200";
-      }
-
-      return {
-        ...s,
-        icon,
-        color,
-        line: idx < steps.length - 1 ? lineColor : null,
-      };
-    });
-  };
-
-  const steps = getSteps(budget.status);
-
-  // Map status to current step for visual highlight (simplification for demo)
-  // In a real app, logic would be more robust.
+  // Map AuditLog to WorkflowEvent
+  const events: WorkflowEvent[] = auditHistory.map((log) => ({
+    id: log.id,
+    at: log.date,
+    title: actionLabel(log.action),
+    description: log.description,
+    actorName: log.actor,
+    note: log.comment,
+    action: log.action,
+  }));
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-8">
-      {/* Header Area */}
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
           <div className="flex items-center gap-4">
             <Link
               href={backHref}
-              className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200"
+              className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-[#1E293B]">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Budget Tracking
               </h1>
-              <p className="text-gray-500">
+              <div className="text-sm text-gray-500">
                 Track the complete lifecycle and history of this budget request
-              </p>
+              </div>
             </div>
           </div>
-          <button className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200 relative">
-            <Bell className="w-6 h-6 text-gray-600" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full"></span>
-          </button>
         </div>
 
-        {/* Main Brief Card */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-start justify-between mb-8">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-[#1E293B]">
-                  {budget.projectName}
-                </h2>
-                <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-semibold uppercase tracking-wider">
-                  {budget.type}
-                </span>
-              </div>
-              <p className="text-gray-500 font-medium">
-                {budget.displayId} - {budget.projectSub}
-              </p>
-            </div>
-            <div
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border ${statusConfig.color}`}
-            >
-              {statusConfig.icon}
-              <span className="text-sm font-bold uppercase tracking-wide">
-                {statusConfig.label}
+        <div className="flex items-center gap-3">
+          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-gray-200 hover:text-gray-900 transition-colors">
+            <Bell className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-black/5">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {budget.projectName}
+              </h2>
+              <span className={typePill(budget.type) + " uppercase"}>
+                {budget.type.toUpperCase()}
               </span>
             </div>
-          </div>
-
-          {/* Stats Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 bg-gray-50/50 rounded-2xl">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                Total amount
-              </p>
-              <p className="text-lg font-bold text-[#1E293B]">
-                {budget.totalAmount}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                Requester
-              </p>
-              <p className="text-lg font-bold text-[#1E293B] leading-snug line-clamp-2">
-                {budget.requester}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                Created
-              </p>
-              <p className="text-lg font-bold text-[#1E293B]">
-                {budget.createdDate}
-              </p>
-            </div>
-            <div className="space-y-1 md:text-right">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                Last Updated
-              </p>
-              <p className="text-lg font-bold text-[#1E293B]">
-                {budget.updatedDate}
-              </p>
+            <div className="mt-1 text-sm text-gray-500">
+              {budget.displayId} - {budget.projectSub}
             </div>
           </div>
 
-          {/* Workflow Progress */}
-          <div className="mt-12 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-[#1E293B]">
-                Workflow progress
-              </h3>
-              <button
-                onClick={() => setIsAuditModalOpen(true)}
-                className="text-gray-500 text-sm font-semibold hover:underline"
-              >
-                Expand
-              </button>
-            </div>
+          <div
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide ${status.cls}`}
+          >
+            {status.icon}
+            {status.label}
+          </div>
+        </div>
 
-            <div className="flex items-center px-4">
-              {steps.map((step, idx) => (
-                <React.Fragment key={idx}>
-                  <div className="flex flex-col items-center relative z-10">
-                    <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${step.color} bg-white transition-all`}
-                    >
-                      {step.icon}
-                    </div>
-                    <span className="mt-2 text-xs font-bold text-[#334155] absolute -bottom-6 whitespace-nowrap">
-                      {step.label}
-                    </span>
-                  </div>
-                  {step.line && (
-                    <div
-                      className={`flex-1 h-1 mx-0.5 ${step.line} transition-all`}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
+        <div className="mt-8 grid grid-cols-2 gap-8 rounded-2xl bg-gray-50 p-6 md:grid-cols-4">
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Total Amount
+            </div>
+            <div className="mt-2 text-xl font-bold text-gray-900">
+              {budget.totalAmount}
             </div>
           </div>
-
-          <div className="mt-16 grid grid-cols-2 gap-8">
-            {/* Cost Breakdown */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-[#1E293B]">
-                  ₱ Cost Breakdown
-                </span>
-              </div>
-              <div className="space-y-2">
-                {items.length > 0 ? (
-                  items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-4 bg-gray-50/50 hover:bg-gray-100 transition-colors rounded-xl flex justify-between items-center group"
-                    >
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-[#1E293B]">
-                          {item.description}
-                        </p>
-                        <p className="text-xs text-gray-500 font-medium">
-                          Equipment | Qty: {item.quantity}
-                        </p>
-                      </div>
-                      <p className="text-sm font-bold text-[#1E293B]">
-                        ₱ {Number(item.total_cost).toLocaleString()}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-sm italic">
-                    No items listed
-                  </p>
-                )}
-              </div>
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Requester
             </div>
+            <div className="mt-2 text-lg font-bold text-gray-900">
+              {budget.requester}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Created
+            </div>
+            <div className="mt-2 text-lg font-bold text-gray-900">
+              {budget.createdDate}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Last Updated
+            </div>
+            <div className="mt-2 text-lg font-bold text-gray-900">
+              {budget.updatedDate}
+            </div>
+          </div>
+        </div>
 
-            {/* Project Timeline */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gray-700" />
-                <span className="text-lg font-bold text-[#1E293B]">
-                  Project timeline
-                </span>
-              </div>
+        <div className="mt-10 border-b border-gray-100 pb-10">
+          <WorkflowProgress steps={steps} events={events} />
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-2">
+          <div>
+            <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <Wallet className="h-5 w-5 text-gray-400" /> Cost Breakdown
+            </h3>
+
+            {items.length === 0 ? (
+              <div className="text-sm text-gray-500">No line items.</div>
+            ) : (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
-                    <span className="text-sm text-gray-500 font-bold uppercase tracking-wider">
-                      Start Date
-                    </span>
-                    <span className="text-sm font-bold text-[#1E293B]">
-                      {budget.startDate || "N/A"}
-                    </span>
+                {items.slice(0, 5).map((it) => (
+                  <div
+                    key={it.id}
+                    className="flex items-center justify-between rounded-xl bg-gray-50 p-4"
+                  >
+                    <div>
+                      <div className="font-bold text-gray-900">
+                        {it.description}
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {it.quarter ? `${it.quarter} | ` : ""} Qty:{" "}
+                        {it.quantity}
+                      </div>
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatPhp(it.total_cost)}
+                    </div>
                   </div>
-                  <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
-                    <span className="text-sm text-gray-500 font-bold uppercase tracking-wider">
-                      End Date
-                    </span>
-                    <span className="text-sm font-bold text-[#1E293B]">
-                      {budget.endDate || "N/A"}
-                    </span>
-                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <Calendar className="h-5 w-5 text-gray-400" /> Project timeline
+            </h3>
+            <div className="space-y-6 rounded-xl bg-gray-50 p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Start Date
                 </div>
+                <div className="font-bold text-gray-900">
+                  {budget.startDate || "-"}
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  End Date
+                </div>
+                <div className="font-bold text-gray-900">
+                  {budget.endDate || "-"}
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Variance Explanation
+                </div>
+                {budget.variance_explanation ? (
+                  <div className="text-sm font-medium text-gray-900 break-words whitespace-pre-wrap">
+                    {budget.variance_explanation}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">
+                    No variance explanation provided
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-      {/* Audit Tracking Modal */}
-      {isAuditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setIsAuditModalOpen(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <ArrowLeft className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <h2 className="text-2xl font-bold text-[#1E293B]">
-                    Complete Audit Tracking
-                  </h2>
-                </div>
-                <button
-                  onClick={() => setIsAuditModalOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-6 h-6 text-gray-400" />
-                </button>
-              </div>
-
-              <div className="relative pl-8 space-y-12">
-                {/* Vertical Line */}
-                <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-100" />
-
-                {auditHistory.length > 0 ? (
-                  auditHistory.map((log) => {
-                    const isRevision = log.action === "revision_requested";
-                    const isRejected =
-                      log.action === "reject" || log.action === "rejected";
-                    let dotColor =
-                      "bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.1)]";
-                    if (isRevision)
-                      dotColor =
-                        "bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.1)]";
-                    if (isRejected)
-                      dotColor =
-                        "bg-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.1)]";
-
-                    const statusLabel =
-                      log.action.replace(/_/g, " ").charAt(0).toUpperCase() +
-                      log.action.replace(/_/g, " ").slice(1);
-
-                    return (
-                      <div key={log.id} className="relative group">
-                        {/* Step Dot */}
-                        <div
-                          className={`absolute -left-5.5 top-1.5 w-3 h-3 rounded-full ${dotColor} z-10`}
-                        />
-
-                        <div className="flex justify-between items-start bg-gray-50/50 p-4 rounded-2xl group-hover:bg-gray-100/80 transition-colors">
-                          <div className="space-y-1">
-                            <p className="text-sm font-bold text-[#1E293B]">
-                              {statusLabel}
-                            </p>
-                            <p className="text-xs text-[#475569] font-medium">
-                              {log.description}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
-                              by {log.actor}
-                            </p>
-                          </div>
-                          <span className="text-xs font-bold text-[#1E293B] bg-white px-3 py-1 rounded-lg border border-gray-100">
-                            {log.date}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-gray-500 italic text-center py-8">
-                    No audit logs found
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

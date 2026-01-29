@@ -4,8 +4,12 @@ import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
-import { Bell, Eye, Search } from "lucide-react";
+import { Bell, Eye, Search, Plus } from "lucide-react";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
+import {
+  MobileCardList,
+  type MobileCardData,
+} from "@/components/ui/mobile-card";
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
@@ -47,6 +51,16 @@ function statusPill(status: string) {
   if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
   // submitted / verified / verified_by_reviewer -> pending-ish
   return `${base} bg-blue-100 text-blue-700`;
+}
+
+function statusToVariant(
+  status: string,
+): "success" | "warning" | "error" | "info" | "default" {
+  if (status === "approved") return "success";
+  if (status === "revision_requested") return "warning";
+  if (status === "rejected") return "error";
+  if (status === "draft") return "default";
+  return "info";
 }
 
 function typePill(type: "capex" | "opex") {
@@ -204,9 +218,117 @@ export default async function BudgetIndexPage({
       })
     : allBudgets;
 
+  // Prepare mobile card data
+  const mobileCards: MobileCardData[] = filteredBudgets.map((b) => {
+    const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
+    const sub =
+      departmentById.get(b.user_id) ?? requesterById.get(b.user_id) ?? "";
+    const projectCode = (b as { project_code?: string | null }).project_code;
+    const displayId = projectCode ?? `BUD-${b.budget_number}`;
+    const viewHref = projectCode
+      ? `/dashboard/budget/${encodeURIComponent(projectCode)}`
+      : `/dashboard/budget/BUD-${String(b.budget_number).padStart(3, "0")}`;
+
+    return {
+      id: b.id,
+      displayId,
+      title: projectName,
+      subtitle: sub,
+      type: b.budget_type === "capex" ? "CapEx" : "OpEx",
+      amount: formatPhp(b.total_amount),
+      status: {
+        label: statusLabel(b.status),
+        variant: statusToVariant(b.status),
+      },
+      date: formatDateShort(b.created_at),
+      actionHref: viewHref,
+      actionLabel: "View",
+    };
+  });
+
   return (
-    <div className="-m-8 p-6 md:p-8">
-      <div className="flex items-start justify-between gap-4">
+    <div className="-m-4 md:-m-8 p-4 md:p-8">
+      {/* Mobile Header */}
+      <div className="md:hidden mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-xl font-bold text-gray-900">All Requests</h1>
+          {canCreateRequest && (
+            <Link
+              href="/dashboard/budget/create"
+              className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
+              aria-label="Create Request"
+            >
+              <Plus className="h-5 w-5" />
+            </Link>
+          )}
+        </div>
+
+        {/* Mobile Search */}
+        <form action="/dashboard/budget" method="GET" className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            name="q"
+            defaultValue={qRaw ?? ""}
+            placeholder="Search requests..."
+            className="h-12 w-full rounded-xl bg-gray-100 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-[#358334]/20 focus:bg-white transition-all"
+          />
+          {activeStatus !== "all" ? (
+            <input type="hidden" name="status" value={activeStatus} />
+          ) : null}
+        </form>
+
+        {/* Mobile Filter Chips */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          <Link
+            href={buildBudgetListHref({ q: qRaw ?? "", status: "all" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "all"
+                ? "bg-gray-800 text-white"
+                : "bg-white text-gray-600 border border-gray-200"
+            }`}
+          >
+            All
+          </Link>
+          <Link
+            href={buildBudgetListHref({ q: qRaw ?? "", status: "approved" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "approved"
+                ? "bg-green-500 text-white"
+                : "bg-white text-green-600 border border-green-200"
+            }`}
+          >
+            Approved
+          </Link>
+          <Link
+            href={buildBudgetListHref({ q: qRaw ?? "", status: "pending" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "pending"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-blue-600 border border-blue-200"
+            }`}
+          >
+            Pending
+          </Link>
+          <Link
+            href={buildBudgetListHref({ q: qRaw ?? "", status: "revision" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "revision"
+                ? "bg-orange-500 text-white"
+                : "bg-white text-orange-600 border border-orange-200"
+            }`}
+          >
+            Revision
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile Card List */}
+      <div className="md:hidden">
+        <MobileCardList items={mobileCards} emptyMessage="No requests found." />
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden md:flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">List of Requests</h1>
           <div className="text-sm text-gray-500 mt-1">
@@ -222,7 +344,8 @@ export default async function BudgetIndexPage({
         </button>
       </div>
 
-      <div className="mt-6 rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block mt-6 rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
         <div className="p-5 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <form
@@ -242,7 +365,7 @@ export default async function BudgetIndexPage({
               ) : null}
             </form>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <Link
                 href={buildBudgetListHref({
                   q: qRaw ?? "",
@@ -250,8 +373,8 @@ export default async function BudgetIndexPage({
                 })}
                 className={
                   activeStatus === "approved"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-green-100 text-green-700 ring-2 ring-green-400"
-                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-green-50 text-green-600 border-green-200 ring-2 ring-green-400"
+                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
                 }
               >
                 Approved
@@ -260,8 +383,8 @@ export default async function BudgetIndexPage({
                 href={buildBudgetListHref({ q: qRaw ?? "", status: "pending" })}
                 className={
                   activeStatus === "pending"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 ring-2 ring-blue-400"
-                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-400"
+                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
                 }
               >
                 Pending
@@ -273,8 +396,8 @@ export default async function BudgetIndexPage({
                 })}
                 className={
                   activeStatus === "revision"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-orange-100 text-orange-700 ring-2 ring-orange-400"
-                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-orange-50 text-orange-700 border-orange-200 ring-2 ring-orange-400"
+                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
                 }
               >
                 Revision

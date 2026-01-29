@@ -175,7 +175,7 @@ export default function ApproverDashboard({
                             isRejected ? "opacity-60" : ""
                           }`}
                         >
-                          <div className="font-bold text-gray-900 leading-tight">
+                          <div className="font-medium text-gray-900 leading-tight">
                             {r.projectName}
                           </div>
                           <div className="text-xs font-semibold text-gray-400 mt-0.5">
@@ -190,7 +190,7 @@ export default function ApproverDashboard({
                           {typePill(r.type)}
                         </td>
                         <td
-                          className={`py-5 pr-4 text-gray-900 font-bold text-center ${
+                          className={`py-5 pr-4 text-gray-900 font-medium text-center ${
                             isRejected ? "opacity-60" : ""
                           }`}
                         >

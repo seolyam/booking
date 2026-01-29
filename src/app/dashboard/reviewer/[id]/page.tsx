@@ -3,7 +3,13 @@ import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
-import { budgets, budgetItems, users, reviewChecklists } from "@/db/schema";
+import {
+  auditLogs,
+  budgets,
+  budgetItems,
+  users,
+  reviewChecklists,
+} from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import ReviewPageClient from "./ReviewPageClient";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
@@ -89,6 +95,39 @@ export default async function ReviewBudgetDetailPage({
 
   const budget = budgetData[0];
 
+  // Mark as reviewed-on-open for this reviewer (idempotent)
+  let hasReviewOpened = false;
+  try {
+    const existingOpened = await db
+      .select({ id: auditLogs.id })
+      .from(auditLogs)
+      .where(
+        and(
+          eq(auditLogs.budget_id, budget.id),
+          eq(auditLogs.actor_id, appUser.id),
+          eq(auditLogs.action, "review_opened"),
+        ),
+      )
+      .limit(1);
+
+    if (existingOpened.length > 0) {
+      hasReviewOpened = true;
+    } else {
+      await db.insert(auditLogs).values({
+        budget_id: budget.id,
+        actor_id: appUser.id,
+        action: "review_opened",
+        previous_status: budget.status,
+        new_status: budget.status,
+        comment: "Opened review",
+      });
+      hasReviewOpened = true;
+    }
+  } catch {
+    // If audit log insert fails for any reason, do not block the review UI.
+    hasReviewOpened = false;
+  }
+
   // Get requester info
   const requesterData = await db
     .select({
@@ -169,18 +208,18 @@ export default async function ReviewBudgetDetailPage({
   const similarUsers =
     similarActorIds.length > 0
       ? await db
-          .select({
-            id: users.id,
-            full_name: users.full_name,
-            department: users.department,
-          })
-          .from(users)
-          .where(
-            and(
-              inArray(users.id, similarActorIds),
-              eq(users.department, requester?.department || "Finance"),
-            ),
-          )
+        .select({
+          id: users.id,
+          full_name: users.full_name,
+          department: users.department,
+        })
+        .from(users)
+        .where(
+          and(
+            inArray(users.id, similarActorIds),
+            eq(users.department, requester?.department || "Finance"),
+          ),
+        )
       : [];
 
   const similarUserMap = new Map(similarUsers.map((u) => [u.id, u]));
@@ -193,12 +232,12 @@ export default async function ReviewBudgetDetailPage({
   const similarItems =
     similarBudgetIds.length > 0
       ? await db
-          .select({
-            budget_id: budgetItems.budget_id,
-            description: budgetItems.description,
-          })
-          .from(budgetItems)
-          .where(inArray(budgetItems.budget_id, similarBudgetIds))
+        .select({
+          budget_id: budgetItems.budget_id,
+          description: budgetItems.description,
+        })
+        .from(budgetItems)
+        .where(inArray(budgetItems.budget_id, similarBudgetIds))
       : [];
 
   const similarItemsMap = new Map();
@@ -237,6 +276,11 @@ export default async function ReviewBudgetDetailPage({
     rejected: "Rejected",
     approved: "Approved",
   };
+
+  const displayStatusLabel =
+    budget.status === "submitted" && hasReviewOpened
+      ? "Reviewed"
+      : statusLabelMap[budget.status] || budget.status;
 
   const typeLabel = budget.budget_type === "capex" ? "CapEx" : "OpEx";
 
@@ -281,20 +325,18 @@ export default async function ReviewBudgetDetailPage({
         {/* Main Content */}
         <div className="lg:col-span-8 space-y-10">
           {/* Project Info Card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 relative overflow-hidden">
+          <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
             <div
-              className={`absolute top-6 right-6 flex items-center gap-2 px-4 py-2 rounded-full border ${statusCardClass}`}
+              className={`absolute top-10 right-10 flex items-center gap-2 px-4 py-2 rounded-full border ${statusCardClass}`}
             >
               <Clock className="w-4 h-4" />
-              <span className="text-sm font-bold">
-                {statusLabelMap[budget.status] || budget.status}
-              </span>
+              <span className="text-sm font-bold">{displayStatusLabel}</span>
             </div>
 
             <div className="space-y-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+                  <h2 className="text-3xl font-bold text-gray-900 leading-tight">
                     {items[0]?.description || "Budget Request"}
                   </h2>
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
@@ -320,7 +362,7 @@ export default async function ReviewBudgetDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Total amount
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-3xl font-bold text-gray-900">
                     {formatPhp(budget.total_amount)}
                   </p>
                 </div>
@@ -357,9 +399,9 @@ export default async function ReviewBudgetDetailPage({
           </div>
 
           {/* Cost Breakdown */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-lg font-semibold text-gray-900">
+              <span className="text-lg font-bold text-gray-900">
                 ₱ Cost Breakdown
               </span>
             </div>
@@ -369,7 +411,7 @@ export default async function ReviewBudgetDetailPage({
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className="p-4 bg-gray-50 rounded-xl flex justify-between items-center"
+                    className="p-4 bg-gray-50/50 rounded-xl flex justify-between items-center"
                   >
                     <div className="space-y-1">
                       <p className="text-sm font-bold text-gray-900">
@@ -387,7 +429,7 @@ export default async function ReviewBudgetDetailPage({
                 <div className="flex justify-end pt-4 mt-2">
                   <p className="text-lg font-bold text-gray-900">
                     Total:{" "}
-                    <span className="font-black ml-1">
+                    <span className="font-bold ml-1">
                       {formatPhp(budget.total_amount)}
                     </span>
                   </p>
@@ -399,7 +441,7 @@ export default async function ReviewBudgetDetailPage({
           </div>
 
           {/* Project Timeline & Milestones */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-6">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-gray-700" />
               <h2 className="text-lg font-bold text-gray-900">
@@ -407,22 +449,22 @@ export default async function ReviewBudgetDetailPage({
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <div className="space-y-2">
+              <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
+                <span className="text-sm text-gray-500 font-bold tracking-tight">
                   Start Date
                 </span>
-                <span className="text-sm font-semibold text-gray-900">
+                <span className="text-sm font-bold text-gray-900">
                   {budget.start_date
                     ? formatDate(budget.start_date)
                     : "Not set"}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <div className="flex justify-between p-3 bg-gray-50/50 rounded-xl">
+                <span className="text-sm text-gray-500 font-bold tracking-tight">
                   End Date
                 </span>
-                <span className="text-sm font-semibold text-gray-900">
+                <span className="text-sm font-bold text-gray-900">
                   {budget.end_date ? formatDate(budget.end_date) : "Not set"}
                 </span>
               </div>
@@ -431,10 +473,10 @@ export default async function ReviewBudgetDetailPage({
 
           {/* Variance Explanation */}
           {budget.variance_explanation && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <AlertCircle className="w-5 h-5 text-gray-700" />
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-bold text-gray-900">
                   Variance Explanation
                 </h2>
               </div>

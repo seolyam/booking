@@ -98,12 +98,12 @@ export default async function BudgetTrackingPage({
     actorIds.length === 0
       ? []
       : await db
-          .select({
-            id: users.id,
-            full_name: users.full_name,
-          })
-          .from(users)
-          .where(inArray(users.id, actorIds));
+        .select({
+          id: users.id,
+          full_name: users.full_name,
+        })
+        .from(users)
+        .where(inArray(users.id, actorIds));
 
   const actorMap = new Map(actorsData.map((a) => [a.id, a.full_name]));
 
@@ -145,6 +145,7 @@ export default async function BudgetTrackingPage({
       ? formatDate(new Date(budget.start_date))
       : null,
     endDate: budget.end_date ? formatDate(new Date(budget.end_date)) : null,
+    variance_explanation: budget.variance_explanation || null,
   };
 
   const auditHistory = logs
