@@ -4,7 +4,11 @@ import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
 import { desc, eq, inArray, and, ne } from "drizzle-orm";
-import { Bell, Search, Eye } from "lucide-react";
+import { Bell, Search, Eye, Plus } from "lucide-react";
+import {
+  MobileCardList,
+  type MobileCardData,
+} from "@/components/ui/mobile-card";
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
@@ -54,6 +58,16 @@ function statusPill(status: string) {
   if (status === "rejected") return `${base} bg-red-100 text-red-700`;
   if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
   return `${base} bg-blue-100 text-blue-700`;
+}
+
+function statusToVariant(
+  status: string,
+): "success" | "warning" | "error" | "info" | "default" {
+  if (status === "approved" || status === "verified") return "success";
+  if (status === "revision_requested") return "warning";
+  if (status === "rejected") return "error";
+  if (status === "draft") return "default";
+  return "info";
 }
 
 type StatusFilter = "all" | "approved" | "pending" | "revision" | "draft";
@@ -172,9 +186,137 @@ export default async function RequestsPage({
         );
       });
 
+  // Prepare mobile card data
+  const mobileCards: MobileCardData[] = filteredBudgets.map((b) => {
+    const budDisplayId = `BUD-${b.budget_number}`;
+    const projectCode = b.project_code;
+    const displayId = projectCode ?? budDisplayId;
+    const viewHref = projectCode
+      ? `/dashboard/requests/${encodeURIComponent(projectCode)}`
+      : `/dashboard/requests/${b.id}`;
+    const editHref = projectCode
+      ? `/dashboard/budget/edit/${encodeURIComponent(projectCode)}`
+      : `/dashboard/budget/edit/BUD-${String(b.budget_number).padStart(3, "0")}`;
+    const projectName = firstItem.get(b.id) ?? "Budget Request";
+
+    return {
+      id: b.id,
+      displayId,
+      title: projectName,
+      type: b.budget_type === "capex" ? "CapEx" : "OpEx",
+      amount: formatPhp(b.total_amount),
+      status: {
+        label: statusLabel(b.status),
+        variant: statusToVariant(b.status),
+      },
+      date: formatDateShort(new Date(b.created_at)),
+      actionHref: b.status === "revision_requested" ? editHref : viewHref,
+      actionLabel: b.status === "revision_requested" ? "Edit" : "View",
+    };
+  });
+
   return (
-    <div className="-m-8 p-6 md:p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="-m-4 md:-m-8 p-4 md:p-8">
+      {/* Mobile Header */}
+      <div className="md:hidden mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-xl font-bold text-gray-900">Your Requests</h1>
+          <Link
+            href="/dashboard/budget/create"
+            className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
+            aria-label="Create Request"
+          >
+            <Plus className="h-5 w-5" />
+          </Link>
+        </div>
+
+        {/* Mobile Search */}
+        <form
+          action="/dashboard/requests"
+          method="GET"
+          className="relative mb-3"
+        >
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            name="q"
+            defaultValue={qRaw ?? ""}
+            placeholder="Search requests..."
+            className="h-12 w-full rounded-xl bg-gray-100 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-[#358334]/20 focus:bg-white transition-all"
+          />
+          {activeStatus !== "all" ? (
+            <input type="hidden" name="status" value={activeStatus} />
+          ) : null}
+        </form>
+
+        {/* Mobile Filter Chips */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          <Link
+            href={buildRequestsHref({ q: qRaw ?? "", status: "all" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "all"
+                ? "bg-gray-800 text-white"
+                : "bg-white text-gray-600 border border-gray-200"
+            }`}
+          >
+            All
+          </Link>
+          <Link
+            href={buildRequestsHref({ q: qRaw ?? "", status: "approved" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "approved"
+                ? "bg-green-500 text-white"
+                : "bg-white text-green-600 border border-green-200"
+            }`}
+          >
+            Approved
+          </Link>
+          <Link
+            href={buildRequestsHref({ q: qRaw ?? "", status: "pending" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "pending"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-blue-600 border border-blue-200"
+            }`}
+          >
+            Pending
+          </Link>
+          <Link
+            href={buildRequestsHref({ q: qRaw ?? "", status: "revision" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "revision"
+                ? "bg-orange-500 text-white"
+                : "bg-white text-orange-600 border border-orange-200"
+            }`}
+          >
+            Revision
+          </Link>
+          <Link
+            href={buildRequestsHref({ q: qRaw ?? "", status: "draft" })}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeStatus === "draft"
+                ? "bg-gray-500 text-white"
+                : "bg-white text-gray-600 border border-gray-200"
+            }`}
+          >
+            Draft
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile Card List */}
+      <div className="md:hidden">
+        <MobileCardList
+          items={mobileCards}
+          emptyMessage={
+            q || activeStatus !== "all"
+              ? "No requests match your search."
+              : "No requests yet."
+          }
+        />
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden md:flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Your Requests</h1>
           <p className="text-sm text-gray-600 mt-1">
@@ -190,7 +332,8 @@ export default async function RequestsPage({
         </button>
       </div>
 
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
         <div className="p-5 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <form
