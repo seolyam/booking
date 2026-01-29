@@ -4,7 +4,7 @@ import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { db } from "@/db";
-import { budgets, budgetItems, users } from "@/db/schema";
+import { auditLogs, budgets, budgetItems, users } from "@/db/schema";
 import { desc, eq, inArray, and } from "drizzle-orm";
 import ReviewerDashboard, {
   type ReviewerDashboardRow,
@@ -41,11 +41,6 @@ function getStatusFilterFromSearchParam(
   return "all";
 }
 
-function includesQuery(haystack: string | null | undefined, q: string) {
-  if (!haystack) return false;
-  return haystack.toLowerCase().includes(q);
-}
-
 export default async function ReviewerReviewQueuePage({
   searchParams,
 }: {
@@ -54,8 +49,6 @@ export default async function ReviewerReviewQueuePage({
   const sp = (await searchParams) ?? {};
   const qRaw = Array.isArray(sp.q) ? sp.q[0] : sp.q;
   const statusRaw = Array.isArray(sp.status) ? sp.status[0] : sp.status;
-
-  const q = (qRaw ?? "").trim().toLowerCase();
   const activeStatus = getStatusFilterFromSearchParam(statusRaw);
 
   const user = await getAuthUser();
@@ -75,13 +68,6 @@ export default async function ReviewerReviewQueuePage({
     redirect("/dashboard");
   }
 
-  const statusWhere =
-    activeStatus === "pending"
-      ? eq(budgets.status, "submitted")
-      : activeStatus === "reviewed"
-        ? eq(budgets.status, "verified_by_reviewer")
-        : undefined;
-
   const reviewQueue = await db
     .select({
       id: budgets.id,
@@ -95,15 +81,17 @@ export default async function ReviewerReviewQueuePage({
     .from(budgets)
     .leftJoin(users, eq(budgets.user_id, users.id))
     .where(
-      statusWhere
-        ? and(
-            inArray(budgets.status, ["submitted", "verified_by_reviewer"]),
-            statusWhere,
-          )
-        : inArray(budgets.status, ["submitted", "verified_by_reviewer"]),
+      inArray(budgets.status, [
+        "submitted",
+        "verified_by_reviewer",
+        "verified",
+        "revision_requested",
+        "approved",
+        "rejected",
+      ]),
     )
     .orderBy(desc(budgets.created_at))
-    .limit(50);
+    .limit(200);
 
   const budgetIds = reviewQueue.map((b) => b.id);
   const items =
@@ -124,42 +112,40 @@ export default async function ReviewerReviewQueuePage({
     }
   }
 
-  // Apply client-side search filter
-  const filteredQueue = !q
-    ? reviewQueue
-    : reviewQueue.filter((b) => {
-        const budDisplayId = `bud-${b.budget_number}`;
-        const budNum = String(b.budget_number);
-        const projectCode = (b as { project_code?: string | null })
-          .project_code;
-        const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
-        const dept = b.department ?? "";
+  const reviewedOnOpenBudgetIds = new Set<string>();
+  if (budgetIds.length > 0) {
+    const opened = await db
+      .select({ budget_id: auditLogs.budget_id })
+      .from(auditLogs)
+      .where(
+        and(
+          inArray(auditLogs.budget_id, budgetIds),
+          eq(auditLogs.actor_id, appUser.id),
+          eq(auditLogs.action, "review_opened"),
+        ),
+      );
 
-        return (
-          includesQuery(b.id, q) ||
-          includesQuery(projectCode, q) ||
-          includesQuery(budDisplayId, q) ||
-          includesQuery(budNum, q) ||
-          includesQuery(projectName, q) ||
-          includesQuery(dept, q)
-        );
-      });
+    for (const row of opened) reviewedOnOpenBudgetIds.add(row.budget_id);
+  }
 
-  const rows: ReviewerDashboardRow[] = filteredQueue.map((b) => {
+  const rows: ReviewerDashboardRow[] = reviewQueue.map((b) => {
     const type =
       b.budget_type === "capex" ? ("CapEx" as const) : ("OpEx" as const);
 
+    const isReviewed =
+      b.status !== "submitted" || reviewedOnOpenBudgetIds.has(b.id);
+
+    const isReviewableStatus =
+      b.status === "submitted" ||
+      b.status === "revision_requested" ||
+      b.status === "verified_by_reviewer";
+
     const statusLabel = (() => {
-      if (b.status === "verified_by_reviewer") return "Reviewed" as const;
-      return "Pending" as const;
+      return isReviewed ? ("Reviewed" as const) : ("Pending" as const);
     })();
 
-    const isPendingDecision =
-      b.status === "submitted" || b.status === "verified_by_reviewer";
-
-    const actionLabel = isPendingDecision ? "Review" : "View";
-
-    const actionHref = isPendingDecision
+    const actionLabel = isReviewableStatus ? "Review" : "View";
+    const actionHref = isReviewableStatus
       ? `/dashboard/reviewer/${b.id}`
       : `/dashboard/reviewer/${b.id}/tracking`;
 
@@ -211,6 +197,7 @@ export default async function ReviewerReviewQueuePage({
         rows={rows}
         activeFilter={activeStatus}
         searchQuery={qRaw ?? ""}
+        enableClientFiltering
       />
     </div>
   );
