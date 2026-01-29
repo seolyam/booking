@@ -2,7 +2,7 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { budgets, budgetItems } from "@/db/schema";
+import { budgets, budgetItems, users } from "@/db/schema";
 import { desc, eq, inArray, and, ne } from "drizzle-orm";
 import { Bell, Search, Eye } from "lucide-react";
 
@@ -116,10 +116,10 @@ export default async function RequestsPage({
           ? eq(budgets.status, "draft")
           : activeStatus === "pending"
             ? inArray(budgets.status, [
-                "submitted",
-                "verified",
-                "verified_by_reviewer",
-              ])
+              "submitted",
+              "verified",
+              "verified_by_reviewer",
+            ])
             : undefined;
 
   const myBudgets = await db.query.budgets.findMany({
@@ -135,12 +135,12 @@ export default async function RequestsPage({
     ids.length === 0
       ? []
       : await db
-          .select({
-            budget_id: budgetItems.budget_id,
-            description: budgetItems.description,
-          })
-          .from(budgetItems)
-          .where(inArray(budgetItems.budget_id, ids));
+        .select({
+          budget_id: budgetItems.budget_id,
+          description: budgetItems.description,
+        })
+        .from(budgetItems)
+        .where(inArray(budgetItems.budget_id, ids));
 
   const firstItem = new Map<string, string>();
   for (const it of items) {
@@ -152,46 +152,47 @@ export default async function RequestsPage({
   const filteredBudgets = !q
     ? myBudgets
     : myBudgets.filter((b) => {
-        const budDisplayId = `bud-${b.budget_number}`;
-        const budNum = String(b.budget_number);
-        const projectCode = b.project_code;
-        const projectName = firstItem.get(b.id) ?? "Budget Request";
-        const status = statusLabel(b.status);
-        const type = b.budget_type;
-        const amountDigits = normalizeDigits(b.total_amount);
+      const budDisplayId = `bud-${b.budget_number}`;
+      const budNum = String(b.budget_number);
+      const projectCode = b.project_code;
+      const projectName = firstItem.get(b.id) ?? "Budget Request";
+      const status = statusLabel(b.status);
+      const type = b.budget_type;
+      const amountDigits = normalizeDigits(b.total_amount);
 
-        return (
-          includesQuery(b.id, q) ||
-          includesQuery(projectCode, q) ||
-          includesQuery(budDisplayId, q) ||
-          includesQuery(budNum, q) ||
-          includesQuery(projectName, q) ||
-          includesQuery(type, q) ||
-          includesQuery(status, q) ||
-          includesQuery(amountDigits, normalizeDigits(q))
-        );
-      });
+      return (
+        includesQuery(b.id, q) ||
+        includesQuery(projectCode, q) ||
+        includesQuery(budDisplayId, q) ||
+        includesQuery(budNum, q) ||
+        includesQuery(projectName, q) ||
+        includesQuery(type, q) ||
+        includesQuery(status, q) ||
+        includesQuery(amountDigits, normalizeDigits(q))
+      );
+    });
+
+  // Fetch user details for department
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+    columns: { department: true },
+  });
 
   return (
-    <div className="-m-8 p-6 md:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Your Requests</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage your budget requests
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="rounded-full p-2 text-gray-700 hover:bg-black/5"
+    <div className="-m-8 p-6 md:p-8 w-full max-w-[1400px] mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">My Budget Requests</h1>
+        <Link
+          href="/dashboard/budget/create"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#358334] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm"
         >
-          <Bell className="h-5 w-5" />
-        </button>
+          Create Request +
+        </Link>
       </div>
 
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-        <div className="p-5 md:p-6">
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
+        {/* Filter Bar - Retained Features */}
+        <div className="p-5 md:p-6 border-b border-gray-100">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <form
               action="/dashboard/requests"
@@ -202,8 +203,8 @@ export default async function RequestsPage({
               <input
                 name="q"
                 defaultValue={qRaw ?? ""}
-                placeholder="Search (BUD-#, request name, type, status…)"
-                className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400"
+                placeholder="Search..."
+                className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
               />
               {activeStatus !== "all" ? (
                 <input type="hidden" name="status" value={activeStatus} />
@@ -211,93 +212,75 @@ export default async function RequestsPage({
             </form>
 
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-              <Link
-                href={buildRequestsHref({ q: qRaw ?? "", status: "approved" })}
-                className={
-                  activeStatus === "approved"
-                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-green-50 text-green-600 border-green-200 ring-2 ring-green-400"
-                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
-                }
-              >
-                Approved
-              </Link>
-              <Link
-                href={buildRequestsHref({ q: qRaw ?? "", status: "pending" })}
-                className={
-                  activeStatus === "pending"
-                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-400"
-                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
-                }
-              >
-                Pending
-              </Link>
-              <Link
-                href={buildRequestsHref({ q: qRaw ?? "", status: "revision" })}
-                className={
-                  activeStatus === "revision"
-                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-orange-50 text-orange-700 border-orange-200 ring-2 ring-orange-400"
-                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
-                }
-              >
-                Revision
-              </Link>
-              <Link
-                href={buildRequestsHref({ q: qRaw ?? "", status: "draft" })}
-                className={
-                  activeStatus === "draft"
-                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-200 text-gray-700 border-gray-200 ring-2 ring-gray-400"
-                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
-                }
-              >
-                Draft
-              </Link>
+              {[
+                { label: "Approved", val: "approved", color: "green" },
+                { label: "Pending", val: "pending", color: "blue" },
+                { label: "Revision", val: "revision", color: "orange" },
+                { label: "Draft", val: "draft", color: "gray" },
+              ].map((tab) => {
+                const isActive = activeStatus === tab.val;
+                const activeClass =
+                  tab.color === "green"
+                    ? "bg-green-50 text-green-700 border-green-200 ring-green-200"
+                    : tab.color === "blue"
+                      ? "bg-blue-50 text-blue-700 border-blue-200 ring-blue-200"
+                      : tab.color === "orange"
+                        ? "bg-orange-50 text-orange-700 border-orange-200 ring-orange-200"
+                        : "bg-gray-200 text-gray-700 border-gray-200 ring-gray-200";
+
+                return (
+                  <Link
+                    key={tab.val}
+                    href={buildRequestsHref({
+                      q: qRaw ?? "",
+                      status: tab.val as StatusFilter,
+                    })}
+                    className={`
+                      px-4 py-2 rounded-lg text-sm font-medium transition-all border
+                      ${isActive
+                        ? activeClass + " border ring-1"
+                        : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                      }
+                    `}
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              })}
 
               {(q || activeStatus !== "all") && (
                 <Link
                   href="/dashboard/requests"
-                  className="text-sm text-gray-600 hover:underline"
+                  className="text-sm text-gray-500 hover:text-gray-900 ml-2"
                 >
-                  Clear
+                  Clear filters
                 </Link>
               )}
-            </div>
-
-            <div className="md:ml-auto">
-              <Link
-                href="/dashboard/budget/create"
-                className="inline-flex items-center gap-2 rounded-md bg-[#358334] px-4 py-2 text-sm font-medium text-white hover:bg-[#2F5E3D]"
-              >
-                Create Request
-              </Link>
             </div>
           </div>
         </div>
 
+        {/* Table Content */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-245 table-fixed text-sm">
-            <colgroup>
-              <col style={{ width: 140 }} />
-              <col style={{ width: 220 }} />
-              <col style={{ width: 90 }} />
-              <col style={{ width: 140 }} />
-              <col style={{ width: 140 }} />
-              <col style={{ width: 110 }} />
-              <col style={{ width: 120 }} />
-            </colgroup>
+          <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
-              <tr className="text-left text-xs text-gray-500 border-t border-black/10">
-                <th className="py-4 pl-6 pr-4 font-medium">BUDGET ID</th>
-                <th className="py-4 px-4 font-medium">REQUEST NAME</th>
-                <th className="py-4 px-3 font-medium">TYPE</th>
-                <th className="py-4 px-3 font-medium">AMOUNT</th>
-                <th className="py-4 px-3 font-medium">STATUS</th>
-                <th className="py-4 px-3 font-medium">DATE</th>
-                <th className="py-4 px-3 pr-6 font-medium text-right">
-                  ACTION
+              <tr className="border-b border-gray-100 text-[11px] uppercase tracking-wider text-gray-400">
+                <th className="py-6 pl-8 pr-4 font-semibold w-[140px]">
+                  Budget ID
+                </th>
+                <th className="py-6 px-4 font-semibold w-[320px]">
+                  Project Name
+                </th>
+                <th className="py-6 px-4 font-semibold w-[100px]">Type</th>
+                <th className="py-6 px-4 font-semibold w-[150px]">Amount</th>
+                <th className="py-6 px-4 font-semibold w-[120px]">Status</th>
+                <th className="py-6 px-4 font-semibold w-[120px]">Date</th>
+                <th className="py-6 px-4 pr-8 font-semibold text-right w-[100px]">
+                  Action
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-50">
               {filteredBudgets.length === 0 ? (
                 <tr>
                   <td
@@ -311,65 +294,112 @@ export default async function RequestsPage({
                 </tr>
               ) : (
                 filteredBudgets.map((b) => {
-                  const budDisplayId = `BUD-${b.budget_number}`;
-                  const projectCode = b.project_code;
-                  const displayId = projectCode ?? budDisplayId;
-                  const editHref = projectCode
-                    ? `/dashboard/budget/edit/${encodeURIComponent(projectCode)}`
+                  const displayId = b.project_code
+                    ? b.project_code
+                    : `BUD-${b.budget_number}`;
+
+                  const editHref = b.project_code
+                    ? `/dashboard/budget/edit/${encodeURIComponent(b.project_code)}`
                     : `/dashboard/budget/edit/BUD-${String(b.budget_number).padStart(3, "0")}`;
-                  const viewHref = projectCode
-                    ? `/dashboard/requests/${encodeURIComponent(projectCode)}`
+
+                  const viewHref = b.project_code
+                    ? `/dashboard/requests/${encodeURIComponent(b.project_code)}`
                     : `/dashboard/requests/${b.id}`;
+
                   const projectName = firstItem.get(b.id) ?? "Budget Request";
+                  const department = dbUser?.department || "General";
+
+                  // Type Pill Styles
+                  const isOpex = b.budget_type === "opex";
+                  const typeLabel = isOpex ? "OPEX" : "CAPEX";
+                  const typeClasses = isOpex
+                    ? "bg-purple-100 text-purple-700"
+                    : "bg-blue-100 text-blue-700";
+
+                  // Status Pill Styles
+                  let statusBg = "bg-blue-50 text-blue-600";
+                  let statusText = "Pending";
+
+                  if (b.status === "approved") {
+                    statusBg = "bg-green-50 text-green-600";
+                    statusText = "Approved";
+                  } else if (b.status === "rejected") {
+                    statusBg = "bg-red-50 text-red-600";
+                    statusText = "Rejected";
+                  } else if (b.status === "revision_requested") {
+                    statusBg = "bg-orange-50 text-orange-600";
+                    statusText = "Revision";
+                  } else if (b.status === "draft") {
+                    statusBg = "bg-gray-100 text-gray-600";
+                    statusText = "Draft";
+                  } else if (
+                    b.status === "verified" ||
+                    b.status === "verified_by_reviewer"
+                  ) {
+                    statusBg = "bg-indigo-50 text-indigo-600";
+                    statusText = "Verified";
+                  }
+
+                  // Row Opacity for Rejected
+                  const rowOpacity =
+                    b.status === "rejected" ? "opacity-60 bg-gray-50/50" : "";
+
                   return (
                     <tr
                       key={b.id}
-                      className={`border-t border-black/5 hover:bg-gray-50/50 ${
-                        b.status === "rejected"
-                          ? "opacity-60 bg-gray-50/30"
-                          : ""
-                      }`}
+                      className={`group hover:bg-gray-50/50 transition-colors ${rowOpacity}`}
                     >
-                      <td className="py-4 pl-6 pr-4">
-                        <div className="font-medium text-gray-900">
+                      <td className="py-5 pl-8 pr-4">
+                        <span className="text-sm font-medium text-gray-400">
                           {displayId}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="font-medium text-gray-900 line-clamp-2 leading-snug">
-                          {projectName}
-                        </div>
-                      </td>
-                      <td className="py-4 px-3">
-                        <span className={typePill(b.budget_type)}>
-                          {b.budget_type === "capex" ? "CapEx" : "OpEx"}
                         </span>
                       </td>
-                      <td className="py-4 px-3 text-gray-800 font-medium">
-                        {formatPhp(b.total_amount)}
+                      <td className="py-5 px-4">
+                        <div>
+                          <div className="font-bold text-gray-900 text-sm">
+                            {projectName}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5 font-normal">
+                            {department}
+                          </div>
+                        </div>
                       </td>
-                      <td className="py-4 px-3">
-                        <span className={statusPill(b.status)}>
-                          {statusLabel(b.status)}
+                      <td className="py-5 px-4">
+                        <span
+                          className={`inline-flex items-center justify-center rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide min-w-[60px] ${typeClasses}`}
+                        >
+                          {typeLabel}
                         </span>
                       </td>
-                      <td className="py-4 px-3 text-gray-600">
+                      <td className="py-5 px-4">
+                        <span className="font-bold text-gray-900 text-sm">
+                          {formatPhp(b.total_amount)}
+                        </span>
+                      </td>
+                      <td className="py-5 px-4">
+                        <span
+                          className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${statusBg}`}
+                        >
+                          {statusText}
+                        </span>
+                      </td>
+                      <td className="py-5 px-4 text-sm text-gray-400 font-medium">
                         {formatDateShort(new Date(b.created_at))}
                       </td>
-                      <td className="py-4 px-3 pr-6 text-right whitespace-nowrap">
+                      <td className="py-5 px-4 pr-8 text-right">
                         {b.status === "revision_requested" ? (
                           <Link
                             href={editHref}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-200 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-orange-100 px-3.5 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-200 transition-colors shadow-sm"
                           >
                             Edit
                           </Link>
                         ) : (
                           <Link
                             href={viewHref}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#2C3E50] px-3.5 py-1.5 text-xs font-medium text-white hover:bg-[#1a252f] transition-colors shadow-sm"
                           >
-                            View <Eye className="h-4 w-4" />
+                            View <Eye className="h-3.5 w-3.5" />
                           </Link>
                         )}
                       </td>
@@ -379,6 +409,13 @@ export default async function RequestsPage({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Footer Link */}
+        <div className="border-t border-gray-100 px-8 py-5 flex justify-end">
+          <Link href="#" className="text-sm font-semibold text-gray-600 hover:text-gray-900 hover:underline">
+            View all
+          </Link>
         </div>
       </div>
     </div>

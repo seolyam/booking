@@ -359,8 +359,8 @@ export default function ReviewerDashboard({
                     <tr
                       key={r.budgetId}
                       className={`group hover:bg-gray-50/50 transition-colors ${r.statusLabel === "Rejected"
-                          ? "opacity-60 bg-gray-50/30"
-                          : ""
+                        ? "opacity-60 bg-gray-50/30"
+                        : ""
                         }`}
                     >
                       <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
