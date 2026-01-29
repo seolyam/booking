@@ -210,13 +210,13 @@ export default async function RequestsPage({
               ) : null}
             </form>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <Link
                 href={buildRequestsHref({ q: qRaw ?? "", status: "approved" })}
                 className={
                   activeStatus === "approved"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-green-100 text-green-700 ring-2 ring-green-400"
-                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-green-50 text-green-600 border-green-200 ring-2 ring-green-400"
+                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
                 }
               >
                 Approved
@@ -225,8 +225,8 @@ export default async function RequestsPage({
                 href={buildRequestsHref({ q: qRaw ?? "", status: "pending" })}
                 className={
                   activeStatus === "pending"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 ring-2 ring-blue-400"
-                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-400"
+                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
                 }
               >
                 Pending
@@ -235,8 +235,8 @@ export default async function RequestsPage({
                 href={buildRequestsHref({ q: qRaw ?? "", status: "revision" })}
                 className={
                   activeStatus === "revision"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-orange-100 text-orange-700 ring-2 ring-orange-400"
-                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-orange-50 text-orange-700 border-orange-200 ring-2 ring-orange-400"
+                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
                 }
               >
                 Revision
@@ -245,8 +245,8 @@ export default async function RequestsPage({
                 href={buildRequestsHref({ q: qRaw ?? "", status: "draft" })}
                 className={
                   activeStatus === "draft"
-                    ? "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-200 text-gray-700 ring-2 ring-gray-400"
-                    : "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400 transition-all cursor-pointer"
+                    ? "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-200 text-gray-700 border-gray-200 ring-2 ring-gray-400"
+                    : "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
                 }
               >
                 Draft
