@@ -140,11 +140,14 @@ export default async function ReviewerReviewQueuePage({
       b.status === "revision_requested" ||
       b.status === "verified_by_reviewer";
 
+    const shouldShowView = isReviewed;
+
     const statusLabel = (() => {
       return isReviewed ? ("Reviewed" as const) : ("Pending" as const);
     })();
 
-    const actionLabel = isReviewableStatus ? "Review" : "View";
+    const actionLabel = shouldShowView ? "View" : "Review";
+
     const actionHref = isReviewableStatus
       ? `/dashboard/reviewer/${b.id}`
       : `/dashboard/reviewer/${b.id}/tracking`;
