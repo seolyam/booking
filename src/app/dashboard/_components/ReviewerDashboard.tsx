@@ -8,6 +8,7 @@ import {
   Eye,
   TrendingUp,
 } from "lucide-react";
+import { useDeferredValue, useMemo, useState } from "react";
 
 export type ReviewerDashboardRow = {
   budgetId: string;
@@ -28,6 +29,7 @@ export default function ReviewerDashboard({
   showStats = true,
   activeFilter,
   searchQuery,
+  enableClientFiltering = false,
 }: {
   stats: {
     reviewedToday: number;
@@ -39,7 +41,37 @@ export default function ReviewerDashboard({
   showStats?: boolean;
   activeFilter?: "all" | "pending" | "reviewed";
   searchQuery?: string;
+  enableClientFiltering?: boolean;
 }) {
+  const [clientFilter, setClientFilter] = useState<
+    "all" | "pending" | "reviewed"
+  >(activeFilter ?? "all");
+  const [clientSearch, setClientSearch] = useState(searchQuery ?? "");
+  const deferredClientSearch = useDeferredValue(clientSearch);
+
+  const normalizedSearch = deferredClientSearch.trim().toLowerCase();
+
+  const filterableRows = useMemo(() => {
+    if (!enableClientFiltering) return rows;
+
+    return rows.filter((r) => {
+      const matchesFilter =
+        clientFilter === "all"
+          ? true
+          : clientFilter === "pending"
+            ? r.statusLabel === "Pending"
+            : r.statusLabel === "Reviewed";
+
+      if (!matchesFilter) return false;
+      if (!normalizedSearch) return true;
+
+      const haystack = `${r.displayId} ${r.projectName} ${r.projectSub}`
+        .toLowerCase()
+        .trim();
+      return haystack.includes(normalizedSearch);
+    });
+  }, [enableClientFiltering, rows, clientFilter, normalizedSearch]);
+
   const statCard = (
     icon: React.ReactNode,
     value: number,
@@ -123,6 +155,34 @@ export default function ReviewerDashboard({
     );
   };
 
+  const filterBtn = (
+    label: string,
+    filter: "all" | "pending" | "reviewed",
+  ) => {
+    const isActive = clientFilter === filter;
+
+    const baseClass =
+      "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0";
+
+    const colorClass = isActive
+      ? filter === "pending"
+        ? "bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-400"
+        : filter === "reviewed"
+          ? "bg-yellow-50 text-yellow-700 border-yellow-200 ring-2 ring-yellow-400"
+          : "bg-gray-100 text-gray-700 border-gray-200 ring-2 ring-gray-400"
+      : "bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400";
+
+    return (
+      <button
+        type="button"
+        onClick={() => setClientFilter(filter)}
+        className={`${baseClass} ${colorClass}`}
+      >
+        {label}
+      </button>
+    );
+  };
+
   const actionButton = (r: ReviewerDashboardRow) => {
     const base =
       "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shadow-sm transition-all";
@@ -192,42 +252,80 @@ export default function ReviewerDashboard({
         <div className="p-4 md:p-8">
           {(activeFilter !== undefined || searchQuery !== undefined) && (
             <div className="mb-6 md:mb-8 flex flex-col md:flex-row gap-4 md:items-center">
-              <form
-                action="/dashboard/reviewer/review"
-                method="GET"
-                className="relative w-full md:w-96"
-              >
-                <input
-                  name="q"
-                  defaultValue={searchQuery ?? ""}
-                  placeholder="Search (BUD-#, project, department…)"
-                  className="h-11 md:h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400"
-                />
-                {activeFilter && activeFilter !== "all" ? (
-                  <input type="hidden" name="status" value={activeFilter} />
-                ) : null}
-              </form>
+              {enableClientFiltering ? (
+                <div className="relative w-full md:w-96">
+                  <input
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
+                    placeholder="Search (BUD-#, project, department…)"
+                    className="h-11 md:h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400"
+                  />
+                </div>
+              ) : (
+                <form
+                  action="/dashboard/reviewer/review"
+                  method="GET"
+                  className="relative w-full md:w-96"
+                >
+                  <input
+                    name="q"
+                    defaultValue={searchQuery ?? ""}
+                    placeholder="Search (BUD-#, project, department…)"
+                    className="h-11 md:h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400"
+                  />
+                  {activeFilter && activeFilter !== "all" ? (
+                    <input type="hidden" name="status" value={activeFilter} />
+                  ) : null}
+                </form>
+              )}
 
               <div className="flex flex-wrap items-center gap-3">
-                {filterChip("All", "all", "/dashboard/reviewer/review")}
-                {filterChip(
-                  "Pending",
-                  "pending",
-                  "/dashboard/reviewer/review?status=pending",
-                )}
-                {filterChip(
-                  "Reviewed",
-                  "reviewed",
-                  "/dashboard/reviewer/review?status=reviewed",
-                )}
+                {enableClientFiltering ? (
+                  <>
+                    <div className="flex flex-wrap gap-2 md:gap-3">
+                      {filterBtn("All", "all")}
+                      {filterBtn("Pending", "pending")}
+                      {filterBtn("Reviewed", "reviewed")}
+                    </div>
+                    {(clientSearch || clientFilter !== "all") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClientSearch("");
+                          setClientFilter("all");
+                        }}
+                        className="text-sm text-gray-600 hover:underline"
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <span className="text-xs font-medium text-gray-500">
+                      Showing {filterableRows.length} of {rows.length}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {filterChip("All", "all", "/dashboard/reviewer/review")}
+                    {filterChip(
+                      "Pending",
+                      "pending",
+                      "/dashboard/reviewer/review?status=pending",
+                    )}
+                    {filterChip(
+                      "Reviewed",
+                      "reviewed",
+                      "/dashboard/reviewer/review?status=reviewed",
+                    )}
 
-                {(searchQuery || (activeFilter && activeFilter !== "all")) && (
-                  <Link
-                    href="/dashboard/reviewer/review"
-                    className="text-sm text-gray-600 hover:underline"
-                  >
-                    Clear
-                  </Link>
+                    {(searchQuery || (activeFilter && activeFilter !== "all")) && (
+                      <Link
+                        href="/dashboard/reviewer/review"
+                        className="text-sm text-gray-600 hover:underline"
+                      >
+                        Clear
+                      </Link>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -247,7 +345,7 @@ export default function ReviewerDashboard({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {rows.length === 0 ? (
+                {filterableRows.length === 0 ? (
                   <tr>
                     <td
                       colSpan={7}
@@ -257,7 +355,7 @@ export default function ReviewerDashboard({
                     </td>
                   </tr>
                 ) : (
-                  rows.map((r) => (
+                  filterableRows.map((r) => (
                     <tr
                       key={r.budgetId}
                       className={`group hover:bg-gray-50/50 transition-colors ${r.statusLabel === "Rejected"

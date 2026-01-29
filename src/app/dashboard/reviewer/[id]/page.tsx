@@ -3,7 +3,13 @@ import { redirect } from "next/navigation";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import Link from "next/link";
 import { db } from "@/db";
-import { budgets, budgetItems, users, reviewChecklists } from "@/db/schema";
+import {
+  auditLogs,
+  budgets,
+  budgetItems,
+  users,
+  reviewChecklists,
+} from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import ReviewPageClient from "./ReviewPageClient";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
@@ -88,6 +94,39 @@ export default async function ReviewBudgetDetailPage({
   }
 
   const budget = budgetData[0];
+
+  // Mark as reviewed-on-open for this reviewer (idempotent)
+  let hasReviewOpened = false;
+  try {
+    const existingOpened = await db
+      .select({ id: auditLogs.id })
+      .from(auditLogs)
+      .where(
+        and(
+          eq(auditLogs.budget_id, budget.id),
+          eq(auditLogs.actor_id, appUser.id),
+          eq(auditLogs.action, "review_opened"),
+        ),
+      )
+      .limit(1);
+
+    if (existingOpened.length > 0) {
+      hasReviewOpened = true;
+    } else {
+      await db.insert(auditLogs).values({
+        budget_id: budget.id,
+        actor_id: appUser.id,
+        action: "review_opened",
+        previous_status: budget.status,
+        new_status: budget.status,
+        comment: "Opened review",
+      });
+      hasReviewOpened = true;
+    }
+  } catch {
+    // If audit log insert fails for any reason, do not block the review UI.
+    hasReviewOpened = false;
+  }
 
   // Get requester info
   const requesterData = await db
@@ -238,6 +277,11 @@ export default async function ReviewBudgetDetailPage({
     approved: "Approved",
   };
 
+  const displayStatusLabel =
+    budget.status === "submitted" && hasReviewOpened
+      ? "Reviewed"
+      : statusLabelMap[budget.status] || budget.status;
+
   const typeLabel = budget.budget_type === "capex" ? "CapEx" : "OpEx";
 
   const statusCardClass = (() => {
@@ -286,9 +330,7 @@ export default async function ReviewBudgetDetailPage({
               className={`absolute top-10 right-10 flex items-center gap-2 px-4 py-2 rounded-full border ${statusCardClass}`}
             >
               <Clock className="w-4 h-4" />
-              <span className="text-sm font-bold">
-                {statusLabelMap[budget.status] || budget.status}
-              </span>
+              <span className="text-sm font-bold">{displayStatusLabel}</span>
             </div>
 
             <div className="space-y-8">
