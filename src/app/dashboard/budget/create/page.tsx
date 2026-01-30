@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 // import { useMemo, useCallback } from "react"; // DISABLED - for project feature
-import { Bell, Trash2, Calendar, FileText, Layers, Wallet, AlertCircle } from "lucide-react";
+import { Bell, Trash2, Calendar, FileText, Layers, Wallet, AlertCircle, Save, Send, SendHorizonal, SendIcon } from "lucide-react";
 // import { FolderPlus, Building2 } from "lucide-react"; // DISABLED - for project feature
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -404,7 +404,7 @@ export default function CreateBudgetPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -839,7 +839,7 @@ export default function CreateBudgetPage() {
               onClick={() => persistBudget("draft")}
               disabled={isSaving}
             >
-              📄 Save as draft
+              <Save className="h-4 w-4 mr-2" /> Save as draft
             </Button>
 
             <Button
@@ -848,15 +848,11 @@ export default function CreateBudgetPage() {
               onClick={() => persistBudget("submit")}
               disabled={isSaving}
             >
-              {isSaving ? "Submitting…" : "✓ Submit request"}
+              <SendIcon className="h-4 w-4 mr-2" /> {isSaving ? "Submitting…" : "Submit request"}
             </Button>
           </div>
-
-
         </section>
       </div>
-
-
     </div>
   );
 }

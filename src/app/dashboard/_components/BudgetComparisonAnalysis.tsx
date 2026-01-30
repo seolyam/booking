@@ -23,114 +23,114 @@ interface BudgetComparisonProps {
 }
 
 function clamp(n: number, min: number, max: number) {
-    return Math.min(max, Math.max(min, n));
+  return Math.min(max, Math.max(min, n));
 }
 
 function DonutComparisonChart({
-    currentAmount,
-    historicalAverage,
-    size = 160,
+  currentAmount,
+  historicalAverage,
+  size = 160,
 }: {
-    currentAmount: number;
-    historicalAverage: number;
-    size?: number;
+  currentAmount: number;
+  historicalAverage: number;
+  size?: number;
 }) {
-    const avg = historicalAverage > 0 ? historicalAverage : 1;
-    const ratio = currentAmount / avg;
+  const avg = historicalAverage > 0 ? historicalAverage : 1;
+  const ratio = currentAmount / avg;
 
-    const baseProgress = clamp(ratio, 0, 1);
-    const overRatio = Math.max(ratio - 1, 0);
-    const overMax = 0.5; // Visualize up to +50% over average
-    const overProgress = clamp(overRatio / overMax, 0, 1);
+  const baseProgress = clamp(ratio, 0, 1);
+  const overRatio = Math.max(ratio - 1, 0);
+  const overMax = 0.5; // Visualize up to +50% over average
+  const overProgress = clamp(overRatio / overMax, 0, 1);
 
-    const deltaPct = ((currentAmount - avg) / avg) * 100;
-    const deltaLabel = Number.isFinite(deltaPct)
-        ? `${deltaPct >= 0 ? "+" : ""}${Math.round(deltaPct)}%`
-        : "—";
+  const deltaPct = ((currentAmount - avg) / avg) * 100;
+  const deltaLabel = Number.isFinite(deltaPct)
+    ? `${deltaPct >= 0 ? "+" : ""}${Math.round(deltaPct)}%`
+    : "—";
 
-    const isHigher = currentAmount > avg;
+  const isHigher = currentAmount > avg;
 
-    const vb = 100;
-    const center = vb / 2;
-    const rInner = 34;
-    const rOuter = 41;
-    const cInner = 2 * Math.PI * rInner;
-    const cOuter = 2 * Math.PI * rOuter;
+  const vb = 100;
+  const center = vb / 2;
+  const rInner = 34;
+  const rOuter = 41;
+  const cInner = 2 * Math.PI * rInner;
+  const cOuter = 2 * Math.PI * rOuter;
 
-    const innerDash = `${baseProgress * cInner} ${cInner}`;
-    const outerDash = `${overProgress * cOuter} ${cOuter}`;
+  const innerDash = `${baseProgress * cInner} ${cInner}`;
+  const outerDash = `${overProgress * cOuter} ${cOuter}`;
 
-    const ringColor = isHigher ? "#f59e0b" : "#22c55e"; // amber / green
+  const ringColor = isHigher ? "#f59e0b" : "#22c55e"; // amber / green
 
-    return (
-        <div
-            className="relative"
-            style={{ width: size, height: size }}
-            aria-label="Budget comparison chart"
-        >
-            <svg
-                width={size}
-                height={size}
-                viewBox={`0 0 ${vb} ${vb}`}
-                role="img"
-                aria-hidden="true"
-            >
-                <g transform={`rotate(-90 ${center} ${center})`}>
-                    {/* Base track */}
-                    <circle
-                        cx={center}
-                        cy={center}
-                        r={rInner}
-                        fill="none"
-                        stroke="#e5e7eb"
-                        strokeWidth={12}
-                    />
-                    {/* Base progress: current vs average (0..100%) */}
-                    <circle
-                        cx={center}
-                        cy={center}
-                        r={rInner}
-                        fill="none"
-                        stroke={ringColor}
-                        strokeWidth={12}
-                        strokeLinecap="round"
-                        strokeDasharray={innerDash}
-                    />
+  return (
+    <div
+      className="relative"
+      style={{ width: size, height: size }}
+      aria-label="Budget comparison chart"
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${vb} ${vb}`}
+        role="img"
+        aria-hidden="true"
+      >
+        <g transform={`rotate(-90 ${center} ${center})`}>
+          {/* Base track */}
+          <circle
+            cx={center}
+            cy={center}
+            r={rInner}
+            fill="none"
+            stroke="#e5e7eb"
+            strokeWidth={12}
+          />
+          {/* Base progress: current vs average (0..100%) */}
+          <circle
+            cx={center}
+            cy={center}
+            r={rInner}
+            fill="none"
+            stroke={ringColor}
+            strokeWidth={12}
+            strokeLinecap="round"
+            strokeDasharray={innerDash}
+          />
 
-                    {/* Overage ring: +0..50% */}
-                    {overProgress > 0 ? (
-                        <>
-                            <circle
-                                cx={center}
-                                cy={center}
-                                r={rOuter}
-                                fill="none"
-                                stroke="#f3f4f6"
-                                strokeWidth={6}
-                            />
-                            <circle
-                                cx={center}
-                                cy={center}
-                                r={rOuter}
-                                fill="none"
-                                stroke="#fb923c"
-                                strokeWidth={6}
-                                strokeLinecap="round"
-                                strokeDasharray={outerDash}
-                            />
-                        </>
-                    ) : null}
-                </g>
-            </svg>
+          {/* Overage ring: +0..50% */}
+          {overProgress > 0 ? (
+            <>
+              <circle
+                cx={center}
+                cy={center}
+                r={rOuter}
+                fill="none"
+                stroke="#f3f4f6"
+                strokeWidth={6}
+              />
+              <circle
+                cx={center}
+                cy={center}
+                r={rOuter}
+                fill="none"
+                stroke="#fb923c"
+                strokeWidth={6}
+                strokeLinecap="round"
+                strokeDasharray={outerDash}
+              />
+            </>
+          ) : null}
+        </g>
+      </svg>
 
-            <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                    <p className="text-xs font-bold text-gray-400 uppercase">Vs Avg</p>
-                    <p className="text-lg font-bold text-gray-900">{deltaLabel}</p>
-                </div>
-            </div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xs font-bold text-gray-400 uppercase">Vs Avg</p>
+          <p className="text-lg font-bold text-gray-900">{deltaLabel}</p>
         </div>
-    );
+      </div>
+    </div>
+  );
 }
 
 export default function BudgetComparisonAnalysis({
@@ -172,24 +172,12 @@ export default function BudgetComparisonAnalysis({
         </div>
 
         <div className="flex items-center gap-12">
-          {/* Donut Chart Placeholder */}
-          <div className="relative w-40 h-40">
-            <div className="absolute inset-0 rounded-full border-[16px] border-gray-200"></div>
-            <div
-              className="absolute inset-0 rounded-full border-[16px] border-green-500"
-              style={{
-                clipPath:
-                  "polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 50%)",
-              }}
-            ></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-xs font-bold text-gray-400 uppercase">
-                  Analysis
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Functional Donut Chart */}
+          <DonutComparisonChart
+            currentAmount={currentAmount}
+            historicalAverage={historicalAverage}
+            size={160}
+          />
 
           <div className="flex-1 space-y-4">
             <div className="p-4 bg-green-50 rounded-xl flex justify-between items-center">
@@ -256,15 +244,12 @@ export default function BudgetComparisonAnalysis({
               <div className="space-y-8">
                 {/* Visual Chart Area */}
                 <div className="flex justify-center py-4">
-                  <div className="relative w-60 h-60">
-                    <div className="absolute inset-0 rounded-full border-[24px] border-gray-100"></div>
-                    <div
-                      className="absolute inset-0 rounded-full border-[24px] border-green-500"
-                      style={{
-                        clipPath:
-                          "polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 30%)",
-                      }}
-                    ></div>
+                  <div className="relative" style={{ width: 240, height: 240 }}>
+                    <DonutComparisonChart
+                      currentAmount={currentAmount}
+                      historicalAverage={historicalAverage}
+                      size={240}
+                    />
                     <div className="absolute -right-32 top-1/4 space-y-3">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-green-500"></div>
@@ -275,7 +260,7 @@ export default function BudgetComparisonAnalysis({
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-gray-200"></div>
                         <span className="text-sm font-semibold text-gray-600">
-                          Past Projects
+                          Avg Baseline
                         </span>
                       </div>
                     </div>
