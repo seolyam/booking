@@ -215,7 +215,7 @@ export default async function BudgetIndexPage({
     : allBudgets;
 
   return (
-    <div className="-m-8 p-6 md:p-8 w-full max-w-[1400px] mx-auto">
+    <div className="w-full max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">List of Requests</h1>
@@ -361,8 +361,8 @@ export default async function BudgetIndexPage({
                     <tr
                       key={b.id}
                       className={`group hover:bg-gray-50/50 transition-colors ${b.status === "rejected"
-                          ? "opacity-60 bg-gray-50/30"
-                          : ""
+                        ? "opacity-60 bg-gray-50/30"
+                        : ""
                         }`}
                     >
                       <td className="py-5 pl-8 pr-4">

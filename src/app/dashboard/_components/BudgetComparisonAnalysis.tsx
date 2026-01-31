@@ -60,7 +60,9 @@ function DonutComparisonChart({
   const innerDash = `${baseProgress * cInner} ${cInner}`;
   const outerDash = `${overProgress * cOuter} ${cOuter}`;
 
-  const ringColor = isHigher ? "#f59e0b" : "#22c55e"; // amber / green
+  const ringColor = "#22c55e"; // always green for current request
+  // Base track now represents Historical Average (Blue)
+  const trackColor = "#bfdbfe"; // blue-200
 
   return (
     <div
@@ -76,13 +78,13 @@ function DonutComparisonChart({
         aria-hidden="true"
       >
         <g transform={`rotate(-90 ${center} ${center})`}>
-          {/* Base track */}
+          {/* Base track (Historical Average) */}
           <circle
             cx={center}
             cy={center}
             r={rInner}
             fill="none"
-            stroke="#e5e7eb"
+            stroke={trackColor}
             strokeWidth={12}
           />
           {/* Base progress: current vs average (0..100%) */}
@@ -113,7 +115,7 @@ function DonutComparisonChart({
                 cy={center}
                 r={rOuter}
                 fill="none"
-                stroke="#fb923c"
+                stroke={ringColor}
                 strokeWidth={6}
                 strokeLinecap="round"
                 strokeDasharray={outerDash}
@@ -252,13 +254,13 @@ export default function BudgetComparisonAnalysis({
                     />
                     <div className="absolute -right-32 top-1/4 space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                        <div className={`w-3 h-3 rounded-full bg-green-500`}></div>
                         <span className="text-sm font-semibold text-gray-600">
                           Your Request
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-gray-200"></div>
+                        <div className="w-3 h-3 rounded-full bg-blue-200"></div>
                         <span className="text-sm font-semibold text-gray-600">
                           Avg Baseline
                         </span>
