@@ -252,7 +252,9 @@ export default function BudgetComparisonAnalysis({
                     />
                     <div className="absolute -right-32 top-1/4 space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full bg-green-500`}></div>
+                        <div
+                          className={`w-3 h-3 rounded-full bg-green-500`}
+                        ></div>
                         <span className="text-sm font-semibold text-gray-600">
                           Your Request
                         </span>

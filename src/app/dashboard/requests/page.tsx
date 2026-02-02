@@ -96,10 +96,10 @@ export default async function RequestsPage({
           ? eq(budgets.status, "draft")
           : activeStatus === "pending"
             ? inArray(budgets.status, [
-              "submitted",
-              "verified",
-              "verified_by_reviewer",
-            ])
+                "submitted",
+                "verified",
+                "verified_by_reviewer",
+              ])
             : undefined;
 
   const myBudgets = await db.query.budgets.findMany({
@@ -115,12 +115,12 @@ export default async function RequestsPage({
     ids.length === 0
       ? []
       : await db
-        .select({
-          budget_id: budgetItems.budget_id,
-          description: budgetItems.description,
-        })
-        .from(budgetItems)
-        .where(inArray(budgetItems.budget_id, ids));
+          .select({
+            budget_id: budgetItems.budget_id,
+            description: budgetItems.description,
+          })
+          .from(budgetItems)
+          .where(inArray(budgetItems.budget_id, ids));
 
   const firstItem = new Map<string, string>();
   for (const it of items) {
@@ -132,25 +132,25 @@ export default async function RequestsPage({
   const filteredBudgets = !q
     ? myBudgets
     : myBudgets.filter((b) => {
-      const budDisplayId = `bud-${b.budget_number}`;
-      const budNum = String(b.budget_number);
-      const projectCode = b.project_code;
-      const projectName = firstItem.get(b.id) ?? "Budget Request";
-      const status = statusLabel(b.status);
-      const type = b.budget_type;
-      const amountDigits = normalizeDigits(b.total_amount);
+        const budDisplayId = `bud-${b.budget_number}`;
+        const budNum = String(b.budget_number);
+        const projectCode = b.project_code;
+        const projectName = firstItem.get(b.id) ?? "Budget Request";
+        const status = statusLabel(b.status);
+        const type = b.budget_type;
+        const amountDigits = normalizeDigits(b.total_amount);
 
-      return (
-        includesQuery(b.id, q) ||
-        includesQuery(projectCode, q) ||
-        includesQuery(budDisplayId, q) ||
-        includesQuery(budNum, q) ||
-        includesQuery(projectName, q) ||
-        includesQuery(type, q) ||
-        includesQuery(status, q) ||
-        includesQuery(amountDigits, normalizeDigits(q))
-      );
-    });
+        return (
+          includesQuery(b.id, q) ||
+          includesQuery(projectCode, q) ||
+          includesQuery(budDisplayId, q) ||
+          includesQuery(budNum, q) ||
+          includesQuery(projectName, q) ||
+          includesQuery(type, q) ||
+          includesQuery(status, q) ||
+          includesQuery(amountDigits, normalizeDigits(q))
+        );
+      });
 
   // Fetch user details for department
   const dbUser = await db.query.users.findFirst({
@@ -217,9 +217,10 @@ export default async function RequestsPage({
                     })}
                     className={`
                       px-4 py-2 rounded-lg text-sm font-medium transition-all border
-                      ${isActive
-                        ? activeClass + " border ring-1"
-                        : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                      ${
+                        isActive
+                          ? activeClass + " border ring-1"
+                          : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                       }
                     `}
                   >
@@ -391,7 +392,6 @@ export default async function RequestsPage({
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );

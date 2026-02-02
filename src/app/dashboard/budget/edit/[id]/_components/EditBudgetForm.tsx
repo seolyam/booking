@@ -304,7 +304,6 @@ export default function EditBudgetForm({
 
       <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-100 overflow-hidden">
         <div className="p-6 md:p-10 space-y-10">
-
           {error && (
             <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600 font-medium">
               {error}
@@ -358,10 +357,16 @@ export default function EditBudgetForm({
                 <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="bg-gray-50/50 border-b border-gray-100 text-[11px] uppercase tracking-wider text-gray-400 font-bold">
-                      <th className="px-6 py-4 text-left w-[200px]">Category</th>
-                      <th className="px-6 py-4 text-left w-[300px]">Description</th>
+                      <th className="px-6 py-4 text-left w-[200px]">
+                        Category
+                      </th>
+                      <th className="px-6 py-4 text-left w-[300px]">
+                        Description
+                      </th>
                       <th className="px-6 py-4 text-left w-[100px]">Qty</th>
-                      <th className="px-6 py-4 text-left w-[140px]">Unit Cost</th>
+                      <th className="px-6 py-4 text-left w-[140px]">
+                        Unit Cost
+                      </th>
                       <th className="px-6 py-4 text-left w-[140px]">Total</th>
                       <th className="px-6 py-4 text-center w-[60px]">Action</th>
                     </tr>
@@ -423,14 +428,20 @@ export default function EditBudgetForm({
                         </td>
                         <td className="px-6 py-4 align-top">
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₱</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ₱
+                            </span>
                             <Input
                               type="number"
                               min="0"
                               step="0.01"
                               value={item.unitCost}
                               onChange={(e) =>
-                                updateExistingItem(index, "unitCost", e.target.value)
+                                updateExistingItem(
+                                  index,
+                                  "unitCost",
+                                  e.target.value,
+                                )
                               }
                               className="pl-7 border-gray-200 bg-white rounded-lg h-10 text-sm focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334]"
                             />
@@ -438,7 +449,8 @@ export default function EditBudgetForm({
                         </td>
                         <td className="px-6 py-4 align-top">
                           <div className="h-10 flex items-center text-sm font-semibold text-gray-900">
-                            ₱{(
+                            ₱
+                            {(
                               item.quantity *
                               (parseFloat(item.unitCost as string) || 0)
                             ).toLocaleString("en-US", {
@@ -489,7 +501,11 @@ export default function EditBudgetForm({
                             placeholder="Description"
                             value={item.description}
                             onChange={(e) =>
-                              updateNewItem(index, "description", e.target.value)
+                              updateNewItem(
+                                index,
+                                "description",
+                                e.target.value,
+                              )
                             }
                             className="border-blue-100 bg-white rounded-lg h-10 text-sm focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334]"
                           />
@@ -511,7 +527,9 @@ export default function EditBudgetForm({
                         </td>
                         <td className="px-6 py-4 align-top">
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₱</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ₱
+                            </span>
                             <Input
                               type="number"
                               min="0"
@@ -526,7 +544,8 @@ export default function EditBudgetForm({
                         </td>
                         <td className="px-6 py-4 align-top">
                           <div className="h-10 flex items-center text-sm font-semibold text-gray-900">
-                            ₱{(
+                            ₱
+                            {(
                               item.quantity *
                               (parseFloat(item.unitCost as string) || 0)
                             ).toLocaleString("en-US", {
@@ -551,9 +570,12 @@ export default function EditBudgetForm({
               </div>
               {/* Total Footer inside table container to look integrated */}
               <div className="bg-gray-50/50 border-t border-gray-100 px-6 py-4 flex justify-end items-center gap-4">
-                <span className="text-sm font-bold text-gray-500 uppercase tracking-wide">Total Estimated Cost</span>
+                <span className="text-sm font-bold text-gray-500 uppercase tracking-wide">
+                  Total Estimated Cost
+                </span>
                 <span className="text-xl font-black text-gray-900">
-                  ₱{totalBudget.toLocaleString("en-US", {
+                  ₱
+                  {totalBudget.toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -570,7 +592,8 @@ export default function EditBudgetForm({
               Variance Explanation
             </h2>
             <p className="text-sm text-gray-500 mb-4">
-              Please provide a detailed explanation for the changes made to this budget request.
+              Please provide a detailed explanation for the changes made to this
+              budget request.
             </p>
 
             <div>
@@ -579,7 +602,10 @@ export default function EditBudgetForm({
                 value={varianceExplanation}
                 onChange={(e) => {
                   const text = e.target.value;
-                  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+                  const wordCount = text
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean).length;
                   if (wordCount <= 120) {
                     setVarianceExplanation(text);
                   }
@@ -587,8 +613,8 @@ export default function EditBudgetForm({
                 className="w-full rounded-xl border-gray-200 min-h-[120px] p-4 text-sm focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334] resize-y"
               />
               <div className="text-right text-xs font-medium text-gray-400 mt-2">
-                {varianceExplanation.trim().split(/\s+/).filter(Boolean).length}/120
-                words
+                {varianceExplanation.trim().split(/\s+/).filter(Boolean).length}
+                /120 words
               </div>
             </div>
           </section>

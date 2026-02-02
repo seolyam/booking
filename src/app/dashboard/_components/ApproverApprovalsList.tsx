@@ -139,15 +139,21 @@ export default function ApproverApprovalsList({
           <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-100 text-[11px] uppercase tracking-wider text-gray-400">
-                <th className="py-6 pl-8 pr-4 font-semibold w-[140px]">BUDGET ID</th>
-                <th className="py-6 px-4 font-semibold w-[320px]">PROJECT NAME</th>
+                <th className="py-6 pl-8 pr-4 font-semibold w-[140px]">
+                  BUDGET ID
+                </th>
+                <th className="py-6 px-4 font-semibold w-[320px]">
+                  PROJECT NAME
+                </th>
                 <th className="py-6 px-4 font-semibold w-[100px]">TYPE</th>
                 <th className="py-6 px-4 font-semibold w-[150px]">AMOUNT</th>
                 <th className="py-6 px-4 font-semibold w-[120px]">STATUS</th>
                 <th className="py-6 px-4 font-semibold w-[120px]">
                   {currentStatus === "Approved" ? "DATE APPROVED" : "DATE"}
                 </th>
-                <th className="py-6 px-4 pr-8 font-semibold text-right w-[100px]">ACTION</th>
+                <th className="py-6 px-4 pr-8 font-semibold text-right w-[100px]">
+                  ACTION
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -178,7 +184,9 @@ export default function ApproverApprovalsList({
                           {r.displayId}
                         </span>
                       </td>
-                      <td className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}>
+                      <td
+                        className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}
+                      >
                         <div>
                           <div className="font-bold text-gray-900 text-sm">
                             {r.projectName}
@@ -188,15 +196,21 @@ export default function ApproverApprovalsList({
                           </div>
                         </div>
                       </td>
-                      <td className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}>
+                      <td
+                        className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}
+                      >
                         {typePill(r.type)}
                       </td>
-                      <td className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}>
+                      <td
+                        className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}
+                      >
                         <span className="font-bold text-gray-900 text-sm">
                           {r.amount}
                         </span>
                       </td>
-                      <td className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}>
+                      <td
+                        className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}
+                      >
                         {statusPill(r.statusLabel)}
                       </td>
                       <td
@@ -211,19 +225,20 @@ export default function ApproverApprovalsList({
                           const isPending = r.statusLabel === "Pending";
                           const href = isPending
                             ? `/dashboard/approver/approvals/${encodeURIComponent(
-                              r.displayId,
-                            )}`
+                                r.displayId,
+                              )}`
                             : `/dashboard/budget/${encodeURIComponent(
-                              r.displayId,
-                            )}`;
+                                r.displayId,
+                              )}`;
 
                           return (
                             <Link
                               href={href}
-                              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors shadow-sm ${isPending
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors shadow-sm ${
+                                isPending
                                   ? "bg-orange-600 text-white hover:bg-orange-700"
                                   : "bg-[#2C3E50] text-white hover:bg-[#1a252f]"
-                                }`}
+                              }`}
                             >
                               {isPending ? "Review" : "View"}{" "}
                               <Eye className="h-3.5 w-3.5" />
