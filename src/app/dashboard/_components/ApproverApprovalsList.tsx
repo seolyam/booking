@@ -197,7 +197,7 @@ export default function ApproverApprovalsList({
                 <th className="pb-4 pr-4 font-bold text-center">
                   {sortLabel(
                     "date",
-                    currentStatus === "Approved" ? "DATE APPROVED" : "DATE"
+                    currentStatus === "Approved" ? "DATE APPROVED" : "DATE",
                   )}
                 </th>
                 <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
@@ -278,10 +278,10 @@ export default function ApproverApprovalsList({
                           const isPending = r.statusLabel === "Pending";
                           const href = isPending
                             ? `/dashboard/approver/approvals/${encodeURIComponent(
-                                r.displayId
+                                r.displayId,
                               )}`
                             : `/dashboard/budget/${encodeURIComponent(
-                                r.displayId
+                                r.displayId,
                               )}`;
 
                           return (

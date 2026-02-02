@@ -136,10 +136,10 @@ export default async function BudgetIndexPage({
         ? eq(budgets.status, "revision_requested")
         : activeStatus === "pending"
           ? inArray(budgets.status, [
-            "submitted",
-            "verified",
-            "verified_by_reviewer",
-          ])
+              "submitted",
+              "verified",
+              "verified_by_reviewer",
+            ])
           : undefined;
 
   const allBudgets = await db.query.budgets.findMany({
@@ -153,13 +153,13 @@ export default async function BudgetIndexPage({
     budgetIds.length === 0
       ? []
       : await db
-        .select({
-          budget_id: budgetItems.budget_id,
-          description: budgetItems.description,
-        })
-        .from(budgetItems)
-        .where(inArray(budgetItems.budget_id, budgetIds))
-        .orderBy(asc(budgetItems.quarter));
+          .select({
+            budget_id: budgetItems.budget_id,
+            description: budgetItems.description,
+          })
+          .from(budgetItems)
+          .where(inArray(budgetItems.budget_id, budgetIds))
+          .orderBy(asc(budgetItems.quarter));
 
   const firstItemByBudgetId = new Map<string, string>();
   for (const row of itemRows) {
@@ -173,14 +173,14 @@ export default async function BudgetIndexPage({
     userIds.length === 0
       ? []
       : await db
-        .select({
-          id: users.id,
-          email: users.email,
-          full_name: users.full_name,
-          department: users.department,
-        })
-        .from(users)
-        .where(inArray(users.id, userIds));
+          .select({
+            id: users.id,
+            email: users.email,
+            full_name: users.full_name,
+            department: users.department,
+          })
+          .from(users)
+          .where(inArray(users.id, userIds));
 
   const requesterById = new Map(
     requesterRows.map((u) => [u.id, u.full_name || u.email]),
@@ -191,31 +191,31 @@ export default async function BudgetIndexPage({
 
   const filteredBudgets = q
     ? allBudgets.filter((b) => {
-      const projectName = firstItemByBudgetId.get(b.id) ?? "";
-      const requesterName = requesterById.get(b.user_id) ?? "";
-      const dept = departmentById.get(b.user_id) ?? "";
+        const projectName = firstItemByBudgetId.get(b.id) ?? "";
+        const requesterName = requesterById.get(b.user_id) ?? "";
+        const dept = departmentById.get(b.user_id) ?? "";
 
-      const budLabel = `BUD-${b.budget_number}`;
-      const projectCode = (b as { project_code?: string | null })
-        .project_code;
-      const statusText = statusLabel(b.status);
-      const amountDigits = normalizeDigits(formatPhp(b.total_amount));
-      const qDigits = normalizeDigits(q);
+        const budLabel = `BUD-${b.budget_number}`;
+        const projectCode = (b as { project_code?: string | null })
+          .project_code;
+        const statusText = statusLabel(b.status);
+        const amountDigits = normalizeDigits(formatPhp(b.total_amount));
+        const qDigits = normalizeDigits(q);
 
-      return (
-        includesQuery(b.id, q) ||
-        includesQuery(projectCode, q) ||
-        includesQuery(budLabel, q) ||
-        includesQuery(String(b.budget_number), q) ||
-        includesQuery(projectName, q) ||
-        includesQuery(requesterName, q) ||
-        includesQuery(dept, q) ||
-        includesQuery(b.budget_type, q) ||
-        includesQuery(b.status, q) ||
-        includesQuery(statusText, q) ||
-        (qDigits.length >= 3 && amountDigits.includes(qDigits))
-      );
-    })
+        return (
+          includesQuery(b.id, q) ||
+          includesQuery(projectCode, q) ||
+          includesQuery(budLabel, q) ||
+          includesQuery(String(b.budget_number), q) ||
+          includesQuery(projectName, q) ||
+          includesQuery(requesterName, q) ||
+          includesQuery(dept, q) ||
+          includesQuery(b.budget_type, q) ||
+          includesQuery(b.status, q) ||
+          includesQuery(statusText, q) ||
+          (qDigits.length >= 3 && amountDigits.includes(qDigits))
+        );
+      })
     : allBudgets;
 
   // Prepare mobile card data
@@ -302,9 +302,10 @@ export default async function BudgetIndexPage({
                     })}
                     className={`
                       px-4 py-2 rounded-lg text-sm font-medium transition-all border
-                      ${isActive
-                        ? activeClass + " border ring-1"
-                        : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                      ${
+                        isActive
+                          ? activeClass + " border ring-1"
+                          : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                       }
                     `}
                   >
