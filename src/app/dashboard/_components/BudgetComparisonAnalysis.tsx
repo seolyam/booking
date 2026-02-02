@@ -48,8 +48,6 @@ function DonutComparisonChart({
     ? `${deltaPct >= 0 ? "+" : ""}${Math.round(deltaPct)}%`
     : "—";
 
-  const isHigher = currentAmount > avg;
-
   const vb = 100;
   const center = vb / 2;
   const rInner = 34;

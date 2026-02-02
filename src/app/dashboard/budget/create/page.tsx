@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 // import { useMemo, useCallback } from "react"; // DISABLED - for project feature
-import { Bell, Trash2, Calendar, FileText, Layers, Wallet, AlertCircle, Save, Send, SendHorizonal, SendIcon } from "lucide-react";
+import {
+  Bell,
+  Trash2,
+  Calendar,
+  FileText,
+  Layers,
+  Wallet,
+  AlertCircle,
+  Save,
+  SendIcon,
+} from "lucide-react";
 // import { FolderPlus, Building2 } from "lucide-react"; // DISABLED - for project feature
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
