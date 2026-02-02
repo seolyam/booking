@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 // import { useMemo, useCallback } from "react"; // DISABLED - for project feature
-import { Bell, Trash2, Calendar, FileText, Layers, Wallet, AlertCircle } from "lucide-react";
+import {
+  Bell,
+  Trash2,
+  Calendar,
+  FileText,
+  Layers,
+  Wallet,
+  AlertCircle,
+  Save,
+  SendIcon,
+} from "lucide-react";
 // import { FolderPlus, Building2 } from "lucide-react"; // DISABLED - for project feature
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -404,7 +414,7 @@ export default function CreateBudgetPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -471,15 +481,17 @@ export default function CreateBudgetPage() {
             <button
               type="button"
               onClick={() => setBudgetType("capex")}
-              className={`p-4 border-2 rounded-lg text-left transition-all ${budgetType === "capex"
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-200 bg-white hover:border-gray-300"
-                }`}
+              className={`p-4 border-2 rounded-lg text-left transition-all ${
+                budgetType === "capex"
+                  ? "border-blue-400 bg-blue-50"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              }`}
             >
               <div className="flex items-center justify-between">
                 <div
-                  className={`font-semibold text-lg ${budgetType === "capex" ? "text-blue-700" : "text-gray-900"
-                    }`}
+                  className={`font-semibold text-lg ${
+                    budgetType === "capex" ? "text-blue-700" : "text-gray-900"
+                  }`}
                 >
                   CapEx
                 </div>
@@ -490,14 +502,16 @@ export default function CreateBudgetPage() {
                 )}
               </div>
               <div
-                className={`text-sm mt-1 ${budgetType === "capex" ? "text-blue-600" : "text-gray-600"
-                  }`}
+                className={`text-sm mt-1 ${
+                  budgetType === "capex" ? "text-blue-600" : "text-gray-600"
+                }`}
               >
                 Capital Expenditure - Long term assets and infrastructure
               </div>
               <div
-                className={`text-xs mt-2 ${budgetType === "capex" ? "text-blue-500" : "text-gray-400"
-                  }`}
+                className={`text-xs mt-2 ${
+                  budgetType === "capex" ? "text-blue-500" : "text-gray-400"
+                }`}
               >
                 Examples: Heavy Machinery, Vehicles, Buildings
               </div>
@@ -507,15 +521,17 @@ export default function CreateBudgetPage() {
             <button
               type="button"
               onClick={() => setBudgetType("opex")}
-              className={`p-4 border-2 rounded-lg text-left transition-all ${budgetType === "opex"
-                ? "border-purple-400 bg-purple-50"
-                : "border-gray-200 bg-white hover:border-gray-300"
-                }`}
+              className={`p-4 border-2 rounded-lg text-left transition-all ${
+                budgetType === "opex"
+                  ? "border-purple-400 bg-purple-50"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              }`}
             >
               <div className="flex items-center justify-between">
                 <div
-                  className={`font-semibold text-lg ${budgetType === "opex" ? "text-purple-700" : "text-gray-900"
-                    }`}
+                  className={`font-semibold text-lg ${
+                    budgetType === "opex" ? "text-purple-700" : "text-gray-900"
+                  }`}
                 >
                   OpEx
                 </div>
@@ -526,14 +542,16 @@ export default function CreateBudgetPage() {
                 )}
               </div>
               <div
-                className={`text-sm mt-1 ${budgetType === "opex" ? "text-purple-600" : "text-gray-600"
-                  }`}
+                className={`text-sm mt-1 ${
+                  budgetType === "opex" ? "text-purple-600" : "text-gray-600"
+                }`}
               >
                 Operating Expenditure - Day-to-day operational costs
               </div>
               <div
-                className={`text-xs mt-2 ${budgetType === "opex" ? "text-purple-500" : "text-gray-400"
-                  }`}
+                className={`text-xs mt-2 ${
+                  budgetType === "opex" ? "text-purple-500" : "text-gray-400"
+                }`}
               >
                 Examples: Office Supplies, Utilities, Subscriptions
               </div>
@@ -545,8 +563,9 @@ export default function CreateBudgetPage() {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Generated ID:</span>
                 <span
-                  className={`font-mono font-semibold ${budgetType === "capex" ? "text-blue-600" : "text-purple-600"
-                    }`}
+                  className={`font-mono font-semibold ${
+                    budgetType === "capex" ? "text-blue-600" : "text-purple-600"
+                  }`}
                 >
                   {budgetIdPreview}
                 </span>
@@ -635,10 +654,11 @@ export default function CreateBudgetPage() {
                                   <span>{cat.name}</span>
                                   {cat.allowed_type !== "BOTH" && (
                                     <span
-                                      className={`text-[10px] px-1.5 py-0.5 rounded ${cat.allowed_type === "CAPEX"
-                                        ? "bg-blue-100 text-blue-700"
-                                        : "bg-purple-100 text-purple-700"
-                                        }`}
+                                      className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                        cat.allowed_type === "CAPEX"
+                                          ? "bg-blue-100 text-blue-700"
+                                          : "bg-purple-100 text-purple-700"
+                                      }`}
                                     >
                                       {cat.allowed_type}
                                     </span>
@@ -735,6 +755,7 @@ export default function CreateBudgetPage() {
               </div>
             </div>
           </div>
+
         </section>
 
         <div className="border-t border-gray-100" />
@@ -839,7 +860,8 @@ export default function CreateBudgetPage() {
               onClick={() => persistBudget("draft")}
               disabled={isSaving}
             >
-              📄 Save as draft
+              <Save className="h-4 w-4 mr-2" /> Save as draft
+
             </Button>
 
             <Button
@@ -848,14 +870,13 @@ export default function CreateBudgetPage() {
               onClick={() => persistBudget("submit")}
               disabled={isSaving}
             >
-              {isSaving ? "Submitting…" : "✓ Submit request"}
+              <SendIcon className="h-4 w-4 mr-2" />{" "}
+              {isSaving ? "Submitting…" : "Submit request"}
             </Button>
           </div>
 
-
         </section>
       </div>
-
 
     </div>
   );

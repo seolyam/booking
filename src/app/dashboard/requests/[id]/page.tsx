@@ -4,7 +4,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, ArrowLeft, Bell, Wallet, Calendar } from "lucide-react";
 import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
@@ -190,19 +190,19 @@ export default async function RequestViewPage({
   // Requester view: only allow viewing your own requests.
   const budget = looksLikeProjectCode
     ? await db.query.budgets.findFirst({
-        where: sql`${budgets.project_code} = ${decodedId} and ${budgets.user_id} = ${user.id}`,
-      })
+      where: sql`${budgets.project_code} = ${decodedId} and ${budgets.user_id} = ${user.id}`,
+    })
     : looksLikeBudLabel
       ? await db.query.budgets.findFirst({
-          where: sql`${budgets.budget_number} = ${parseInt(decodedId.slice(4), 10)} and ${budgets.user_id} = ${user.id}`,
-        })
+        where: sql`${budgets.budget_number} = ${parseInt(decodedId.slice(4), 10)} and ${budgets.user_id} = ${user.id}`,
+      })
       : Number.isFinite(numericId)
         ? await db.query.budgets.findFirst({
-            where: sql`${budgets.budget_number} = ${numericId} and ${budgets.user_id} = ${user.id}`,
-          })
+          where: sql`${budgets.budget_number} = ${numericId} and ${budgets.user_id} = ${user.id}`,
+        })
         : await db.query.budgets.findFirst({
-            where: sql`${budgets.id} = ${decodedId} and ${budgets.user_id} = ${user.id}`,
-          });
+          where: sql`${budgets.id} = ${decodedId} and ${budgets.user_id} = ${user.id}`,
+        });
 
   if (!budget) notFound();
 
@@ -231,13 +231,13 @@ export default async function RequestViewPage({
     actorIds.length === 0
       ? []
       : await db
-          .select({
-            id: users.id,
-            email: users.email,
-            full_name: users.full_name,
-          })
-          .from(users)
-          .where(inArray(users.id, actorIds));
+        .select({
+          id: users.id,
+          email: users.email,
+          full_name: users.full_name,
+        })
+        .from(users)
+        .where(inArray(users.id, actorIds));
 
   const actorNameById = new Map(
     actorRows.map((a) => [a.id, a.full_name || a.email]),
@@ -268,146 +268,165 @@ export default async function RequestViewPage({
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link
               href="/dashboard/requests"
-              aria-label="Back"
-              className="rounded-full p-2 text-gray-700 hover:bg-black/5"
+              className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
             >
-              <span aria-hidden="true">←</span>
+              <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Budget Tracking
               </h1>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-500">
                 Track the complete lifecycle and history of this budget request
               </div>
             </div>
           </div>
         </div>
 
-        <div
-          className={
-            "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold " +
-            status.cls
-          }
-        >
-          {status.icon}
-          {status.label}
+        <div className="flex items-center gap-3">
+          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-gray-200 hover:text-gray-900 transition-colors">
+            <Bell className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="min-w-0">
+      <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-black/5">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div>
             <div className="flex items-center gap-3">
-              <div className="text-lg font-semibold text-gray-900 truncate">
+              <h2 className="text-2xl font-bold text-gray-900">
                 {displayTitle}
-              </div>
-              <span className={typePill(budget.budget_type)}>
-                {budget.budget_type === "capex" ? "CapEx" : "OpEx"}
+              </h2>
+              <span className={typePill(budget.budget_type) + " uppercase"}>
+                {budget.budget_type === "capex" ? "CAPEX" : "OPEX"}
               </span>
             </div>
-            <div className="mt-1 text-xs text-gray-500">{projectSub}</div>
+            <div className="mt-1 text-sm text-gray-500">{projectSub}</div>
+          </div>
+
+          <div
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide ${status.cls}`}
+          >
+            {status.icon}
+            {status.label}
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-black/5 p-4 md:grid-cols-4">
-          <div>
-            <div className="text-xs text-gray-600">Total amount</div>
-            <div className="mt-1 font-semibold text-gray-900">
+        <div className="mt-8 grid grid-cols-2 gap-8 rounded-2xl bg-gray-50 p-6 md:grid-cols-4">
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Total Amount
+            </div>
+            <div className="mt-2 text-xl font-bold text-gray-900">
               {formatPhp(budget.total_amount)}
             </div>
           </div>
-          <div>
-            <div className="text-xs text-gray-600">Requester</div>
-            <div className="mt-1 font-semibold text-gray-900">
-              {requester?.full_name || requester?.email || "Requester"}
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Requester
+            </div>
+            <div className="mt-2 text-lg font-bold text-gray-900">
+              {requester?.email || "Requester"}
             </div>
           </div>
-          <div>
-            <div className="text-xs text-gray-600">Created</div>
-            <div className="mt-1 font-semibold text-gray-900">{createdAt}</div>
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Created
+            </div>
+            <div className="mt-2 text-lg font-bold text-gray-900">
+              {createdAt}
+            </div>
           </div>
-          <div>
-            <div className="text-xs text-gray-600">Last Updated</div>
-            <div className="mt-1 font-semibold text-gray-900">{updatedAt}</div>
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Last Updated
+            </div>
+            <div className="mt-2 text-lg font-bold text-gray-900">
+              {updatedAt}
+            </div>
           </div>
         </div>
-      </div>
 
-      <WorkflowProgress steps={steps} events={events} />
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 p-6">
-          <div className="text-base font-semibold text-gray-900">
-            ₱ Cost Breakdown
-          </div>
-
-          {items.length === 0 ? (
-            <div className="mt-3 text-sm text-gray-600">No line items.</div>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {items.slice(0, 5).map((it) => (
-                <div
-                  key={it.id}
-                  className="flex items-center justify-between gap-4 rounded-lg bg-black/5 px-4 py-3"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-gray-900 truncate">
-                      {it.description}
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      {`Qty: ${it.quantity} • ${it.quarter}`}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-sm font-semibold text-gray-900">
-                    {formatPhp(it.total_cost)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="mt-10 border-b border-gray-100 pb-10">
+          <WorkflowProgress steps={steps} events={events} />
         </div>
 
-        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 p-6">
-          <div className="text-base font-semibold text-gray-900">
-            Project timeline
+        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-2">
+          <div>
+            <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <Wallet className="h-5 w-5 text-gray-400" /> Cost Breakdown
+            </h3>
+
+            {items.length === 0 ? (
+              <div className="text-sm text-gray-500">No line items.</div>
+            ) : (
+              <div className="space-y-4">
+                {items.slice(0, 5).map((it) => (
+                  <div
+                    key={it.id}
+                    className="flex items-center justify-between rounded-xl bg-gray-50 p-4"
+                  >
+                    <div>
+                      <div className="font-bold text-gray-900">
+                        {it.description}
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {it.quarter ? `${it.quarter} | ` : ""} Qty:{" "}
+                        {it.quantity}
+                      </div>
+                    </div>
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatPhp(it.total_cost)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="mt-4 space-y-4 rounded-lg bg-black/5 p-4">
-            {budget.start_date && (
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm text-gray-700">Start Date</div>
-                <div className="text-sm font-semibold text-gray-900">
-                  {formatDateShort(budget.start_date)}
+          <div>
+            <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <Calendar className="h-5 w-5 text-gray-400" /> Project timeline
+            </h3>
+            <div className="space-y-6 rounded-xl bg-gray-50 p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Start Date
+                </div>
+                <div className="font-bold text-gray-900">
+                  {budget.start_date
+                    ? formatDateShort(budget.start_date)
+                    : "-"}
                 </div>
               </div>
-            )}
-            {budget.end_date && (
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm text-gray-700">End Date</div>
-                <div className="text-sm font-semibold text-gray-900">
-                  {formatDateShort(budget.end_date)}
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  End Date
+                </div>
+                <div className="font-bold text-gray-900">
+                  {budget.end_date ? formatDateShort(budget.end_date) : "-"}
                 </div>
               </div>
-            )}
-            {!budget.start_date && !budget.end_date && (
-              <div className="text-sm text-gray-600">No timeline set.</div>
-            )}
-          </div>
 
-          {budget.variance_explanation ? (
-            <div className="mt-4">
-              <div className="text-sm font-semibold text-gray-900">
-                Variance explanation
-              </div>
-              <div className="mt-1 text-sm text-gray-700">
-                {budget.variance_explanation}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Variance Explanation
+                </div>
+                {budget.variance_explanation ? (
+                  <div className="text-sm font-medium text-gray-900 break-words whitespace-pre-wrap">
+                    {budget.variance_explanation}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">
+                    No variance explanation provided
+                  </div>
+                )}
               </div>
             </div>
-          ) : null}
+          </div>
         </div>
       </div>
     </div>
