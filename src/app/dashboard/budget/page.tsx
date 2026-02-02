@@ -40,13 +40,16 @@ function statusLabel(status: string) {
     .join(" ");
 }
 
-/* Helper Functions */
-function typePill(type: "capex" | "opex") {
-  const cls =
-    type === "capex"
-      ? "bg-blue-100 text-blue-700"
-      : "bg-purple-100 text-purple-700";
-  return `inline-flex items-center justify-center rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide min-w-[60px] ${cls}`;
+function statusPill(status: string) {
+  const base =
+    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
+  if (status === "approved") return `${base} bg-green-100 text-green-700`;
+  if (status === "revision_requested")
+    return `${base} bg-orange-100 text-orange-700`;
+  if (status === "rejected") return `${base} bg-red-100 text-red-700`;
+  if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
+  // submitted / verified / verified_by_reviewer -> pending-ish
+  return `${base} bg-blue-100 text-blue-700`;
 }
 
 function statusToVariant(
@@ -59,23 +62,12 @@ function statusToVariant(
   return "info";
 }
 
-function statusPill(status: string) {
-  let cls = "bg-gray-100 text-gray-600";
-  if (status === "approved") {
-    cls = "bg-green-50 text-green-600";
-  } else if (
-    status === "submitted" ||
-    status === "verified" ||
-    status === "verified_by_reviewer"
-  ) {
-    cls = "bg-blue-50 text-blue-600";
-  } else if (status === "revision_requested") {
-    cls = "bg-orange-50 text-orange-600";
-  } else if (status === "rejected") {
-    cls = "bg-red-50 text-red-600";
-  }
-
-  return `inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${cls}`;
+function typePill(type: "capex" | "opex") {
+  const base =
+    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
+  return type === "capex"
+    ? `${base} bg-blue-100 text-blue-700`
+    : `${base} bg-purple-100 text-purple-700`;
 }
 
 type StatusFilter = "all" | "approved" | "pending" | "revision";

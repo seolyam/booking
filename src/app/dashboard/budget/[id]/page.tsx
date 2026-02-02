@@ -318,13 +318,11 @@ export default async function BudgetDetailPage({
 
         <div className="flex items-center gap-3">
           {canApprove && (
-            <div className="[&_button]:bg-white [&_button]:text-gray-900 [&_button]:ring-1 [&_button]:ring-gray-200 [&_button]:shadow-sm [&_button]:hover:bg-gray-50 [&_button]:font-medium">
-              <ApprovalDecisionButton
-                budgetId={budget.id}
-                budgetStatus={budget.status}
-                redirectHref={null}
-              />
-            </div>
+            <ApprovalDecisionButton
+              budgetId={budget.id}
+              budgetStatus={budget.status}
+              redirectHref={null}
+            />
           )}
           <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-gray-200 hover:text-gray-900 transition-colors">
             <Bell className="h-5 w-5" />
