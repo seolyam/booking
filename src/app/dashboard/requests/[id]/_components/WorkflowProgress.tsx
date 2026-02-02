@@ -34,13 +34,15 @@ function StepDot({
   const isDone = state === "done";
   const isCurrent = state === "current";
 
+  const isApproved = statusType === "approved";
+
   // Determine colors based on state and statusType
   let borderColor = "";
   let bgColor = "";
   let iconColor = "";
 
-  if (isDone) {
-    // Completed steps are green
+  if (isDone || (isCurrent && isApproved)) {
+    // Completed steps or approved current step are green
     borderColor = "border-green-500";
     bgColor = "bg-white";
     iconColor = "text-green-500";
@@ -75,10 +77,10 @@ function StepDot({
       )}
       aria-hidden="true"
     >
-      {isDone ? (
+      {isDone || (isCurrent && isApproved) ? (
         <Check className={`h-5 w-5 ${iconColor}`} strokeWidth={3} />
       ) : null}
-      {isCurrent && !isDone ? (
+      {isCurrent && !isDone && !isApproved ? (
         <Clock className={`h-5 w-5 ${iconColor}`} strokeWidth={2.5} />
       ) : null}
     </div>

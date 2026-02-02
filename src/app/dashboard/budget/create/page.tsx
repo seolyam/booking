@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 // import { useMemo, useCallback } from "react"; // DISABLED - for project feature
-import { Bell, Trash2, Calendar } from "lucide-react";
+import {
+  Bell,
+  Trash2,
+  Calendar,
+  FileText,
+  Layers,
+  Wallet,
+  AlertCircle,
+  Save,
+  SendIcon,
+} from "lucide-react";
 // import { FolderPlus, Building2 } from "lucide-react"; // DISABLED - for project feature
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -256,7 +266,7 @@ export default function CreateBudgetPage() {
     (sum, item) =>
       sum +
       (parseInt(item.quantity as string) || 0) *
-        (parseFloat(item.unitCost as string) || 0),
+      (parseFloat(item.unitCost as string) || 0),
     0,
   );
 
@@ -404,7 +414,7 @@ export default function CreateBudgetPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -430,409 +440,444 @@ export default function CreateBudgetPage() {
         The project grouping feature will be re-enabled in a future update.
       */}
 
-      {/* Budget Request Details */}
-      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>📝</span> Budget Request Details
-        </h2>
-        <div className="grid grid-cols-1 gap-4">
-          <div>
-            <Label className="text-gray-700 font-medium mb-2 block">
-              Budget Request Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              placeholder="e.g., HV Test Equipment Upgrade (Q2 2026)"
-              value={budgetTitle}
-              onChange={(e) => setBudgetTitle(e.target.value)}
-              className="border-gray-300"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Give this request a clear, concise name. It is separate from the
-              project name.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Phase 2: Budget Type Selection */}
-      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>📋</span> Budget Type & Classification
-        </h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          {/* CapEx */}
-          <button
-            type="button"
-            onClick={() => setBudgetType("capex")}
-            className={`p-4 border-2 rounded-lg text-left transition-all ${
-              budgetType === "capex"
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-200 bg-white hover:border-gray-300"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div
-                className={`font-semibold text-lg ${
-                  budgetType === "capex" ? "text-blue-700" : "text-gray-900"
-                }`}
-              >
-                CapEx
-              </div>
-              {budgetType === "capex" && budgetIdPreview && (
-                <span className="text-xs font-mono bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                  {budgetIdPreview}
-                </span>
-              )}
-            </div>
-            <div
-              className={`text-sm mt-1 ${
-                budgetType === "capex" ? "text-blue-600" : "text-gray-600"
-              }`}
-            >
-              Capital Expenditure - Long term assets and infrastructure
-            </div>
-            <div
-              className={`text-xs mt-2 ${
-                budgetType === "capex" ? "text-blue-500" : "text-gray-400"
-              }`}
-            >
-              Examples: Heavy Machinery, Vehicles, Buildings
-            </div>
-          </button>
-
-          {/* OpEx */}
-          <button
-            type="button"
-            onClick={() => setBudgetType("opex")}
-            className={`p-4 border-2 rounded-lg text-left transition-all ${
-              budgetType === "opex"
-                ? "border-purple-400 bg-purple-50"
-                : "border-gray-200 bg-white hover:border-gray-300"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div
-                className={`font-semibold text-lg ${
-                  budgetType === "opex" ? "text-purple-700" : "text-gray-900"
-                }`}
-              >
-                OpEx
-              </div>
-              {budgetType === "opex" && budgetIdPreview && (
-                <span className="text-xs font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                  {budgetIdPreview}
-                </span>
-              )}
-            </div>
-            <div
-              className={`text-sm mt-1 ${
-                budgetType === "opex" ? "text-purple-600" : "text-gray-600"
-              }`}
-            >
-              Operating Expenditure - Day-to-day operational costs
-            </div>
-            <div
-              className={`text-xs mt-2 ${
-                budgetType === "opex" ? "text-purple-500" : "text-gray-400"
-              }`}
-            >
-              Examples: Office Supplies, Utilities, Subscriptions
-            </div>
-          </button>
-        </div>
-
-        {budgetType && budgetIdPreview && (
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Generated ID:</span>
-              <span
-                className={`font-mono font-semibold ${budgetType === "capex" ? "text-blue-600" : "text-purple-600"}`}
-              >
-                {budgetIdPreview}
-              </span>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Cost Items Section */}
-      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span>₱</span> Cost Items <span className="text-red-500">*</span>
+      {/* Main Card: All Details */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm space-y-10">
+        {/* Budget Request Details */}
+        <section>
+          <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-gray-900" /> Budget Request
+            Details
           </h2>
-          <Button
-            type="button"
-            onClick={addItem}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            Add item +
-          </Button>
-        </div>
-
-        {!budgetType && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-            Please select a Budget Type above to see available categories.
-          </div>
-        )}
-
-        {/* Cost Items Table */}
-        <div className="border border-gray-200 rounded-lg">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Category
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Description
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Quantity
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Unit Cost
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                    Total Cost
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b border-gray-200 hover:bg-gray-50"
-                  >
-                    <td className="px-4 py-3">
-                      <Select
-                        value={item.category}
-                        onValueChange={(val) =>
-                          updateItem(item.id, "category", val)
-                        }
-                        disabled={!budgetType || isLoadingCategories}
-                      >
-                        <SelectTrigger className="border-gray-300 min-w-45">
-                          <SelectValue
-                            placeholder={
-                              isLoadingCategories
-                                ? "Loading..."
-                                : "Select Category"
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent position="popper" sideOffset={5}>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.name}>
-                              <div className="flex items-center gap-2">
-                                <span>{cat.name}</span>
-                                {cat.allowed_type !== "BOTH" && (
-                                  <span
-                                    className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                      cat.allowed_type === "CAPEX"
-                                        ? "bg-blue-100 text-blue-700"
-                                        : "bg-purple-100 text-purple-700"
-                                    }`}
-                                  >
-                                    {cat.allowed_type}
-                                  </span>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        placeholder="Item Description"
-                        value={item.description}
-                        onChange={(e) =>
-                          updateItem(item.id, "description", e.target.value)
-                        }
-                        className="border-gray-300"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        min={1}
-                        placeholder="0"
-                        value={item.quantity}
-                        onKeyDown={preventNonNumericKeys}
-                        onChange={(e) => {
-                          const v = sanitizeInteger(e.target.value);
-                          updateItem(item.id, "quantity", v);
-                        }}
-                        className="border-gray-300 w-20"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        pattern="^\\d*\\.?\\d{0,2}$"
-                        min={0}
-                        step="0.01"
-                        value={item.unitCost}
-                        onKeyDown={preventNonNumericKeys}
-                        onChange={(e) => {
-                          const v = sanitizeCurrency(e.target.value);
-                          updateItem(item.id, "unitCost", v);
-                        }}
-                        className="border-gray-300 w-28"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        value={`₱ ${(
-                          (parseInt(item.quantity as string) || 0) *
-                          (parseFloat(item.unitCost as string) || 0)
-                        ).toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`}
-                        disabled
-                        className="bg-gray-50 border-gray-300 text-gray-700 w-40"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {items.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeItem(item.id)}
-                          className="text-red-500 hover:text-red-700 inline-flex"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Total Budget */}
-        <div className="flex justify-end mt-4">
-          <div className="text-right">
-            <div className="text-sm text-gray-600">Total Budget:</div>
-            <div className="text-2xl font-bold text-gray-900">
-              ₱
-              {totalBudget.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <Label className="text-gray-700 font-medium mb-2 block">
+                Budget Request Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="e.g., HV Test Equipment Upgrade (Q2 2026)"
+                value={budgetTitle}
+                onChange={(e) => setBudgetTitle(e.target.value)}
+                className="border-gray-300"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Give this request a clear, concise name. It is separate from the
+                project name.
+              </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Timeline Section */}
-      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Calendar className="h-5 w-5" /> Project Timeline
-        </h2>
+        <div className="border-t border-gray-100" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label className="text-gray-700 font-medium">Start Date</Label>
-              <button
-                type="button"
-                onClick={() => {
-                  const today = new Date().toISOString().split("T")[0];
-                  setStartDate(today);
-                }}
-                className="text-xs text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+        {/* Budget Type Selection */}
+        <section>
+          <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Layers className="h-5 w-5 text-gray-900" /> Budget Type &
+            Classification
+          </h2>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* CapEx */}
+            <button
+              type="button"
+              onClick={() => setBudgetType("capex")}
+              className={`p-4 border-2 rounded-lg text-left transition-all ${
+                budgetType === "capex"
+                  ? "border-blue-400 bg-blue-50"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className={`font-semibold text-lg ${
+                    budgetType === "capex" ? "text-blue-700" : "text-gray-900"
+                  }`}
+                >
+                  CapEx
+                </div>
+                {budgetType === "capex" && budgetIdPreview && (
+                  <span className="text-xs font-mono bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                    {budgetIdPreview}
+                  </span>
+                )}
+              </div>
+              <div
+                className={`text-sm mt-1 ${
+                  budgetType === "capex" ? "text-blue-600" : "text-gray-600"
+                }`}
               >
-                Current Date Today
-              </button>
-            </div>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border-gray-300"
-            />
+                Capital Expenditure - Long term assets and infrastructure
+              </div>
+              <div
+                className={`text-xs mt-2 ${
+                  budgetType === "capex" ? "text-blue-500" : "text-gray-400"
+                }`}
+              >
+                Examples: Heavy Machinery, Vehicles, Buildings
+              </div>
+            </button>
+
+            {/* OpEx */}
+            <button
+              type="button"
+              onClick={() => setBudgetType("opex")}
+              className={`p-4 border-2 rounded-lg text-left transition-all ${
+                budgetType === "opex"
+                  ? "border-purple-400 bg-purple-50"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className={`font-semibold text-lg ${
+                    budgetType === "opex" ? "text-purple-700" : "text-gray-900"
+                  }`}
+                >
+                  OpEx
+                </div>
+                {budgetType === "opex" && budgetIdPreview && (
+                  <span className="text-xs font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                    {budgetIdPreview}
+                  </span>
+                )}
+              </div>
+              <div
+                className={`text-sm mt-1 ${
+                  budgetType === "opex" ? "text-purple-600" : "text-gray-600"
+                }`}
+              >
+                Operating Expenditure - Day-to-day operational costs
+              </div>
+              <div
+                className={`text-xs mt-2 ${
+                  budgetType === "opex" ? "text-purple-500" : "text-gray-400"
+                }`}
+              >
+                Examples: Office Supplies, Utilities, Subscriptions
+              </div>
+            </button>
           </div>
+
+          {budgetType && budgetIdPreview && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Generated ID:</span>
+                <span
+                  className={`font-mono font-semibold ${
+                    budgetType === "capex" ? "text-blue-600" : "text-purple-600"
+                  }`}
+                >
+                  {budgetIdPreview}
+                </span>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <div className="border-t border-gray-100" />
+
+        {/* Cost Items Section */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-gray-900" /> Cost Items{" "}
+              <span className="text-red-500">*</span>
+            </h2>
+            <Button
+              type="button"
+              onClick={addItem}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Add item +
+            </Button>
+          </div>
+
+          {!budgetType && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+              Please select a Budget Type above to see available categories.
+            </div>
+          )}
+
+          {/* Cost Items Table */}
+          <div className="border border-gray-200 rounded-lg">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                      Category
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                      Description
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                      Quantity
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                      Unit Cost
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                      Total Cost
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-gray-200 hover:bg-gray-50"
+                    >
+                      <td className="px-4 py-3">
+                        <Select
+                          value={item.category}
+                          onValueChange={(val) =>
+                            updateItem(item.id, "category", val)
+                          }
+                          disabled={!budgetType || isLoadingCategories}
+                        >
+                          <SelectTrigger className="border-gray-300 min-w-45">
+                            <SelectValue
+                              placeholder={
+                                isLoadingCategories
+                                  ? "Loading..."
+                                  : "Select Category"
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent position="popper" sideOffset={5}>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.name}>
+                                <div className="flex items-center gap-2">
+                                  <span>{cat.name}</span>
+                                  {cat.allowed_type !== "BOTH" && (
+                                    <span
+                                      className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                        cat.allowed_type === "CAPEX"
+                                          ? "bg-blue-100 text-blue-700"
+                                          : "bg-purple-100 text-purple-700"
+                                      }`}
+                                    >
+                                      {cat.allowed_type}
+                                    </span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Input
+                          placeholder="Item Description"
+                          value={item.description}
+                          onChange={(e) =>
+                            updateItem(item.id, "description", e.target.value)
+                          }
+                          className="border-gray-300"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          min={1}
+                          placeholder="0"
+                          value={item.quantity}
+                          onKeyDown={preventNonNumericKeys}
+                          onChange={(e) => {
+                            const v = sanitizeInteger(e.target.value);
+                            updateItem(item.id, "quantity", v);
+                          }}
+                          className="border-gray-300 w-20"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          pattern="^\\d*\\.?\\d{0,2}$"
+                          min={0}
+                          step="0.01"
+                          value={item.unitCost}
+                          onKeyDown={preventNonNumericKeys}
+                          onChange={(e) => {
+                            const v = sanitizeCurrency(e.target.value);
+                            updateItem(item.id, "unitCost", v);
+                          }}
+                          className="border-gray-300 w-28"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Input
+                          value={`₱ ${(
+                            (parseInt(item.quantity as string) || 0) *
+                            (parseFloat(item.unitCost as string) || 0)
+                          ).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`}
+                          disabled
+                          className="bg-gray-50 border-gray-300 text-gray-700 w-40"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="text-red-500 hover:text-red-700 inline-flex"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Total Budget */}
+          <div className="flex justify-end mt-4">
+            <div className="text-right">
+              <div className="text-sm text-gray-600">Total Budget:</div>
+              <div className="text-2xl font-bold text-gray-900">
+                ₱
+                {totalBudget.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <div className="border-t border-gray-100" />
+
+        {/* Timeline Section */}
+        <section>
+          <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-gray-900" /> Project Timeline
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-gray-700 font-medium">Start Date</Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = new Date().toISOString().split("T")[0];
+                    setStartDate(today);
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                >
+                  Current Date Today
+                </button>
+              </div>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="border-gray-300"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700 font-medium mb-2 block">
+                End Date
+              </Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate || undefined}
+                className="border-gray-300"
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-500 mt-3">
+            Optional: Specify the timeline for this budget request.
+          </p>
+        </section>
+
+        <div className="border-t border-gray-100" />
+
+        {/* Variance Explanation Section */}
+        <section>
+          <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-gray-900" /> Variance
+            Explanation
+          </h2>
+
           <div>
             <Label className="text-gray-700 font-medium mb-2 block">
-              End Date
+              Explain any variances from forecast or previous budgets{" "}
+              <span className="text-red-500">*</span>
             </Label>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              min={startDate || undefined}
-              className="border-gray-300"
+            <Textarea
+              placeholder="Explain why this budget differs from forecasted amounts, previous similar projects, or standard costs..."
+              value={varianceExplanation}
+              onChange={(e) => {
+                const text = e.target.value;
+                const wordCount = text
+                  .trim()
+                  .split(/\s+/)
+                  .filter(Boolean).length;
+                if (wordCount <= 120) {
+                  setVarianceExplanation(text);
+                }
+              }}
+              className="border-gray-300 min-h-30"
             />
+            <div className="text-right text-xs text-gray-400 mt-1">
+              {varianceExplanation.trim().split(/\s+/).filter(Boolean).length}
+              /120 words
+            </div>
           </div>
-        </div>
 
-        <p className="text-xs text-gray-500 mt-3">
-          Optional: Specify the timeline for this budget request.
-        </p>
-      </section>
+          {/* Actions */}
+          <div className="flex items-center gap-4 pb-8">
+            <Button
+              type="button"
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              onClick={() => router.push("/dashboard/requests")}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
 
-      {/* Variance Explanation Section */}
-      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>ⓘ</span> Variance Explanation
-        </h2>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={() => persistBudget("draft")}
+              disabled={isSaving}
+            >
+              <Save className="h-4 w-4 mr-2" /> Save as draft
 
-        <div>
-          <Label className="text-gray-700 font-medium mb-2 block">
-            Explain any variances from forecast or previous budgets{" "}
-            <span className="text-red-500">*</span>
-          </Label>
-          <Textarea
-            placeholder="Explain why this budget differs from forecasted amounts, previous similar projects, or standard costs..."
-            value={varianceExplanation}
-            onChange={(e) => setVarianceExplanation(e.target.value)}
-            className="border-gray-300 min-h-30"
-          />
-        </div>
-      </section>
+            </Button>
 
-      {/* Actions */}
-      <div className="flex items-center gap-4 pb-8">
-        <Button
-          type="button"
-          className="bg-orange-600 hover:bg-orange-700 text-white"
-          onClick={() => router.push("/dashboard/requests")}
-          disabled={isSaving}
-        >
-          Cancel
-        </Button>
+            <Button
+              type="button"
+              className="bg-green-600 hover:bg-green-700 text-white ml-auto"
+              onClick={() => persistBudget("submit")}
+              disabled={isSaving}
+            >
+              <SendIcon className="h-4 w-4 mr-2" />{" "}
+              {isSaving ? "Submitting…" : "Submit request"}
+            </Button>
+          </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          onClick={() => persistBudget("draft")}
-          disabled={isSaving}
-        >
-          📄 Save as draft
-        </Button>
-
-        <Button
-          type="button"
-          className="bg-green-600 hover:bg-green-700 text-white ml-auto"
-          onClick={() => persistBudget("submit")}
-          disabled={isSaving}
-        >
-          {isSaving ? "Submitting…" : "✓ Submit request"}
-        </Button>
+        </section>
       </div>
+
     </div>
   );
 }
