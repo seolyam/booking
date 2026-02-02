@@ -1,9 +1,8 @@
 import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, desc, inArray } from "drizzle-orm";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import {
   BudgetIndexClient,
@@ -12,63 +11,6 @@ import {
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
-
-function formatPhp(amount: string) {
-  const n = Number(amount);
-  if (!Number.isFinite(n)) return "₱0";
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-function formatDateShort(d: Date) {
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${mm}-${dd}-${yy}`;
-}
-
-function statusLabel(status: string) {
-  if (status === "verified_by_reviewer") return "Reviewed";
-  if (status === "revision_requested") return "Revision";
-  if (status === "verified") return "Verified";
-  return status
-    .split("_")
-    .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
-    .join(" ");
-}
-
-function statusPill(status: string) {
-  const base =
-    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
-  if (status === "approved") return `${base} bg-green-100 text-green-700`;
-  if (status === "revision_requested")
-    return `${base} bg-orange-100 text-orange-700`;
-  if (status === "rejected") return `${base} bg-red-100 text-red-700`;
-  if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
-  // submitted / verified / verified_by_reviewer -> pending-ish
-  return `${base} bg-blue-100 text-blue-700`;
-}
-
-function statusToVariant(
-  status: string,
-): "success" | "warning" | "error" | "info" | "default" {
-  if (status === "approved") return "success";
-  if (status === "revision_requested") return "warning";
-  if (status === "rejected") return "error";
-  if (status === "draft") return "default";
-  return "info";
-}
-
-function typePill(type: "capex" | "opex") {
-  const base =
-    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
-  return type === "capex"
-    ? `${base} bg-blue-100 text-blue-700`
-    : `${base} bg-purple-100 text-purple-700`;
-}
 
 type StatusFilter = "all" | "approved" | "pending" | "revision";
 
@@ -79,25 +21,6 @@ function getStatusFilterFromSearchParam(
     return value;
   }
   return "all";
-}
-
-function buildBudgetListHref(params: { q?: string; status?: StatusFilter }) {
-  const sp = new URLSearchParams();
-  const q = (params.q ?? "").trim();
-  const status = params.status ?? "all";
-  if (q) sp.set("q", q);
-  if (status !== "all") sp.set("status", status);
-  const qs = sp.toString();
-  return qs ? `/dashboard/budget?${qs}` : "/dashboard/budget";
-}
-
-function includesQuery(haystack: string | null | undefined, q: string) {
-  if (!haystack) return false;
-  return haystack.toLowerCase().includes(q);
-}
-
-function normalizeDigits(value: string) {
-  return value.replace(/[^0-9]/g, "");
 }
 
 export default async function BudgetIndexPage({

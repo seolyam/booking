@@ -1,9 +1,8 @@
 import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
-import { desc, eq, inArray, and, ne } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import {
   RequestsListClient,
   type RequestsListRow,
@@ -11,53 +10,6 @@ import {
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
-
-function formatPhp(amount: string) {
-  const n = Number(amount);
-  if (!Number.isFinite(n)) return "₱0";
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-function formatDateShort(d: Date) {
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${mm}-${dd}-${yy}`;
-}
-
-function typePill(type: "capex" | "opex") {
-  const base =
-    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
-  return type === "capex"
-    ? `${base} bg-blue-100 text-blue-700`
-    : `${base} bg-purple-100 text-purple-700`;
-}
-
-function statusLabel(status: string) {
-  if (status === "verified_by_reviewer") return "Reviewed";
-  if (status === "revision_requested") return "Revision";
-  if (status === "verified") return "Verified";
-  return status
-    .split("_")
-    .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
-    .join(" ");
-}
-
-function statusPill(status: string) {
-  const base =
-    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
-  if (status === "approved") return `${base} bg-green-100 text-green-700`;
-  if (status === "verified") return `${base} bg-green-100 text-green-700`;
-  if (status === "revision_requested")
-    return `${base} bg-orange-100 text-orange-700`;
-  if (status === "rejected") return `${base} bg-red-100 text-red-700`;
-  if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
-  return `${base} bg-blue-100 text-blue-700`;
-}
 
 type StatusFilter = "all" | "approved" | "pending" | "revision" | "draft";
 
@@ -73,25 +25,6 @@ function getStatusFilterFromSearchParam(
     return value;
   }
   return "all";
-}
-
-function buildRequestsHref(params: { q?: string; status?: StatusFilter }) {
-  const sp = new URLSearchParams();
-  const q = (params.q ?? "").trim();
-  const status = params.status ?? "all";
-  if (q) sp.set("q", q);
-  if (status !== "all") sp.set("status", status);
-  const qs = sp.toString();
-  return qs ? `/dashboard/requests?${qs}` : "/dashboard/requests";
-}
-
-function includesQuery(haystack: string | null | undefined, q: string) {
-  if (!haystack) return false;
-  return haystack.toLowerCase().includes(q);
-}
-
-function normalizeDigits(value: string) {
-  return value.replace(/[^0-9]/g, "");
 }
 
 export default async function RequestsPage({
