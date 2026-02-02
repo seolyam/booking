@@ -331,7 +331,7 @@ function NotesCard({ title, value }: { title: string; value: string | null }) {
   return (
     <div className="rounded-xl border border-black/10 bg-white p-5">
       <div className="text-xs font-semibold text-gray-600">{title}</div>
-      <div className="mt-2 text-sm text-gray-900 whitespace-pre-wrap">
+      <div className="mt-2 text-sm text-gray-900 whitespace-pre-wrap break-words overflow-hidden">
         {value && value.trim().length > 0 ? value : "—"}
       </div>
     </div>

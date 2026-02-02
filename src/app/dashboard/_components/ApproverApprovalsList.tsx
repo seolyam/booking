@@ -16,21 +16,6 @@ export default function ApproverApprovalsList({
   const [currentStatus, setCurrentStatus] =
     useState<ApproverDashboardRow["statusLabel"]>(activeStatus);
 
-  type SortKey =
-    | "budgetId"
-    | "projectName"
-    | "type"
-    | "amount"
-    | "status"
-    | "date"
-    | "dateApproved"
-    | "action";
-
-  const [sortKey, setSortKey] = useState<SortKey>(
-    activeStatus === "Approved" ? "dateApproved" : "date",
-  );
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-
   const filteredRows = initialRows.filter((r) => {
     const matchesSearch =
       r.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,11 +24,6 @@ export default function ApproverApprovalsList({
     const matchesStatus = r.statusLabel === currentStatus;
     return matchesSearch && matchesStatus;
   });
-
-  const parsePhp = (s: string) => {
-    const n = Number(s.replace(/[^0-9.-]+/g, ""));
-    return Number.isFinite(n) ? n : 0;
-  };
 
   const parseDateLike = (label: string) => {
     // label is MM-DD-YY
@@ -54,28 +34,14 @@ export default function ApproverApprovalsList({
   };
 
   const sortedRows = [...filteredRows].sort((a, b) => {
-    const dir = sortDir === "asc" ? 1 : -1;
-    const cmp = (x: number | string, y: number | string) => {
-      if (typeof x === "number" && typeof y === "number") return x - y;
-      return String(x).localeCompare(String(y));
-    };
-
-    if (sortKey === "budgetId") return dir * cmp(a.displayId, b.displayId);
-    if (sortKey === "projectName")
-      return dir * cmp(a.projectName, b.projectName);
-    if (sortKey === "type") return dir * cmp(a.type, b.type);
-    if (sortKey === "amount")
-      return dir * (parsePhp(a.amount) - parsePhp(b.amount));
-    if (sortKey === "status") return dir * cmp(a.statusLabel, b.statusLabel);
-    if (sortKey === "date")
-      return dir * (parseDateLike(a.dateLabel) - parseDateLike(b.dateLabel));
-    if (sortKey === "dateApproved") {
+    // Default: newest first.
+    if (currentStatus === "Approved") {
       const aT = a.approvedAt ? Date.parse(a.approvedAt) : 0;
       const bT = b.approvedAt ? Date.parse(b.approvedAt) : 0;
-      return dir * (aT - bT);
+      return bT - aT;
     }
-    // action: no meaningful ordering
-    return 0;
+
+    return parseDateLike(b.dateLabel) - parseDateLike(a.dateLabel);
   });
 
   /* Helper Functions */
@@ -114,27 +80,26 @@ export default function ApproverApprovalsList({
 
   const filterBtn = (status: ApproverDashboardRow["statusLabel"]) => {
     const isActive = currentStatus === status;
-    const activeClass = status === 'Pending'
-      ? "bg-blue-50 text-blue-700 border-blue-200 ring-blue-200"
-      : status === 'Approved'
-        ? "bg-green-50 text-green-700 border-green-200 ring-green-200"
-        : "bg-red-50 text-red-700 border-red-200 ring-red-200";
+    const activeClass =
+      status === "Pending"
+        ? "bg-blue-50 text-blue-700 border-blue-200 ring-blue-200"
+        : status === "Approved"
+          ? "bg-green-50 text-green-700 border-green-200 ring-green-200"
+          : "bg-red-50 text-red-700 border-red-200 ring-red-200";
 
     return (
       <button
         onClick={() => setCurrentStatus(status)}
-        className={`
-                px-4 py-2 rounded-lg text-sm font-medium transition-all border
-                ${isActive
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
+          isActive
             ? activeClass + " border ring-1"
             : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-          }
-            `}
+        }`}
       >
         {status === "Approved" ? "Approved" : status}
       </button>
     );
-  }
+  };
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -196,21 +161,24 @@ export default function ApproverApprovalsList({
                   </td>
                 </tr>
               ) : (
-                filteredRows.map((r) => {
+                sortedRows.map((r) => {
                   const isRejected = r.statusLabel === "Rejected";
 
                   return (
                     <tr
                       key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${isRejected ? "opacity-60 bg-gray-50/30" : ""
-                        }`}
+                      className={`group hover:bg-gray-50/50 transition-colors ${
+                        isRejected ? "bg-gray-50/30" : ""
+                      }`}
                     >
-                      <td className="py-5 pl-8 pr-4">
+                      <td
+                        className={`py-5 pl-8 pr-4 ${isRejected ? "opacity-60" : ""}`}
+                      >
                         <span className="text-sm font-medium text-gray-400">
                           {r.displayId}
                         </span>
                       </td>
-                      <td className="py-5 px-4">
+                      <td className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}>
                         <div>
                           <div className="font-bold text-gray-900 text-sm">
                             {r.projectName}
@@ -220,18 +188,22 @@ export default function ApproverApprovalsList({
                           </div>
                         </div>
                       </td>
-                      <td className="py-5 px-4">
+                      <td className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}>
                         {typePill(r.type)}
                       </td>
-                      <td className="py-5 px-4">
+                      <td className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}>
                         <span className="font-bold text-gray-900 text-sm">
                           {r.amount}
                         </span>
                       </td>
-                      <td className="py-5 px-4">
+                      <td className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}>
                         {statusPill(r.statusLabel)}
                       </td>
-                      <td className="py-5 px-4 text-sm text-gray-400 font-medium">
+                      <td
+                        className={`py-5 px-4 text-sm text-gray-400 font-medium ${
+                          isRejected ? "opacity-60" : ""
+                        }`}
+                      >
                         {r.dateLabel}
                       </td>
                       <td className="py-5 px-4 pr-8 text-right">

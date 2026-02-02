@@ -4,7 +4,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
 import { desc, eq, inArray, and, ne } from "drizzle-orm";
-import { Bell, Search, Eye } from "lucide-react";
+import { Search, Eye } from "lucide-react";
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
@@ -26,14 +26,6 @@ function formatDateShort(d: Date) {
   return `${mm}-${dd}-${yy}`;
 }
 
-function typePill(type: "capex" | "opex") {
-  const base =
-    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
-  return type === "capex"
-    ? `${base} bg-blue-100 text-blue-700`
-    : `${base} bg-purple-100 text-purple-700`;
-}
-
 function statusLabel(status: string) {
   if (status === "verified_by_reviewer") return "Reviewed";
   if (status === "revision_requested") return "Revision";
@@ -42,18 +34,6 @@ function statusLabel(status: string) {
     .split("_")
     .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
     .join(" ");
-}
-
-function statusPill(status: string) {
-  const base =
-    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
-  if (status === "approved") return `${base} bg-green-100 text-green-700`;
-  if (status === "verified") return `${base} bg-green-100 text-green-700`;
-  if (status === "revision_requested")
-    return `${base} bg-orange-100 text-orange-700`;
-  if (status === "rejected") return `${base} bg-red-100 text-red-700`;
-  if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
-  return `${base} bg-blue-100 text-blue-700`;
 }
 
 type StatusFilter = "all" | "approved" | "pending" | "revision" | "draft";
@@ -340,21 +320,20 @@ export default async function RequestsPage({
                     statusText = "Verified";
                   }
 
-                  // Row Opacity for Rejected
-                  const rowOpacity =
-                    b.status === "rejected" ? "opacity-60 bg-gray-50/50" : "";
+                  const isRejected = b.status === "rejected";
+                  const dimCellClass = isRejected ? "opacity-60" : "";
 
                   return (
                     <tr
                       key={b.id}
-                      className={`group hover:bg-gray-50/50 transition-colors ${rowOpacity}`}
+                      className={`group hover:bg-gray-50/50 transition-colors ${isRejected ? "bg-gray-50/50" : ""}`}
                     >
-                      <td className="py-5 pl-8 pr-4">
+                      <td className={`py-5 pl-8 pr-4 ${dimCellClass}`}>
                         <span className="text-sm font-medium text-gray-400">
                           {displayId}
                         </span>
                       </td>
-                      <td className="py-5 px-4">
+                      <td className={`py-5 px-4 ${dimCellClass}`}>
                         <div>
                           <div className="font-bold text-gray-900 text-sm">
                             {projectName}
@@ -364,26 +343,28 @@ export default async function RequestsPage({
                           </div>
                         </div>
                       </td>
-                      <td className="py-5 px-4">
+                      <td className={`py-5 px-4 ${dimCellClass}`}>
                         <span
                           className={`inline-flex items-center justify-center rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide min-w-[60px] ${typeClasses}`}
                         >
                           {typeLabel}
                         </span>
                       </td>
-                      <td className="py-5 px-4">
+                      <td className={`py-5 px-4 ${dimCellClass}`}>
                         <span className="font-bold text-gray-900 text-sm">
                           {formatPhp(b.total_amount)}
                         </span>
                       </td>
-                      <td className="py-5 px-4">
+                      <td className={`py-5 px-4 ${dimCellClass}`}>
                         <span
                           className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${statusBg}`}
                         >
                           {statusText}
                         </span>
                       </td>
-                      <td className="py-5 px-4 text-sm text-gray-400 font-medium">
+                      <td
+                        className={`py-5 px-4 text-sm text-gray-400 font-medium ${dimCellClass}`}
+                      >
                         {formatDateShort(new Date(b.created_at))}
                       </td>
                       <td className="py-5 px-4 pr-8 text-right">
