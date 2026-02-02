@@ -1065,12 +1065,8 @@ export default function DashboardShell({
       </div>
 
       {/* Mobile Content Area - only visible on small screens */}
-      <div className="md:hidden min-h-dvh pt-[60px] pb-[80px] bg-linear-to-b from-[#C7C800] to-[#2F5E3D]">
-        <div className="p-4 min-h-[calc(100dvh-140px)]">
-          <div className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden min-h-full">
-            <div className="p-4 overflow-x-auto">{children}</div>
-          </div>
-        </div>
+      <div className="md:hidden min-h-svh pt-15 pb-[calc(4.5rem+env(safe-area-inset-bottom))] bg-linear-to-b from-[#C7C800] to-[#2F5E3D]">
+        <div className="px-3 py-3">{children}</div>
       </div>
 
       {/* Mobile Bottom Navigation */}

@@ -147,7 +147,7 @@ export default function MobileBottomNav({ role }: { role: Role }) {
   const items = getNavItems(role);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg md:hidden safe-area-pb">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg md:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around h-16 px-2">
         {items.map((item) => {
           const isActive = item.activeMatch
@@ -158,8 +158,9 @@ export default function MobileBottomNav({ role }: { role: Role }) {
             <Link
               key={item.key}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 py-2 px-1 min-h-[56px] rounded-lg transition-colors",
+                "relative flex flex-col items-center justify-center flex-1 py-2 px-1 min-h-14 rounded-lg transition-colors",
                 isActive
                   ? "text-[#358334]"
                   : "text-gray-500 hover:text-gray-700 active:bg-gray-100",
