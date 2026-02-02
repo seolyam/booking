@@ -597,25 +597,15 @@ export default function EditBudgetForm({
             </p>
 
             <div>
+              <Label className="text-gray-700 font-medium mb-2 block">
+                Explain the changes made to this budget request
+              </Label>
               <Textarea
-                placeholder="Explain what changes you've made to address the reviewer's feedback..."
+                placeholder="Explain what changes you've made and why..."
                 value={varianceExplanation}
-                onChange={(e) => {
-                  const text = e.target.value;
-                  const wordCount = text
-                    .trim()
-                    .split(/\s+/)
-                    .filter(Boolean).length;
-                  if (wordCount <= 120) {
-                    setVarianceExplanation(text);
-                  }
-                }}
-                className="w-full rounded-xl border-gray-200 min-h-[120px] p-4 text-sm focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334] resize-y"
+                onChange={(e) => setVarianceExplanation(e.target.value)}
+                className="border-gray-300 min-h-30"
               />
-              <div className="text-right text-xs font-medium text-gray-400 mt-2">
-                {varianceExplanation.trim().split(/\s+/).filter(Boolean).length}
-                /120 words
-              </div>
             </div>
           </section>
         </div>

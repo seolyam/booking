@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 
 import { buildNav, type NavItem, type Role } from "./nav";
 import MobileNavbar from "./MobileNavbar";
+import MobileBottomNav from "./MobileBottomNav";
 
 type Profile = { fullName: string; departmentLine: string; initials: string };
 
@@ -1064,13 +1065,16 @@ export default function DashboardShell({
       </div>
 
       {/* Mobile Content Area - only visible on small screens */}
-      <div className="md:hidden min-h-dvh pt-[60px] bg-linear-to-b from-[#C7C800] to-[#2F5E3D]">
-        <div className="p-4 min-h-[calc(100dvh-60px)]">
+      <div className="md:hidden min-h-dvh pt-[60px] pb-[80px] bg-linear-to-b from-[#C7C800] to-[#2F5E3D]">
+        <div className="p-4 min-h-[calc(100dvh-140px)]">
           <div className="rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden min-h-full">
             <div className="p-4 overflow-x-auto">{children}</div>
           </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav role={role} />
     </>
   );
 }

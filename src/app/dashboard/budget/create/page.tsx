@@ -266,7 +266,7 @@ export default function CreateBudgetPage() {
     (sum, item) =>
       sum +
       (parseInt(item.quantity as string) || 0) *
-        (parseFloat(item.unitCost as string) || 0),
+      (parseFloat(item.unitCost as string) || 0),
     0,
   );
 
@@ -755,6 +755,7 @@ export default function CreateBudgetPage() {
               </div>
             </div>
           </div>
+
         </section>
 
         <div className="border-t border-gray-100" />
@@ -860,6 +861,7 @@ export default function CreateBudgetPage() {
               disabled={isSaving}
             >
               <Save className="h-4 w-4 mr-2" /> Save as draft
+
             </Button>
 
             <Button
@@ -872,8 +874,10 @@ export default function CreateBudgetPage() {
               {isSaving ? "Submitting…" : "Submit request"}
             </Button>
           </div>
+
         </section>
       </div>
+
     </div>
   );
 }

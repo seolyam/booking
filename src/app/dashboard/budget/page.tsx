@@ -4,8 +4,12 @@ import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
-import { Bell, Eye, Search } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
+import {
+  MobileCardList,
+  type MobileCardData,
+} from "@/components/ui/mobile-card";
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
@@ -37,34 +41,34 @@ function statusLabel(status: string) {
     .join(" ");
 }
 
-/* Helper Functions */
-function typePill(type: "capex" | "opex") {
-  const cls =
-    type === "capex"
-      ? "bg-blue-100 text-blue-700"
-      : "bg-purple-100 text-purple-700";
-  return `inline-flex items-center justify-center rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide min-w-[60px] ${cls}`;
+function statusPill(status: string) {
+  const base =
+    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
+  if (status === "approved") return `${base} bg-green-100 text-green-700`;
+  if (status === "revision_requested")
+    return `${base} bg-orange-100 text-orange-700`;
+  if (status === "rejected") return `${base} bg-red-100 text-red-700`;
+  if (status === "draft") return `${base} bg-gray-200 text-gray-700`;
+  // submitted / verified / verified_by_reviewer -> pending-ish
+  return `${base} bg-blue-100 text-blue-700`;
 }
 
-function statusPill(status: string) {
-  let cls = "bg-gray-100 text-gray-600";
-  if (status === "approved") {
-    cls = "bg-green-50 text-green-600";
-  } else if (
-    status === "submitted" ||
-    status === "verified" ||
-    status === "verified_by_reviewer"
-  ) {
-    cls = "bg-blue-50 text-blue-600";
-  } else if (status === "revision_requested") {
-    cls = "bg-orange-50 text-orange-600";
-  } else if (status === "rejected") {
-    cls = "bg-red-50 text-red-600";
-  } else if (status === "verified") {
-    cls = "bg-indigo-50 text-indigo-600";
-  }
+function statusToVariant(
+  status: string,
+): "success" | "warning" | "error" | "info" | "default" {
+  if (status === "approved") return "success";
+  if (status === "revision_requested") return "warning";
+  if (status === "rejected") return "error";
+  if (status === "draft") return "default";
+  return "info";
+}
 
-  return `inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${cls}`;
+function typePill(type: "capex" | "opex") {
+  const base =
+    "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium";
+  return type === "capex"
+    ? `${base} bg-blue-100 text-blue-700`
+    : `${base} bg-purple-100 text-purple-700`;
 }
 
 type StatusFilter = "all" | "approved" | "pending" | "revision";
@@ -214,27 +218,47 @@ export default async function BudgetIndexPage({
     })
     : allBudgets;
 
+  // Prepare mobile card data
+  const mobileCards: MobileCardData[] = filteredBudgets.map((b) => {
+    const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
+    const sub =
+      departmentById.get(b.user_id) ?? requesterById.get(b.user_id) ?? "";
+    const projectCode = (b as { project_code?: string | null }).project_code;
+    const displayId = projectCode ?? `BUD-${b.budget_number}`;
+    const viewHref = projectCode
+      ? `/dashboard/budget/${encodeURIComponent(projectCode)}`
+      : `/dashboard/budget/BUD-${String(b.budget_number).padStart(3, "0")}`;
+
+    return {
+      id: b.id,
+      displayId,
+      title: projectName,
+      subtitle: sub,
+      type: b.budget_type === "capex" ? "CapEx" : "OpEx",
+      amount: formatPhp(b.total_amount),
+      status: {
+        label: statusLabel(b.status),
+        variant: statusToVariant(b.status),
+      },
+      date: formatDateShort(b.created_at),
+      actionHref: viewHref,
+      actionLabel: "View",
+    };
+  });
+
   return (
-    <div className="w-full max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="-m-8 p-6 md:p-8">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">List of Requests</h1>
           <div className="text-sm text-gray-500 mt-1">
             History of all requests
           </div>
         </div>
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
       </div>
 
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
-        {/* Filter Bar */}
-        <div className="p-5 md:p-6 border-b border-gray-100">
+      <div className="mt-6 rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
+        <div className="p-5 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             {/* Search */}
             <form
@@ -312,8 +336,13 @@ export default async function BudgetIndexPage({
           </div>
         </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
+        {/* Mobile Card List */}
+        <div className="md:hidden px-4 pb-4">
+          <MobileCardList items={mobileCards} showAmount />
+        </div>
+
+        {/* Desktop Table Content */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-100 text-[11px] uppercase tracking-wider text-gray-400">
@@ -360,10 +389,11 @@ export default async function BudgetIndexPage({
                   return (
                     <tr
                       key={b.id}
-                      className={`group hover:bg-gray-50/50 transition-colors ${b.status === "rejected"
-                        ? "opacity-60 bg-gray-50/30"
-                        : ""
-                        }`}
+                      className={`border-t border-black/10 ${
+                        b.status === "rejected"
+                          ? "opacity-60 bg-gray-50/30"
+                          : ""
+                      }`}
                     >
                       <td className="py-5 pl-8 pr-4">
                         <span className="text-sm font-medium text-gray-400">

@@ -7,8 +7,13 @@ import {
   Clock,
   Eye,
   TrendingUp,
+  Search,
 } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
+import {
+  MobileCardList,
+  type MobileCardData,
+} from "@/components/ui/mobile-card";
 
 export type ReviewerDashboardRow = {
   budgetId: string;
@@ -71,6 +76,34 @@ export default function ReviewerDashboard({
       return haystack.includes(normalizedSearch);
     });
   }, [enableClientFiltering, rows, clientFilter, normalizedSearch]);
+
+  // Convert to mobile card data
+  const mobileCards: MobileCardData[] = filterableRows.map((r) => ({
+    id: r.budgetId,
+    displayId: r.displayId,
+    title: r.projectName,
+    subtitle: r.projectSub,
+    type: r.type,
+    amount: r.amount,
+    status: {
+      label: r.statusLabel,
+      variant:
+        r.statusLabel === "Pending"
+          ? "info"
+          : r.statusLabel === "Reviewed"
+            ? "warning"
+            : r.statusLabel === "Verified"
+              ? "success"
+              : r.statusLabel === "Revision"
+                ? "warning"
+                : r.statusLabel === "Rejected"
+                  ? "error"
+                  : "default",
+    },
+    date: r.dateLabel,
+    actionHref: r.actionHref,
+    actionLabel: r.actionLabel,
+  }));
 
   const statCard = (
     icon: React.ReactNode,
@@ -155,10 +188,7 @@ export default function ReviewerDashboard({
     );
   };
 
-  const filterBtn = (
-    label: string,
-    filter: "all" | "pending" | "reviewed",
-  ) => {
+  const filterBtn = (label: string, filter: "all" | "pending" | "reviewed") => {
     const isActive = clientFilter === filter;
 
     const baseClass =
@@ -248,7 +278,122 @@ export default function ReviewerDashboard({
         </>
       )}
 
-      <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+      {/* Mobile-only search and filters */}
+      <div className="md:hidden mb-4">
+        {enableClientFiltering ? (
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+              placeholder="Search..."
+              className="h-12 w-full rounded-xl bg-gray-100 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-[#358334]/20 focus:bg-white transition-all"
+            />
+          </div>
+        ) : (
+          <form
+            action="/dashboard/reviewer/review"
+            method="GET"
+            className="relative mb-3"
+          >
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              name="q"
+              defaultValue={searchQuery ?? ""}
+              placeholder="Search..."
+              className="h-12 w-full rounded-xl bg-gray-100 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-[#358334]/20 focus:bg-white transition-all"
+            />
+            {activeFilter && activeFilter !== "all" ? (
+              <input type="hidden" name="status" value={activeFilter} />
+            ) : null}
+          </form>
+        )}
+
+        {/* Mobile Filter Chips */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          {enableClientFiltering ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setClientFilter("all")}
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  clientFilter === "all"
+                    ? "bg-gray-800 text-white"
+                    : "bg-white text-gray-600 border border-gray-200"
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientFilter("pending")}
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  clientFilter === "pending"
+                    ? "bg-blue-500 text-white"
+                    : "bg-white text-blue-600 border border-blue-200"
+                }`}
+              >
+                Pending
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientFilter("reviewed")}
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  clientFilter === "reviewed"
+                    ? "bg-yellow-500 text-white"
+                    : "bg-white text-yellow-600 border border-yellow-200"
+                }`}
+              >
+                Reviewed
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/dashboard/reviewer/review"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeFilter === "all"
+                    ? "bg-gray-800 text-white"
+                    : "bg-white text-gray-600 border border-gray-200"
+                }`}
+              >
+                All
+              </Link>
+              <Link
+                href="/dashboard/reviewer/review?status=pending"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeFilter === "pending"
+                    ? "bg-blue-500 text-white"
+                    : "bg-white text-blue-600 border border-blue-200"
+                }`}
+              >
+                Pending
+              </Link>
+              <Link
+                href="/dashboard/reviewer/review?status=reviewed"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeFilter === "reviewed"
+                    ? "bg-yellow-500 text-white"
+                    : "bg-white text-yellow-600 border border-yellow-200"
+                }`}
+              >
+                Reviewed
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Card List (outside the white card on mobile) */}
+      <div className="md:hidden">
+        <MobileCardList
+          items={mobileCards}
+          emptyMessage="No budgets to review right now."
+        />
+      </div>
+
+      {/* Desktop Card Container */}
+      <div className="hidden md:block rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-4 md:p-8">
           {(activeFilter !== undefined || searchQuery !== undefined) && (
             <div className="mb-6 md:mb-8 flex flex-col md:flex-row gap-4 md:items-center">
@@ -317,7 +462,8 @@ export default function ReviewerDashboard({
                       "/dashboard/reviewer/review?status=reviewed",
                     )}
 
-                    {(searchQuery || (activeFilter && activeFilter !== "all")) && (
+                    {(searchQuery ||
+                      (activeFilter && activeFilter !== "all")) && (
                       <Link
                         href="/dashboard/reviewer/review"
                         className="text-sm text-gray-600 hover:underline"
@@ -331,6 +477,7 @@ export default function ReviewerDashboard({
             </div>
           )}
 
+          {/* Desktop Table */}
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <table className="w-full text-sm min-w-[700px]">
               <thead>
@@ -358,10 +505,11 @@ export default function ReviewerDashboard({
                   filterableRows.map((r) => (
                     <tr
                       key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${r.statusLabel === "Rejected"
-                        ? "opacity-60 bg-gray-50/30"
-                        : ""
-                        }`}
+                      className={`group hover:bg-gray-50/50 transition-colors ${
+                        r.statusLabel === "Rejected"
+                          ? "opacity-60 bg-gray-50/30"
+                          : ""
+                      }`}
                     >
                       <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
                         {r.displayId}

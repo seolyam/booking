@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, ChevronUp, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import type { ApproverDashboardRow } from "./ApproverDashboard";
+
+type SortKey = "date" | "amount";
 
 export default function ApproverApprovalsList({
   initialRows,
@@ -15,6 +17,8 @@ export default function ApproverApprovalsList({
   const [searchTerm, setSearchTerm] = useState("");
   const [currentStatus, setCurrentStatus] =
     useState<ApproverDashboardRow["statusLabel"]>(activeStatus);
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const filteredRows = initialRows.filter((r) => {
     const matchesSearch =
@@ -33,18 +37,62 @@ export default function ApproverApprovalsList({
     return new Date(fullYear, mm - 1, dd).getTime();
   };
 
+  const formatIsoShort = (iso: string | null | undefined) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${mm}-${dd}-${yy}`;
+  };
+
   const sortedRows = [...filteredRows].sort((a, b) => {
-    // Default: newest first.
+    const dir = sortDir === "asc" ? 1 : -1;
+
+    if (sortKey === "amount") {
+      const aNum = Number(a.amount.replace(/[^0-9.-]+/g, "")) || 0;
+      const bNum = Number(b.amount.replace(/[^0-9.-]+/g, "")) || 0;
+      return (aNum - bNum) * dir;
+    }
+
+    // Default: date sorting
     if (currentStatus === "Approved") {
       const aT = a.approvedAt ? Date.parse(a.approvedAt) : 0;
       const bT = b.approvedAt ? Date.parse(b.approvedAt) : 0;
-      return bT - aT;
+      return (aT - bT) * dir;
     }
 
-    return parseDateLike(b.dateLabel) - parseDateLike(a.dateLabel);
+    return (parseDateLike(a.dateLabel) - parseDateLike(b.dateLabel)) * dir;
   });
 
-  /* Helper Functions */
+  const onSortHeaderClick = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
+
+  const sortLabel = (key: SortKey, label: string) => {
+    const isActive = sortKey === key;
+    return (
+      <button
+        type="button"
+        onClick={() => onSortHeaderClick(key)}
+        className="inline-flex items-center gap-1 hover:text-gray-600 transition-colors"
+      >
+        {label}
+        {isActive &&
+          (sortDir === "asc" ? (
+            <ChevronUp className="h-3 w-3" />
+          ) : (
+            <ChevronDown className="h-3 w-3" />
+          ))}
+      </button>
+    );
+  };
+
   const typePill = (type: "CapEx" | "OpEx") => {
     const cls =
       type === "CapEx"
@@ -78,28 +126,28 @@ export default function ApproverApprovalsList({
     );
   };
 
-  const filterBtn = (status: ApproverDashboardRow["statusLabel"]) => {
-    const isActive = currentStatus === status;
-    const activeClass =
-      status === "Pending"
-        ? "bg-blue-50 text-blue-700 border-blue-200 ring-blue-200"
-        : status === "Approved"
-          ? "bg-green-50 text-green-700 border-green-200 ring-green-200"
-          : "bg-red-50 text-red-700 border-red-200 ring-red-200";
-
-    return (
-      <button
-        onClick={() => setCurrentStatus(status)}
-        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
-          isActive
-            ? activeClass + " border ring-1"
-            : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-        }`}
-      >
-        {status === "Approved" ? "Approved" : status}
-      </button>
-    );
-  };
+  const filterBtn = (status: ApproverDashboardRow["statusLabel"]) => (
+    <button
+      onClick={() => {
+        setCurrentStatus(status);
+        setSortKey("date");
+        setSortDir("desc");
+      }}
+      className={`px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0 ${
+        currentStatus === status
+          ? status === "Approved"
+            ? "bg-green-50 text-green-600 border-green-200 ring-2 ring-green-400"
+            : status === "Pending"
+              ? "bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-400"
+              : status === "Rejected"
+                ? "bg-red-50 text-red-600 border-red-200 ring-2 ring-red-400"
+                : "bg-gray-100 text-gray-600 border-gray-200 ring-2 ring-gray-400"
+          : "bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400"
+      }`}
+    >
+      {status === "Approved" ? "Approved" : status}
+    </button>
+  );
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -135,35 +183,34 @@ export default function ApproverApprovalsList({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left border-collapse">
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
-              <tr className="border-b border-gray-100 text-[11px] uppercase tracking-wider text-gray-400">
-                <th className="py-6 pl-8 pr-4 font-semibold w-[140px]">
-                  BUDGET ID
+              <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
+                <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
+                <th className="pb-4 pr-4 font-bold">TYPE</th>
+                <th className="pb-4 pr-4 font-bold text-center">
+                  {sortLabel("amount", "AMOUNT")}
                 </th>
-                <th className="py-6 px-4 font-semibold w-[320px]">
-                  PROJECT NAME
+                <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
+                <th className="pb-4 pr-4 font-bold text-center">
+                  {sortLabel(
+                    "date",
+                    currentStatus === "Approved" ? "DATE APPROVED" : "DATE"
+                  )}
                 </th>
-                <th className="py-6 px-4 font-semibold w-[100px]">TYPE</th>
-                <th className="py-6 px-4 font-semibold w-[150px]">AMOUNT</th>
-                <th className="py-6 px-4 font-semibold w-[120px]">STATUS</th>
-                <th className="py-6 px-4 font-semibold w-[120px]">
-                  {currentStatus === "Approved" ? "DATE APPROVED" : "DATE"}
-                </th>
-                <th className="py-6 px-4 pr-8 font-semibold text-right w-[100px]">
-                  ACTION
-                </th>
+                <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredRows.length === 0 ? (
+              {sortedRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
-                    className="py-16 text-center text-sm text-gray-500"
+                    className="py-20 text-center text-gray-400 font-medium"
                   >
-                    No proposals found.
+                    No proposals found with the current filters.
                   </td>
                 </tr>
               ) : (
@@ -178,66 +225,72 @@ export default function ApproverApprovalsList({
                       }`}
                     >
                       <td
-                        className={`py-5 pl-8 pr-4 ${isRejected ? "opacity-60" : ""}`}
+                        className={`py-5 pr-4 font-bold text-gray-400 text-xs ${
+                          isRejected ? "opacity-60" : ""
+                        }`}
                       >
-                        <span className="text-sm font-medium text-gray-400">
-                          {r.displayId}
-                        </span>
+                        {r.displayId}
                       </td>
                       <td
-                        className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}
+                        className={`py-5 pr-4 ${
+                          isRejected ? "opacity-60" : ""
+                        }`}
                       >
-                        <div>
-                          <div className="font-bold text-gray-900 text-sm">
-                            {r.projectName}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-0.5 font-normal">
-                            {r.projectSub}
-                          </div>
+                        <div className="font-medium text-gray-900 leading-tight">
+                          {r.projectName}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5 font-normal">
+                          {r.projectSub}
                         </div>
                       </td>
                       <td
-                        className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}
+                        className={`py-5 pr-4 ${
+                          isRejected ? "opacity-60" : ""
+                        }`}
                       >
                         {typePill(r.type)}
                       </td>
                       <td
-                        className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}
+                        className={`py-5 pr-4 text-gray-900 font-medium text-center ${
+                          isRejected ? "opacity-60" : ""
+                        }`}
                       >
-                        <span className="font-bold text-gray-900 text-sm">
-                          {r.amount}
-                        </span>
+                        {r.amount}
                       </td>
                       <td
-                        className={`py-5 px-4 ${isRejected ? "opacity-60" : ""}`}
+                        className={`py-5 pr-4 text-center ${
+                          isRejected ? "opacity-60" : ""
+                        }`}
                       >
                         {statusPill(r.statusLabel)}
                       </td>
                       <td
-                        className={`py-5 px-4 text-sm text-gray-400 font-medium ${
+                        className={`py-5 pr-4 text-gray-400 font-bold text-xs text-center ${
                           isRejected ? "opacity-60" : ""
                         }`}
                       >
-                        {r.dateLabel}
+                        {currentStatus === "Approved"
+                          ? formatIsoShort(r.approvedAt)
+                          : r.dateLabel}
                       </td>
-                      <td className="py-5 px-4 pr-8 text-right">
+                      <td className="py-5 pr-0 text-center">
                         {(() => {
                           const isPending = r.statusLabel === "Pending";
                           const href = isPending
                             ? `/dashboard/approver/approvals/${encodeURIComponent(
-                                r.displayId,
+                                r.displayId
                               )}`
                             : `/dashboard/budget/${encodeURIComponent(
-                                r.displayId,
+                                r.displayId
                               )}`;
 
                           return (
                             <Link
                               href={href}
-                              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors shadow-sm ${
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
                                 isPending
-                                  ? "bg-orange-600 text-white hover:bg-orange-700"
-                                  : "bg-[#2C3E50] text-white hover:bg-[#1a252f]"
+                                  ? "bg-orange-500 text-white hover:bg-orange-600"
+                                  : "bg-gray-200 text-gray-600 hover:bg-gray-300"
                               }`}
                             >
                               {isPending ? "Review" : "View"}{" "}
