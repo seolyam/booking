@@ -47,3 +47,7 @@ SUPABASE_SETUP.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database backups
+*.sql
+!supabase/migrations/*.sql
