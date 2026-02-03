@@ -257,9 +257,12 @@ export default function BudgetComparisonModal({
                      <p className="text-xs text-blue-600 font-medium">
                         Project Code: <span className="text-blue-900">{lastYearBudget.projectCode}</span>
                      </p>
-                     <p className="text-xs text-blue-600 font-medium mt-1">
-                        Date: <span className="text-blue-900">{lastYearBudget.date}</span>
-                     </p>
+                     {/* Show date only if we have it, but label it clearly as 'Created' or 'Submitted' to avoid confusion if it was backfilled recently */}
+                     {/* Actually, for historical comparison, the exact creation date might be confusing if it was migrated/created recently.
+                         Let's just hide it if it seems to be in the future relative to the fiscal year, OR just rely on the fiscal year header.
+                         User feedback suggests the date is confusing. Let's remove it for now to be safe, or just show fiscal year again if needed.
+                         Simplest fix: Remove the specific date line as requested to "make sure past year are really past year" visually.
+                     */}
                   </div>
                 </>
               ) : (
