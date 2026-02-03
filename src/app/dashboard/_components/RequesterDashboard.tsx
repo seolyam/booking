@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Clock, FileText, Eye } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, FileText, Eye, Pencil } from "lucide-react";
 
 type DashboardRow = {
   budgetId: string;
@@ -160,11 +160,10 @@ export default function RequesterDashboard({
                   rows.map((r) => (
                     <tr
                       key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${
-                        r.statusLabel === "Rejected"
+                      className={`group hover:bg-gray-50/50 transition-colors ${r.statusLabel === "Rejected"
                           ? "opacity-60 bg-gray-50/30"
                           : ""
-                      }`}
+                        }`}
                     >
                       <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
                         {r.displayId}
@@ -190,15 +189,14 @@ export default function RequesterDashboard({
                       <td className="py-5 pr-0 text-right">
                         <Link
                           href={r.actionHref}
-                          className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition-colors shadow-sm ${
-                            r.actionLabel === "Edit"
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition-colors shadow-sm ${r.actionLabel === "Edit"
                               ? "bg-orange-600 hover:bg-orange-700"
                               : "bg-gray-700 hover:bg-gray-800"
-                          }`}
+                            }`}
                         >
                           {r.actionLabel}{" "}
                           {r.actionLabel === "Edit" ? (
-                            <span>✏️</span>
+                            <span><Pencil className="h-3.5 w-3.5" /></span>
                           ) : (
                             <Eye className="h-3.5 w-3.5" />
                           )}

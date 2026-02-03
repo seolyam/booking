@@ -412,12 +412,46 @@ export async function submitBudget(
   const reviewerIds = await getUsersByRole(["reviewer", "superadmin"]);
   const displayId = existingBudget.project_code || existingBudget.budget_number;
 
+  // If this was a revision, notify the specific reviewer who requested it
+  if (existingBudget.status === "revision_requested") {
+    // Find who requested the revision
+    const lastRevisionParams = await db.query.auditLogs.findFirst({
+      where: and(
+        eq(auditLogs.budget_id, budgetId),
+        eq(auditLogs.action, "request_revision")
+      ),
+      orderBy: [desc(auditLogs.timestamp)],
+    });
+
+    if (lastRevisionParams) {
+      // Notify the specific reviewer
+      await notifyRecipients({
+        userIds: [lastRevisionParams.actor_id],
+        title: "Budget Revision Submitted",
+        message: `The budget "${displayId}" you requested revision on has been re-submitted.`,
+        type: "info",
+        link: `/dashboard/reviewer/${budgetId}`,
+        resourceId: budgetId,
+        resourceType: "budget",
+      });
+
+      // Remove this reviewer from the general broadcast to avoid duplicate notifications
+      const generalReviewersIndex = reviewerIds.indexOf(lastRevisionParams.actor_id);
+      if (generalReviewersIndex > -1) {
+        reviewerIds.splice(generalReviewersIndex, 1);
+      }
+    }
+  }
+
+  // Notify remaining reviewers (broadcasting new/updated request)
   await notifyRecipients({
     userIds: reviewerIds,
-    title: "New Budget Request",
-    message: `A new budget request "${displayId}" has been submitted for review.`,
+    title: existingBudget.status === "revision_requested" ? "Budget Re-submitted" : "New Budget Request",
+    message: existingBudget.status === "revision_requested"
+      ? `Budget request "${displayId}" has been revised and re-submitted.`
+      : `A new budget request "${displayId}" has been submitted for review.`,
     type: "info",
-    link: `/dashboard/reviewer/review/${budgetId}`,
+    link: `/dashboard/reviewer/${budgetId}`,
     resourceId: budgetId,
     resourceType: "budget",
   });
@@ -532,7 +566,7 @@ export async function reviewBudget(
   }
 
   invalidateDashboardCaches();
-  revalidatePath("/dashboard/reviewer/review");
+  revalidatePath("/dashboard/reviewer");
   revalidatePath("/dashboard/reviewer");
   revalidatePath("/dashboard/budget");
   revalidatePath("/dashboard/requests");

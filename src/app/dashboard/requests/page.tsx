@@ -4,7 +4,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
 import { desc, eq, inArray, and, ne } from "drizzle-orm";
-import { Bell, Search, Eye, Pencil } from "lucide-react";
+import { Bell, Search, Eye, Pencil, Pen } from "lucide-react";
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";

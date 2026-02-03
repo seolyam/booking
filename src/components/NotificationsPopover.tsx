@@ -21,6 +21,7 @@ export default function NotificationsPopover() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [filter, setFilter] = useState<"all" | "unread">("all");
 
     useEffect(() => {
         // Initial fetch of count
@@ -47,9 +48,7 @@ export default function NotificationsPopover() {
             try {
                 const data = await getNotifications();
                 setNotifications(data);
-                // We do typically reset unread count only when they interact or maybe just seeing them is enough?
-                // Usually clicking "Mark all read" is better, or marking individual. 
-                // But for UX, let's keep the badge until they read.
+                // Switch to 'unread' default if there are pending items? No, standard is 'all' usually or 'unread' if explicitly designed. Let's stick to 'all' as default but maybe 'unread' if high volume. User asked for filters, so 'all' default is safer.
             } catch (e) {
                 console.error(e);
             } finally {
@@ -80,6 +79,11 @@ export default function NotificationsPopover() {
         await markAllAsRead();
     };
 
+    const displayedNotifications = notifications.filter(n => {
+        if (filter === "unread") return !n.is_read;
+        return true;
+    });
+
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -93,29 +97,55 @@ export default function NotificationsPopover() {
                 </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden rounded-2xl bg-white text-gray-900 border-gray-100 shadow-xl">
-                <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5 bg-white">
-                    <div>
-                        <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">Notifications</DialogTitle>
-                        {unreadCount > 0 ? (
-                            <DialogDescription className="text-sm font-medium text-blue-600 mt-0.5">
-                                You have {unreadCount} unread messages
-                            </DialogDescription>
-                        ) : (
-                            <DialogDescription className="text-sm text-gray-500 mt-0.5">
-                                No new messages
-                            </DialogDescription>
+                <div className="flex flex-col border-b border-gray-100 bg-white">
+                    <div className="flex items-center justify-between px-6 py-5 pb-2">
+                        <div>
+                            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">Notifications</DialogTitle>
+                        </div>
+                        {unreadCount > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleMarkAllRead}
+                                className="h-8 px-3 text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Mark all as read
+                            </Button>
                         )}
                     </div>
-                    {unreadCount > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleMarkAllRead}
-                            className="h-8 px-3 text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+
+                    <div className="px-6 pb-0 flex items-center gap-6">
+                        <button
+                            onClick={() => setFilter("all")}
+                            className={cn(
+                                "pb-3 text-sm font-medium border-b-2 transition-all",
+                                filter === "all"
+                                    ? "border-gray-900 text-gray-900"
+                                    : "border-transparent text-gray-500 hover:text-gray-700"
+                            )}
                         >
-                            Mark all as read
-                        </Button>
-                    )}
+                            All
+                        </button>
+                        <button
+                            onClick={() => setFilter("unread")}
+                            className={cn(
+                                "pb-3 text-sm font-medium border-b-2 transition-all flex items-center gap-2",
+                                filter === "unread"
+                                    ? "border-blue-600 text-blue-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700"
+                            )}
+                        >
+                            Unread
+                            {unreadCount > 0 && (
+                                <span className={cn(
+                                    "px-1.5 py-0.5 rounded-full text-[10px] leading-none",
+                                    filter === "unread" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
+                                )}>
+                                    {unreadCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 <ScrollArea className="h-[60vh] max-h-[500px] bg-white">
@@ -123,19 +153,29 @@ export default function NotificationsPopover() {
                         <div className="flex items-center justify-center py-12 text-gray-400">
                             <Loader2 className="h-8 w-8 animate-spin text-gray-200" />
                         </div>
-                    ) : notifications.length === 0 ? (
+                    ) : displayedNotifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 text-center text-gray-500 gap-4">
                             <div className="h-16 w-16 rounded-full bg-gray-50 flex items-center justify-center">
-                                <Bell className="h-8 w-8 text-gray-300" />
+                                {filter === "unread" ? (
+                                    <CheckCircle2 className="h-8 w-8 text-gray-300" />
+                                ) : (
+                                    <Bell className="h-8 w-8 text-gray-300" />
+                                )}
                             </div>
                             <div>
-                                <p className="text-base font-semibold text-gray-900">All caught up</p>
-                                <p className="text-sm text-gray-500 mt-1">No new notifications to show.</p>
+                                <p className="text-base font-semibold text-gray-900">
+                                    {filter === "unread" ? "No unread messages" : "All caught up"}
+                                </p>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    {filter === "unread"
+                                        ? "You've read all your notifications."
+                                        : "No new notifications to show."}
+                                </p>
                             </div>
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-50">
-                            {notifications.map((n) => (
+                            {displayedNotifications.map((n) => (
                                 <div
                                     key={n.id}
                                     onClick={() => !n.is_read ? handleMarkRead(n.id, { stopPropagation: () => { }, preventDefault: () => { } } as React.MouseEvent) : undefined}
@@ -197,7 +237,7 @@ export default function NotificationsPopover() {
                                         {n.link && (
                                             <div className="mt-3 flex items-center">
                                                 <Link
-                                                    href={n.link}
+                                                    href={n.link.replace("/reviewer/review/", "/reviewer/")}
                                                     onClick={(e) => {
                                                         e.stopPropagation(); // Prevent parent div click
                                                         setIsOpen(false);
