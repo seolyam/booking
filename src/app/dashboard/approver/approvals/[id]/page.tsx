@@ -247,24 +247,24 @@ export default async function ApproverReviewDetailPage({
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">
-        <div className="space-y-1">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard/approver/approvals"
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6 text-gray-900" />
-            </Link>
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 md:gap-0">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/approver/approvals"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6 text-gray-900" />
+          </Link>
+          <div className="space-y-1">
             <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
               Budget approval review
             </h1>
+            <p className="text-gray-500 font-medium text-sm md:text-base">
+              Review and verify budget details before forwarding to approver
+            </p>
           </div>
-          <p className="text-gray-500 font-medium ml-12 text-sm md:text-base">
-            Review and verify budget details before forwarding to approver
-          </p>
         </div>
-        <div className="flex items-center gap-3 self-end md:self-auto">
+        <div className="flex items-center gap-3 self-start md:self-auto mt-4 md:mt-2">
           <ApprovalDecisionButton
             budgetId={budget.id}
             budgetStatus={budget.status}
