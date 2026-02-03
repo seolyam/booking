@@ -246,6 +246,15 @@ export default async function ApproverReviewDetailPage({
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20">
+      {/* Floating Action Button for Decision */}
+      <div className="fixed bottom-6 right-6 z-50 shadow-2xl rounded-xl">
+        <ApprovalDecisionButton
+          budgetId={budget.id}
+          budgetStatus={budget.status}
+          redirectHref="/dashboard/approver/approvals"
+        />
+      </div>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 md:gap-0">
         <div className="flex items-center gap-4">
@@ -265,14 +274,7 @@ export default async function ApproverReviewDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-3 self-start md:self-auto mt-4 md:mt-2">
-          <ApprovalDecisionButton
-            budgetId={budget.id}
-            budgetStatus={budget.status}
-            redirectHref="/dashboard/approver/approvals"
-          />
-          <button className="hidden md:block p-3 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
-            <Bell className="w-5 h-5 text-gray-900" />
-          </button>
+          {/* Action button will be a floating action button (FAB) */}
         </div>
       </div>
 
