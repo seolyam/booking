@@ -471,7 +471,7 @@ export default async function DetailedProjectComparisonPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="text-sm text-gray-500">
             <Link href="/dashboard/compare" className="hover:text-gray-700">
@@ -485,7 +485,7 @@ export default async function DetailedProjectComparisonPage({
           </h1>
         </div>
 
-        <div className="text-right">
+        <div className="text-left sm:text-right">
           <div className="text-xs text-gray-600">Δ amount</div>
           <div
             className={

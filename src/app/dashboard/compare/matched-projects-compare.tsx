@@ -140,7 +140,7 @@ export function MatchedProjectsCompare({
 
   if (matchedRows.length === 0) {
     return (
-      <div className="p-6 pt-0">
+      <div className="p-4 pt-0 md:p-6 md:pt-0">
         <div className="text-sm font-semibold text-gray-900 mb-2">
           Compare a project ({title})
         </div>
@@ -169,7 +169,7 @@ export function MatchedProjectsCompare({
   const delta = currentAmount - lastAmount;
 
   return (
-    <div className="p-6 pt-0 space-y-4">
+    <div className="p-4 pt-0 md:p-6 md:pt-0 space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="text-sm font-semibold text-gray-900">
