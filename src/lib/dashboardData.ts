@@ -29,6 +29,7 @@ type DashboardBudgetRow = {
   user_id: string;
   budget_number: number;
   project_code: string | null;
+  title: string | null;
   budget_type: "capex" | "opex";
   fiscal_year: number;
   status: string;
@@ -49,6 +50,7 @@ function mapBudgetRow(r: Record<string, unknown>, hasProjectCode: boolean) {
     project_code: hasProjectCode
       ? ((r.project_code as string | null) ?? null)
       : null,
+    title: (r.title as string | null) ?? null,
     budget_type: r.budget_type as "capex" | "opex",
     fiscal_year: coerceNumber(r.fiscal_year),
     status: String(r.status),
@@ -79,6 +81,7 @@ async function selectBudgetsSafe(params: {
         user_id,
         budget_number,
         project_code,
+        title,
         budget_type,
         fiscal_year,
         status,
@@ -196,6 +199,7 @@ export const getReviewerDashboardData = unstable_cache(
         .select({
           id: budgets.id,
           budget_number: budgets.budget_number,
+          title: budgets.title,
           budget_type: budgets.budget_type,
           total_amount: budgets.total_amount,
           status: budgets.status,
@@ -267,6 +271,7 @@ export const getApproverDashboardData = unstable_cache(
         .select({
           id: budgets.id,
           budget_number: budgets.budget_number,
+          title: budgets.title,
           budget_type: budgets.budget_type,
           total_amount: budgets.total_amount,
           status: budgets.status,

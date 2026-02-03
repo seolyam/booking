@@ -135,6 +135,7 @@ export const budgets = pgTable(
     // Human-friendly, year-resetting project ID: CapEx-1..CapEx-N / OpEx-1..OpEx-N
     // Nullable for backwards compatibility (older rows).
     project_code: text("project_code"),
+    title: text("title"),
     budget_type: budgetTypeEnum("budget_type").notNull(),
     fiscal_year: integer("fiscal_year").notNull(),
     status: budgetStatusEnum("status").default("draft").notNull(),
@@ -183,6 +184,7 @@ export const archivedBudgets = pgTable(
       .notNull(),
     budget_number: bigint("budget_number", { mode: "number" }).notNull(),
     project_code: text("project_code"),
+    title: text("title"),
     budget_type: budgetTypeEnum("budget_type").notNull(),
     fiscal_year: integer("fiscal_year").notNull(),
     status: budgetStatusEnum("status").notNull(),

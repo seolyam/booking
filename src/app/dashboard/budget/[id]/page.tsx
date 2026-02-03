@@ -289,8 +289,7 @@ export default async function BudgetDetailPage({
   const updatedAt = formatDateShort(budget.updated_at);
 
   const budgetDisplayId = `BUD-${budget.budget_number}`;
-
-  const projectName = items[0]?.description ?? "Budget Request";
+  const projectName = budget.title || items[0]?.description || "Budget Request";
   const projectSub =
     `${budgetDisplayId} • ${requester?.department ?? ""}`.trim();
 

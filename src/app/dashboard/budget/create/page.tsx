@@ -450,18 +450,26 @@ export default function CreateBudgetPage() {
           </h2>
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label className="text-gray-700 font-medium mb-2 block">
-                Budget Request Name <span className="text-red-500">*</span>
-              </Label>
+              <div className="flex justify-between">
+                <Label className="text-gray-700 font-medium mb-2 block">
+                  Budget Request Name <span className="text-red-500">*</span>
+                </Label>
+                <span className="text-xs text-gray-500">
+                  {budgetTitle.length}/30
+                </span>
+              </div>
               <Input
-                placeholder="e.g., HV Test Equipment Upgrade (Q2 2026)"
+                placeholder="e.g., HV Equipment Upgrade"
                 value={budgetTitle}
-                onChange={(e) => setBudgetTitle(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 30) {
+                    setBudgetTitle(e.target.value);
+                  }
+                }}
                 className="border-gray-300"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Give this request a clear, concise name. It is separate from the
-                project name.
+                Keep it short and descriptive (max 30 characters).
               </p>
             </div>
           </div>

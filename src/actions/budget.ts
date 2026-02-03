@@ -82,12 +82,13 @@ async function archiveFiscalYearTx(params: {
   if (toArchiveCount <= 0) return;
 
   // 1) Snapshot budgets into archive table.
-  await tx.execute(sql`
+      await tx.execute(sql`
     insert into ${archivedBudgets} (
       source_budget_id,
       user_id,
       budget_number,
       project_code,
+      title,
       budget_type,
       fiscal_year,
       status,
@@ -104,6 +105,7 @@ async function archiveFiscalYearTx(params: {
       ${budgets.user_id},
       ${budgets.budget_number},
       ${budgets.project_code},
+      ${budgets.title},
       ${budgets.budget_type},
       ${budgets.fiscal_year},
       ${budgets.status},
@@ -213,7 +215,7 @@ const CreateBudgetSchema = z.object({
   budgetType: z.enum(["capex", "opex"]),
   fiscalYear: z.number().int().min(2025).max(2030),
   projectId: z.string().uuid().optional().nullable(),
-  title: z.string().trim().min(3).max(200),
+  title: z.string().trim().min(3).max(30),
 });
 
 export async function createBudgetDraft(
@@ -284,6 +286,7 @@ export async function createBudgetDraft(
           budget_type: budgetType,
           fiscal_year: fiscalYear,
           project_code: projectCode,
+          title: validated.data.title,
           status: "draft",
           total_amount: "0",
           start_date: startDateStr ? new Date(startDateStr) : null,

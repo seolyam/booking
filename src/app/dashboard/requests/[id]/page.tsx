@@ -243,7 +243,7 @@ export default async function RequestViewPage({
     actorRows.map((a) => [a.id, a.full_name || a.email]),
   );
 
-  const projectName = items[0]?.description ?? "Budget Request";
+  const projectName = budget.title || items[0]?.description || "Budget Request";
   const displayId = budget.project_code ?? `BUD-${budget.budget_number}`;
   const displayTitle = projectName;
   const projectSub = `${displayId} • ${requester?.department ?? ""}`.trim();
