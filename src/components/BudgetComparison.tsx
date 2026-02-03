@@ -58,10 +58,10 @@ export default function BudgetComparison({
         </div>
 
         {/* Main Content - Horizontal Layout */}
-        <div className="flex gap-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
           {/* Pie Chart - Left Side */}
           <div className="flex-shrink-0">
-            <div className="w-40 h-40 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "conic-gradient(from 0deg, rgb(187, 247, 208) 0deg 180deg, rgb(219, 234, 254) 180deg 360deg)" }}>
+            <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "conic-gradient(from 0deg, rgb(187, 247, 208) 0deg 180deg, rgb(219, 234, 254) 180deg 360deg)" }}>
               <div className="text-center">
                 <div className="text-xs text-gray-600 mb-1">Your Request</div>
                 <div className="text-lg font-bold text-gray-900">
@@ -72,7 +72,7 @@ export default function BudgetComparison({
           </div>
 
           {/* Info Boxes - Right Side */}
-          <div className="flex-1 flex flex-col gap-4">
+          <div className="flex-1 flex flex-col gap-4 min-w-0">
             {/* Current Request Box */}
             <div className="bg-green-50 rounded-lg p-4 border border-green-100">
               <div className="text-xs text-gray-600 font-medium mb-1">
@@ -123,15 +123,15 @@ export default function BudgetComparison({
             {/* Modal Content */}
             <div className="p-6 space-y-8">
               {/* Pie Chart and Legend - Horizontal Layout */}
-              <div className="flex items-center gap-12">
-                {/* Pie Chart Center */}
-                <div className="flex-shrink-0">
-                  <div className="w-48 h-48 rounded-full flex items-center justify-center" style={{ background: "conic-gradient(from 0deg, rgb(187, 247, 208) 0deg 180deg, rgb(219, 234, 254) 180deg 360deg)" }}>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-600 mb-1">
-                        Your Request
-                      </div>
-                      <div className="text-xl font-bold text-gray-900">
+            <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-center sm:gap-12">
+              {/* Pie Chart Center */}
+              <div className="flex-shrink-0">
+                <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full flex items-center justify-center" style={{ background: "conic-gradient(from 0deg, rgb(187, 247, 208) 0deg 180deg, rgb(219, 234, 254) 180deg 360deg)" }}>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-600 mb-1">
+                      Your Request
+                    </div>
+                    <div className="text-xl font-bold text-gray-900">
                         {formatPhp(currentAmount)}
                       </div>
                     </div>
@@ -152,7 +152,7 @@ export default function BudgetComparison({
               </div>
 
               {/* Info Boxes Below Chart */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                   <div className="text-xs text-gray-600 font-medium mb-1">
                     Current Request:

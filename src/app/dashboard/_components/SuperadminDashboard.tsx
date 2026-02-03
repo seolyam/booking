@@ -13,6 +13,10 @@ import {
   Settings,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  MobileCardList,
+  type MobileCardData,
+} from "@/components/ui/mobile-card";
 
 export type SuperadminDashboardRow = {
   budgetId: string;
@@ -80,7 +84,13 @@ function StatCard({
   );
 }
 
-function BudgetTable({ rows }: { rows: SuperadminDashboardRow[] }) {
+function BudgetTable({
+  rows,
+  emptyMessage = "No budgets found.",
+}: {
+  rows: SuperadminDashboardRow[];
+  emptyMessage?: string;
+}) {
   const typePill = (type: "CapEx" | "OpEx") => {
     const cls =
       type === "CapEx"
@@ -110,82 +120,114 @@ function BudgetTable({ rows }: { rows: SuperadminDashboardRow[] }) {
     );
   };
 
+  const mobileCards: MobileCardData[] = rows.map((r) => ({
+    id: r.budgetId,
+    displayId: r.displayId,
+    title: r.projectName,
+    subtitle: r.projectSub,
+    type: r.type,
+    amount: r.amount,
+    status: {
+      label: r.statusLabel,
+      variant:
+        r.statusLabel === "Approved"
+          ? "success"
+          : r.statusLabel === "Pending"
+            ? "info"
+            : r.statusLabel === "Revision"
+              ? "warning"
+              : "error",
+    },
+    date: r.dateLabel,
+    actionHref: r.actionHref || `/dashboard/budget/${r.budgetId}`,
+    actionLabel: r.actionLabel || "View",
+  }));
+
   return (
-    <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-      <table className="w-full text-sm min-w-[700px]">
-        <thead>
-          <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-            <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
-            <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
-            <th className="pb-4 pr-4 font-bold">TYPE</th>
-            <th className="pb-4 pr-4 font-bold text-center">AMOUNT</th>
-            <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
-            <th className="pb-4 pr-4 font-bold text-center">DATE</th>
-            <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {rows.length === 0 ? (
-            <tr>
-              <td
-                colSpan={7}
-                className="py-20 text-center text-gray-400 font-medium"
-              >
-                No budgets found.
-              </td>
-            </tr>
-          ) : (
-            rows.map((r) => (
-              <tr
-                key={r.budgetId}
-                className={`group hover:bg-gray-50/50 transition-colors ${
-                  r.statusLabel === "Rejected" ? "opacity-60 bg-gray-50/30" : ""
-                }`}
-              >
-                <td className="py-5 pr-4 font-bold text-gray-400 text-xs">
-                  {r.displayId}
-                </td>
-                <td className="py-5 pr-4">
-                  <div className="font-bold text-gray-900 leading-tight">
-                    {r.projectName}
-                  </div>
-                  <div className="text-xs font-semibold text-gray-400 mt-0.5">
-                    {r.projectSub}
-                  </div>
-                </td>
-                <td className="py-5 pr-4">{typePill(r.type)}</td>
-                <td className="py-5 pr-4 text-gray-900 font-bold text-center">
-                  {r.amount}
-                </td>
-                <td className="py-5 pr-4 text-center">
-                  {statusPill(r.statusLabel)}
-                </td>
-                <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
-                  {r.dateLabel}
-                </td>
-                <td className="py-5 pr-0 text-center">
-                  <Link
-                    href={r.actionHref || `/dashboard/budget/${r.budgetId}`}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
-                      r.actionLabel === "Edit"
-                        ? "bg-orange-500 text-white hover:bg-orange-600"
-                        : "bg-gray-200/80 text-gray-600 hover:bg-gray-300/80"
+    <>
+      <div className="md:hidden">
+        <MobileCardList items={mobileCards} emptyMessage={emptyMessage} />
+      </div>
+      <div className="hidden md:block">
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <table className="w-full text-sm min-w-[700px]">
+            <thead>
+              <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
+                <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
+                <th className="pb-4 pr-4 font-bold">TYPE</th>
+                <th className="pb-4 pr-4 font-bold text-center">AMOUNT</th>
+                <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
+                <th className="pb-4 pr-4 font-bold text-center">DATE</th>
+                <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-20 text-center text-gray-400 font-medium"
+                  >
+                    {emptyMessage}
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => (
+                  <tr
+                    key={r.budgetId}
+                    className={`group hover:bg-gray-50/50 transition-colors ${
+                      r.statusLabel === "Rejected"
+                        ? "opacity-60 bg-gray-50/30"
+                        : ""
                     }`}
                   >
-                    {r.actionLabel || "View"}{" "}
-                    {r.actionLabel === "Edit" ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : (
-                      <Eye className="h-3.5 w-3.5" />
-                    )}
-                  </Link>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+                    <td className="py-5 pr-4 font-bold text-gray-400 text-xs">
+                      {r.displayId}
+                    </td>
+                    <td className="py-5 pr-4">
+                      <div className="font-bold text-gray-900 leading-tight">
+                        {r.projectName}
+                      </div>
+                      <div className="text-xs font-semibold text-gray-400 mt-0.5">
+                        {r.projectSub}
+                      </div>
+                    </td>
+                    <td className="py-5 pr-4">{typePill(r.type)}</td>
+                    <td className="py-5 pr-4 text-gray-900 font-bold text-center">
+                      {r.amount}
+                    </td>
+                    <td className="py-5 pr-4 text-center">
+                      {statusPill(r.statusLabel)}
+                    </td>
+                    <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
+                      {r.dateLabel}
+                    </td>
+                    <td className="py-5 pr-0 text-center">
+                      <Link
+                        href={r.actionHref || `/dashboard/budget/${r.budgetId}`}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
+                          r.actionLabel === "Edit"
+                            ? "bg-orange-500 text-white hover:bg-orange-600"
+                            : "bg-gray-200/80 text-gray-600 hover:bg-gray-300/80"
+                        }`}
+                      >
+                        {r.actionLabel || "View"}{" "}
+                        {r.actionLabel === "Edit" ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" />
+                        )}
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -214,7 +256,7 @@ export default function SuperadminDashboard({
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 md:gap-6 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-6 md:grid-cols-5">
           <StatCard
             icon={<FileText className="h-6 w-6 text-blue-500" />}
             value={requesterStats.totalSubmitted}
@@ -358,7 +400,10 @@ export default function SuperadminDashboard({
                   </p>
                 </div>
               </div>
-              <BudgetTable rows={requesterRows} />
+              <BudgetTable
+                rows={requesterRows}
+                emptyMessage="No budgets found."
+              />
             </div>
           </TabsContent>
 
@@ -397,7 +442,7 @@ export default function SuperadminDashboard({
                   </p>
                 </div>
               </div>
-              <BudgetTable rows={reviewerRows} />
+              <BudgetTable rows={reviewerRows} emptyMessage="No budgets found." />
             </div>
           </TabsContent>
 
@@ -444,7 +489,7 @@ export default function SuperadminDashboard({
                   </p>
                 </div>
               </div>
-              <BudgetTable rows={approverRows} />
+              <BudgetTable rows={approverRows} emptyMessage="No budgets found." />
             </div>
           </TabsContent>
 

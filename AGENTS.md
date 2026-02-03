@@ -129,3 +129,4 @@ Adhere to these guidelines unless a specific file clearly establishes a differen
    - `chore: ...` for maintenance/refactoring
    - `docs: ...` for documentation
    - Example: `feat(auth): implement supabase login handler`
+4. Always push if all are successful and functional.

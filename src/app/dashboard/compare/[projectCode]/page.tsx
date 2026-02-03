@@ -370,12 +370,12 @@ function BudgetHeaderCard({
           <div className="text-xs font-semibold text-gray-600">
             {year} ({label})
           </div>
-          <div className="text-sm font-semibold text-gray-900 mt-1">
-            {formatPhp(budget.total_amount)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            Budget #{budget.budget_number} • {budget.user.department}
-          </div>
+            <div className="text-sm font-semibold text-gray-900 mt-1">
+              {formatPhp(budget.total_amount)}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Budget #{budget.budget_number} • {budget.user.department}
+            </div>
         </div>
         <div className="text-right">
           <div className="mb-2">
@@ -392,11 +392,13 @@ function BudgetHeaderCard({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-2 text-xs text-gray-600">
-        <div>
-          <span className="font-semibold text-gray-700">Requester:</span>{" "}
-          {budget.user.full_name ?? "—"} ({budget.user.email})
-        </div>
+        <div className="mt-4 grid grid-cols-1 gap-2 text-xs text-gray-600">
+          <div>
+            <span className="font-semibold text-gray-700">Requester:</span>{" "}
+            <span className="break-words">
+              {budget.user.full_name ?? "—"} ({budget.user.email})
+            </span>
+          </div>
         <div>
           <span className="font-semibold text-gray-700">Created:</span>{" "}
           {formatDateShort(budget.created_at)}

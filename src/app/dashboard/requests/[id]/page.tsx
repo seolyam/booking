@@ -266,7 +266,7 @@ export default async function RequestViewPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
         <div>
           <div className="flex items-center gap-4">
             <Link
@@ -293,7 +293,7 @@ export default async function RequestViewPage({
         </div>
       </div>
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-black/5">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-3">
@@ -304,7 +304,9 @@ export default async function RequestViewPage({
                 {budget.budget_type === "capex" ? "CAPEX" : "OPEX"}
               </span>
             </div>
-            <div className="mt-1 text-sm text-gray-500">{projectSub}</div>
+            <div className="mt-1 text-sm text-gray-500 break-words">
+              {projectSub}
+            </div>
           </div>
 
           <div
@@ -315,8 +317,8 @@ export default async function RequestViewPage({
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-8 rounded-2xl bg-gray-50 p-6 md:grid-cols-4">
-          <div className="text-center">
+        <div className="mt-8 grid min-w-0 grid-cols-1 gap-4 rounded-2xl bg-gray-50 p-4 sm:grid-cols-2 md:grid-cols-4 md:gap-8 md:p-6">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Total Amount
             </div>
@@ -324,15 +326,15 @@ export default async function RequestViewPage({
               {formatPhp(budget.total_amount)}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Requester
             </div>
-            <div className="mt-2 text-lg font-bold text-gray-900">
+            <div className="mt-2 w-full max-w-full overflow-hidden text-base md:text-lg font-bold text-gray-900 break-words">
               {requester?.email || "Requester"}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Created
             </div>
@@ -340,7 +342,7 @@ export default async function RequestViewPage({
               {createdAt}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Last Updated
             </div>

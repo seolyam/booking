@@ -250,7 +250,7 @@ export default function ReviewerDashboard({
           <div className="text-xl md:text-2xl font-bold text-gray-900">
             Budgets to Review
           </div>
-          <div className="grid grid-cols-2 gap-3 md:gap-6 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-6 md:grid-cols-4">
             {statCard(
               <CheckCircle2 className="h-6 w-6 text-green-500" />,
               stats.reviewedToday,

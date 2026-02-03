@@ -254,8 +254,8 @@ export default function BudgetTrackingView({
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-8 rounded-2xl bg-gray-50 p-6 md:grid-cols-4">
-          <div className="text-center">
+        <div className="mt-8 grid min-w-0 grid-cols-1 gap-4 rounded-2xl bg-gray-50 p-4 sm:grid-cols-2 md:grid-cols-4 md:gap-8 md:p-6">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Total Amount
             </div>
@@ -263,15 +263,15 @@ export default function BudgetTrackingView({
               {budget.totalAmount}
             </div>
           </div>
-          <div className="text-center min-w-0">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Requester
             </div>
-            <div className="mt-2 text-base md:text-lg font-bold text-gray-900 break-all md:break-words line-clamp-2">
+            <div className="mt-2 w-full max-w-full overflow-hidden text-base font-bold text-gray-900 break-words md:text-lg">
               {budget.requester}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Created
             </div>
@@ -279,7 +279,7 @@ export default function BudgetTrackingView({
               {budget.createdDate}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Last Updated
             </div>

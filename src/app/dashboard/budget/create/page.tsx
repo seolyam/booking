@@ -598,8 +598,143 @@ export default function CreateBudgetPage() {
             </div>
           )}
 
+          {/* Cost Items (Mobile Cards) */}
+          <div className="space-y-4 md:hidden">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+              >
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-semibold text-gray-500 uppercase">
+                      Category
+                    </Label>
+                    <Select
+                      value={item.category}
+                      onValueChange={(val) =>
+                        updateItem(item.id, "category", val)
+                      }
+                      disabled={!budgetType || isLoadingCategories}
+                    >
+                      <SelectTrigger className="border-gray-300 w-full">
+                        <SelectValue
+                          placeholder={
+                            isLoadingCategories
+                              ? "Loading..."
+                              : "Select Category"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent position="popper" sideOffset={5}>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.name}>
+                            <div className="flex items-center gap-2">
+                              <span>{cat.name}</span>
+                              {cat.allowed_type !== "BOTH" && (
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                    cat.allowed_type === "CAPEX"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-purple-100 text-purple-700"
+                                  }`}
+                                >
+                                  {cat.allowed_type}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-gray-500 uppercase">
+                      Description
+                    </Label>
+                    <Input
+                      placeholder="Item Description"
+                      value={item.description}
+                      onChange={(e) =>
+                        updateItem(item.id, "description", e.target.value)
+                      }
+                      className="border-gray-300"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">
+                        Quantity
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        min={1}
+                        placeholder="0"
+                        value={item.quantity}
+                        onKeyDown={preventNonNumericKeys}
+                        onChange={(e) => {
+                          const v = sanitizeInteger(e.target.value);
+                          updateItem(item.id, "quantity", v);
+                        }}
+                        className="border-gray-300 w-full"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">
+                        Unit Cost
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        pattern="^\\d*\\.?\\d{0,2}$"
+                        min={0}
+                        step="0.01"
+                        value={item.unitCost}
+                        onKeyDown={preventNonNumericKeys}
+                        onChange={(e) => {
+                          const v = sanitizeCurrency(e.target.value);
+                          updateItem(item.id, "unitCost", v);
+                        }}
+                        className="border-gray-300 w-full"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-gray-500 uppercase">
+                      Total Cost
+                    </Label>
+                    <Input
+                      value={`₱ ${(
+                        (parseInt(item.quantity as string) || 0) *
+                        (parseFloat(item.unitCost as string) || 0)
+                      ).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`}
+                      disabled
+                      className="bg-gray-50 border-gray-300 text-gray-700 w-full"
+                    />
+                  </div>
+                </div>
+                {items.length > 1 && (
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.id)}
+                      className="text-red-500 hover:text-red-700 inline-flex items-center gap-2 text-sm font-semibold"
+                    >
+                      <Trash2 className="h-4 w-4" /> Remove item
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
           {/* Cost Items Table */}
-          <div className="border border-gray-200 rounded-lg">
+          <div className="hidden md:block border border-gray-200 rounded-lg">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
