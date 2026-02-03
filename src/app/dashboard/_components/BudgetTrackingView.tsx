@@ -259,7 +259,7 @@ export default function BudgetTrackingView({
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Total Amount
             </div>
-            <div className="mt-2 text-xl font-bold text-gray-900">
+            <div className="mt-2 text-xl font-bold text-gray-900 break-words">
               {budget.totalAmount}
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function BudgetTrackingView({
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Requester
             </div>
-            <div className="mt-2 text-lg font-bold text-gray-900">
+            <div className="mt-2 text-lg font-bold text-gray-900 break-words line-clamp-2">
               {budget.requester}
             </div>
           </div>

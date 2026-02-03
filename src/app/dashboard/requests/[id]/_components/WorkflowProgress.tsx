@@ -154,7 +154,7 @@ export default function WorkflowProgress({
 
       {isOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-hidden"
           role="dialog"
           aria-modal="true"
           aria-label="Complete Audit Tracking"
@@ -162,14 +162,14 @@ export default function WorkflowProgress({
             if (e.target === e.currentTarget) setIsOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
 
-          <div className="relative w-full max-w-3xl rounded-2xl bg-white shadow-xl ring-1 ring-black/10">
-            <div className="flex items-center gap-3 border-b border-black/10 px-6 py-4">
+          <div className="relative w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl bg-white shadow-xl ring-1 ring-black/10 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 md:px-6 md:py-4 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="rounded-full p-2 text-gray-700 hover:bg-black/5"
+                className="rounded-full p-2 text-gray-700 hover:bg-black/5 transition-colors"
                 aria-label="Close"
               >
                 <span aria-hidden="true">←</span>
@@ -179,7 +179,7 @@ export default function WorkflowProgress({
               </div>
             </div>
 
-            <div className="max-h-[75vh] overflow-auto px-6 py-5">
+            <div className="overflow-y-auto px-4 py-4 md:px-6 md:py-5 custom-scrollbar">
               {events.length === 0 ? (
                 <div className="text-sm text-gray-600">No activity yet.</div>
               ) : (
@@ -205,25 +205,25 @@ export default function WorkflowProgress({
                             aria-hidden="true"
                           />
 
-                          <div className="rounded-xl bg-black/5 px-4 py-3">
-                            <div className="flex items-start justify-between gap-4">
+                          <div className="rounded-xl bg-gray-50 px-4 py-3">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
                               <div>
-                                <div className="text-sm font-semibold text-gray-900">
+                                <div className="text-sm font-semibold text-gray-900 break-words">
                                   {e.title}
                                 </div>
-                                <div className="mt-0.5 text-sm text-gray-700">
+                                <div className="mt-0.5 text-sm text-gray-700 break-words">
                                   {e.description}
                                 </div>
                                 <div className="mt-1 text-xs text-gray-600">
                                   {e.actorName ? `by ${e.actorName}` : ""}
                                 </div>
                                 {e.note ? (
-                                  <div className="mt-1 text-xs text-gray-700">
+                                  <div className="mt-1 text-xs text-gray-700 break-words">
                                     {e.note}
                                   </div>
                                 ) : null}
                               </div>
-                              <div className="shrink-0 text-sm font-semibold text-gray-900">
+                              <div className="shrink-0 text-xs sm:text-sm font-medium text-gray-500 sm:text-gray-900">
                                 {e.at}
                               </div>
                             </div>
