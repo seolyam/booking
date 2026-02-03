@@ -295,12 +295,12 @@ export default async function RequestViewPage({
 
         <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-black/5">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-gray-900">
+          <div className="flex-1 min-w-0 md:mr-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-bold text-gray-900 break-words">
                 {displayTitle}
               </h2>
-              <span className={typePill(budget.budget_type) + " uppercase"}>
+              <span className={typePill(budget.budget_type) + " uppercase flex-shrink-0"}>
                 {budget.budget_type === "capex" ? "CAPEX" : "OPEX"}
               </span>
             </div>
@@ -310,7 +310,7 @@ export default async function RequestViewPage({
           </div>
 
           <div
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide ${status.cls}`}
+            className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide ${status.cls}`}
           >
             {status.icon}
             {status.label}
