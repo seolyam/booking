@@ -9,22 +9,27 @@ import BudgetComparisonModal, {
 
 interface BudgetComparisonProps {
   currentAmount: number;
-  historicalAverage: number;
-  historicalMin: number;
-  historicalMax: number;
-  similarProjects: SimilarProject[];
   departmentName: string;
   budgetType: string;
+  lastYearAmount: number | null;
+  lastYearBudget: {
+    id: string;
+    date: string;
+    status: string;
+    projectCode: string;
+  } | null;
+  currentYear: number;
+  lastYear: number;
 }
 
 export default function BudgetComparisonAnalysis({
   currentAmount,
-  historicalAverage,
-  historicalMin,
-  historicalMax,
-  similarProjects,
   departmentName,
   budgetType,
+  lastYearAmount,
+  lastYearBudget,
+  currentYear,
+  lastYear,
 }: BudgetComparisonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -59,7 +64,7 @@ export default function BudgetComparisonAnalysis({
           {/* Functional Donut Chart */}
           <BudgetComparisonChart
             currentAmount={currentAmount}
-            historicalAverage={historicalAverage}
+            historicalAverage={lastYearAmount || currentAmount} // Fallback to current if no history (100% match)
             size={160}
           />
 
@@ -67,7 +72,7 @@ export default function BudgetComparisonAnalysis({
             <div className="p-4 bg-green-50 rounded-xl flex justify-between items-center">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">
-                  Current request
+                  Current request ({currentYear})
                 </p>
                 <p className="text-xl font-bold text-gray-900">
                   {formatPhp(currentAmount)}
@@ -81,10 +86,10 @@ export default function BudgetComparisonAnalysis({
             <div className="p-4 bg-blue-50 rounded-xl flex justify-between items-center">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
-                  Historical average
+                  Last Year ({lastYear})
                 </p>
                 <p className="text-xl font-bold text-gray-900">
-                  {formatPhp(historicalAverage)}
+                  {lastYearAmount !== null ? formatPhp(lastYearAmount) : "N/A"}
                 </p>
               </div>
               <div className="p-2 bg-white rounded-lg shadow-sm">
@@ -95,8 +100,8 @@ export default function BudgetComparisonAnalysis({
         </div>
 
         <p className="mt-6 text-xs text-gray-500 font-medium">
-          Comparing with last year&apos;s similar {budgetType} budgets
-          from {departmentName} department
+          Comparing {currentYear} vs {lastYear} for {budgetType} project code{" "}
+          {lastYearBudget?.projectCode || "(no match)"}.
         </p>
       </div>
 
@@ -104,10 +109,11 @@ export default function BudgetComparisonAnalysis({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         currentAmount={currentAmount}
-        historicalAverage={historicalAverage}
-        historicalMin={historicalMin}
-        historicalMax={historicalMax}
-        similarProjects={similarProjects}
+        lastYearAmount={lastYearAmount}
+        lastYearBudget={lastYearBudget}
+        currentYear={currentYear}
+        lastYear={lastYear}
+        budgetType={budgetType}
       />
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {

@@ -9,8 +9,9 @@ import {
   users,
   auditLogs,
   reviewChecklists,
+  archivedBudgets,
 } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import {
   Calendar,
   AlertCircle,
@@ -212,28 +213,79 @@ export default async function ApproverReviewDetailPage({
     checklist.map((c) => [c.item_key, c.is_checked]),
   );
 
-  // Comparison Data (Mocked similarly to reviewer side for consistency)
-  const historicalAverage = 275000;
-  const historicalMin = 170500;
-  const historicalMax = 340650;
-  const comparisonData = [
-    {
-      id: "1",
-      name: "Previous Upgrade",
-      amount: "250000",
-      date: "01/15/2025",
-      requester: "John Doe",
-      profit: "5%",
-    },
-    {
-      id: "2",
-      name: "System Maintenance",
-      amount: "180000",
-      date: "11/20/2024",
-      requester: "Jane Smith",
-      profit: "3%",
-    },
-  ];
+  // Comparison Logic: Fetch Last Year's Budget
+  const currentYear = new Date().getFullYear(); // Or use budget.fiscal_year if available, but usually comparison is relative to current wall clock year or fiscal year
+  // Actually, better to compare relative to the budget's own fiscal year if it exists, or created_at
+  const budgetFiscalYear = (budget as { fiscal_year?: number }).fiscal_year || budget.created_at.getFullYear();
+  const lastYear = budgetFiscalYear - 1;
+  const projectCode = (budget as { project_code?: string | null }).project_code;
+
+  let lastYearBudgetRecord = null;
+  let lastYearAmount = null;
+
+  if (projectCode) {
+    try {
+      // 1. Check Archived Budgets
+      const archived = await db
+        .select({
+          id: archivedBudgets.id,
+          total_amount: archivedBudgets.total_amount,
+          status: archivedBudgets.status,
+          project_code: archivedBudgets.project_code,
+          created_at: archivedBudgets.created_at,
+        })
+        .from(archivedBudgets)
+        .where(
+          and(
+            eq(archivedBudgets.project_code, projectCode),
+            eq(archivedBudgets.fiscal_year, lastYear),
+          ),
+        )
+        .limit(1);
+
+      if (archived.length > 0) {
+        lastYearBudgetRecord = archived[0];
+      } else {
+        // 2. Check Active Budgets (in case last year's data isn't archived yet)
+        const active = await db
+          .select({
+            id: budgets.id,
+            total_amount: budgets.total_amount,
+            status: budgets.status,
+            project_code: budgets.project_code,
+            created_at: budgets.created_at,
+          })
+          .from(budgets)
+          .where(
+            and(
+              eq(budgets.project_code, projectCode),
+              eq(budgets.fiscal_year, lastYear),
+            ),
+          )
+          .limit(1);
+
+        if (active.length > 0) {
+          lastYearBudgetRecord = active[0];
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching comparison budget:", error);
+      // Fallback or ignore error, displaying no comparison
+    }
+  }
+
+  if (lastYearBudgetRecord) {
+    lastYearAmount = Number(lastYearBudgetRecord.total_amount);
+  }
+
+  const lastYearBudgetData = lastYearBudgetRecord
+    ? {
+        id: lastYearBudgetRecord.id,
+        date: formatDate(lastYearBudgetRecord.created_at),
+        status: lastYearBudgetRecord.status,
+        projectCode: lastYearBudgetRecord.project_code || "Unknown",
+      }
+    : null;
 
   const typeLabel = budget.budget_type === "capex" ? "CapEx" : "OpEx";
 
@@ -487,12 +539,12 @@ export default async function ApproverReviewDetailPage({
           {/* Budget Comparison Analysis */}
           <BudgetComparisonAnalysis
             currentAmount={Number(budget.total_amount)}
-            historicalAverage={historicalAverage}
-            historicalMin={historicalMin}
-            historicalMax={historicalMax}
-            similarProjects={comparisonData}
             departmentName={requester?.department || "Infrastructure"}
             budgetType={typeLabel}
+            lastYearAmount={lastYearAmount}
+            lastYearBudget={lastYearBudgetData}
+            currentYear={budgetFiscalYear}
+            lastYear={lastYear}
           />
         </div>
 
