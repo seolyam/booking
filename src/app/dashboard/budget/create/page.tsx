@@ -417,15 +417,13 @@ export default function CreateBudgetPage() {
   return (
     <div className="w-full max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900">
-            Create Budget Request
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Fill in the details below to create your budget request
-          </p>
-        </div>
+      <div className="mb-10">
+        <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
+          Create Budget Request
+        </h1>
+        <p className="text-gray-500 mt-1 font-medium text-sm md:text-base">
+          Fill in the details below to create your budget request
+        </p>
       </div>
 
       {error && (
