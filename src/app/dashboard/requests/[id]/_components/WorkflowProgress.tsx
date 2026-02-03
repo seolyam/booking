@@ -128,8 +128,8 @@ export default function WorkflowProgress({
         </button>
       </div>
 
-      <div className="relative px-4">
-        <div className="grid grid-cols-3 gap-0 sm:grid-cols-5">
+      <div className="relative px-4 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="min-w-[600px] grid grid-cols-5 gap-0">
           {steps.map((s, idx) => (
             <div key={s.key} className="relative flex flex-col items-center">
               {idx !== 0 ? (

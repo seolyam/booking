@@ -324,9 +324,6 @@ export default async function BudgetDetailPage({
               redirectHref={null}
             />
           )}
-          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-gray-200 hover:text-gray-900 transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
         </div>
       </div>
 
