@@ -246,7 +246,7 @@ export default async function ApproverReviewDetailPage({
     items.length > 0 ? Number(budget.total_amount) / items.length : 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10 pb-20">
+    <div className="max-w-7xl mx-auto space-y-6 pb-20">
       {/* Floating Action Button for Decision */}
       <div className="fixed bottom-24 md:bottom-10 right-6 z-50 shadow-2xl rounded-xl">
         <ApprovalDecisionButton
