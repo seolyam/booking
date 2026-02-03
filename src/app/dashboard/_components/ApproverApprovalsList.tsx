@@ -73,9 +73,9 @@ export default function ApproverApprovalsList({
 
   const mobileCards: MobileCardData[] = sortedRows.map((r) => {
     const isPending = r.statusLabel === "Pending";
-    const href = isPending
-      ? `/dashboard/approver/approvals/${encodeURIComponent(r.displayId)}`
-      : `/dashboard/budget/${encodeURIComponent(r.displayId)}`;
+    const href = `/dashboard/approver/approvals/${encodeURIComponent(
+      r.displayId,
+    )}`;
 
     return {
       id: r.budgetId,
@@ -333,13 +333,9 @@ export default function ApproverApprovalsList({
                         <td className="py-5 pr-0 text-center">
                           {(() => {
                             const isPending = r.statusLabel === "Pending";
-                            const href = isPending
-                              ? `/dashboard/approver/approvals/${encodeURIComponent(
-                                  r.displayId,
-                                )}`
-                              : `/dashboard/budget/${encodeURIComponent(
-                                  r.displayId,
-                                )}`;
+                          const href = `/dashboard/approver/approvals/${encodeURIComponent(
+                              r.displayId,
+                            )}`;
 
                             return (
                               <Link
