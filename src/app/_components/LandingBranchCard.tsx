@@ -28,7 +28,7 @@ export default function LandingBranchCard() {
       <div className="w-full max-w-md flex flex-col items-center">
         <div className="mb-10 flex items-center justify-center">
           <Image
-            src="/images/"
+            src="/images/prime-logo.png"
             alt="Primelectric"
             width={260}
             height={64}

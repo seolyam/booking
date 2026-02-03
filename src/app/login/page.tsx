@@ -133,8 +133,8 @@ export default function LoginPage() {
       <div className="hidden md:flex md:w-[45%] bg-linear-to-br from-[#A8C738] via-[#4DA44E] to-[#2F5E3D] items-center justify-center relative overflow-hidden">
         <div className="flex items-center justify-center">
           <Image
-            src="/images/"
-            alt="Placeholder Logo"
+            src="/images/prime-logo.png"
+            alt="Logo"
             width={400}
             height={400}
             priority
