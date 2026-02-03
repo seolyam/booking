@@ -155,7 +155,7 @@ export default function BudgetComparisonAnalysis({
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-700" />
@@ -171,7 +171,7 @@ export default function BudgetComparisonAnalysis({
           </button>
         </div>
 
-        <div className="flex items-center gap-12">
+        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-12">
           {/* Functional Donut Chart */}
           <DonutComparisonChart
             currentAmount={currentAmount}
@@ -179,7 +179,7 @@ export default function BudgetComparisonAnalysis({
             size={160}
           />
 
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 w-full space-y-4">
             <div className="p-4 bg-green-50 rounded-xl flex justify-between items-center">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">
@@ -218,10 +218,10 @@ export default function BudgetComparisonAnalysis({
 
       {/* Comparison Analysis Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 my-auto">
+            <div className="p-4 md:p-8">
+              <div className="flex items-center justify-between mb-6 md:mb-8">
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setIsModalOpen(false)}
@@ -229,7 +229,7 @@ export default function BudgetComparisonAnalysis({
                   >
                     <ArrowLeft className="w-5 h-5 text-gray-600" />
                   </button>
-                  <h2 className="text-2xl font-bold text-[#1E293B]">
+                  <h2 className="text-xl md:text-2xl font-bold text-[#1E293B]">
                     Comparison Analysis
                   </h2>
                 </div>
@@ -250,7 +250,7 @@ export default function BudgetComparisonAnalysis({
                       historicalAverage={historicalAverage}
                       size={240}
                     />
-                    <div className="absolute -right-32 top-1/4 space-y-3">
+                    <div className="absolute -right-10 md:-right-32 top-1/4 space-y-3 bg-white/80 p-2 rounded-lg md:bg-transparent md:p-0">
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-3 h-3 rounded-full bg-green-500`}
@@ -270,7 +270,7 @@ export default function BudgetComparisonAnalysis({
                 </div>
 
                 {/* Range Stats */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-50 text-center space-y-1">
                     <p className="text-sm font-bold text-blue-800 uppercase tracking-wider">
                       Current Request:
