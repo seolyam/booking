@@ -99,7 +99,7 @@ export default async function DashboardPage() {
       return {
         budgetId: b.id,
         displayId: b.project_code ?? `BUD-${b.budget_number}`,
-        projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
+        projectName: b.title || firstItemByBudgetId.get(b.id) || "Budget Request",
         projectSub: "",
         type,
         amount: formatPhp(b.total_amount),
@@ -127,7 +127,10 @@ export default async function DashboardPage() {
         displayId:
           (b as { project_code?: string | null }).project_code ??
           `BUD-${String(b.budget_number).padStart(3, "0")}`,
-        projectName: reviewerFirstItemByBudgetId.get(b.id) ?? "Budget Request",
+        projectName:
+          (b as { title?: string | null }).title ||
+          reviewerFirstItemByBudgetId.get(b.id) ||
+          "Budget Request",
         projectSub: b.department ?? "",
         type,
         amount: formatPhp(b.total_amount),
@@ -157,7 +160,10 @@ export default async function DashboardPage() {
         budgetId: b.id,
         budgetNumber: b.budget_number,
         displayId,
-        projectName: approverFirstItemByBudgetId.get(b.id) ?? "Budget Request",
+        projectName:
+          (b as { title?: string | null }).title ||
+          approverFirstItemByBudgetId.get(b.id) ||
+          "Budget Request",
         projectSub: b.department ?? "",
         type,
         amount: formatPhp(b.total_amount),
@@ -290,7 +296,8 @@ export default async function DashboardPage() {
             ? ("Rejected" as const)
             : ("Pending" as const);
 
-    const projectName = firstItemByBudgetId.get(b.id) ?? "Budget Request";
+    const projectName =
+      b.title || firstItemByBudgetId.get(b.id) || "Budget Request";
     const isRevisionRequested = b.status === "revision_requested";
     const actionLabel = isRevisionRequested
       ? ("Edit" as const)

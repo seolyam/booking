@@ -112,7 +112,7 @@ export default async function BudgetIndexPage({
       total_amount: b.total_amount,
       status: b.status,
       created_at_iso: b.created_at.toISOString(),
-      projectName: firstItemByBudgetId.get(b.id) ?? "Budget Request",
+      projectName: b.title || firstItemByBudgetId.get(b.id) || "Budget Request",
       requesterName,
       department,
     };

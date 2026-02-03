@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle, Bell, ArrowLeft, Calendar, Wallet } from "lucide-react";
+
 import ApprovalDecisionButton from "@/app/dashboard/_components/ApprovalDecisionButton";
 import WorkflowProgress, {
   type WorkflowEvent,
@@ -289,14 +290,13 @@ export default async function BudgetDetailPage({
   const updatedAt = formatDateShort(budget.updated_at);
 
   const budgetDisplayId = `BUD-${budget.budget_number}`;
-
-  const projectName = items[0]?.description ?? "Budget Request";
+  const projectName = budget.title || items[0]?.description || "Budget Request";
   const projectSub =
     `${budgetDisplayId} • ${requester?.department ?? ""}`.trim();
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
         <div>
           <div className="flex items-center gap-4">
             <Link
@@ -324,13 +324,10 @@ export default async function BudgetDetailPage({
               redirectHref={null}
             />
           )}
-          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-gray-200 hover:text-gray-900 transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
         </div>
       </div>
 
-      <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-black/5">
+      <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-black/5">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-3">
@@ -341,7 +338,9 @@ export default async function BudgetDetailPage({
                 {budget.budget_type === "capex" ? "CAPEX" : "OPEX"}
               </span>
             </div>
-            <div className="mt-1 text-sm text-gray-500">{projectSub}</div>
+            <div className="mt-1 text-sm text-gray-500 break-words">
+              {projectSub}
+            </div>
           </div>
 
           <div
@@ -352,8 +351,8 @@ export default async function BudgetDetailPage({
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-8 rounded-2xl bg-gray-50 p-6 md:grid-cols-4">
-          <div className="text-center">
+        <div className="mt-8 grid min-w-0 grid-cols-1 gap-4 rounded-2xl bg-gray-50 p-4 sm:grid-cols-2 md:grid-cols-4 md:gap-8 md:p-6">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Total Amount
             </div>
@@ -361,15 +360,15 @@ export default async function BudgetDetailPage({
               {formatPhp(budget.total_amount)}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Requester
             </div>
-            <div className="mt-2 text-lg font-bold text-gray-900">
+            <div className="mt-2 w-full max-w-full overflow-hidden text-base md:text-lg font-bold text-gray-900 break-words">
               {requester?.full_name || requester?.email || "Requester"}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Created
             </div>
@@ -377,7 +376,7 @@ export default async function BudgetDetailPage({
               {createdAt}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Last Updated
             </div>

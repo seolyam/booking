@@ -52,6 +52,7 @@ export default function ReviewerDashboard({
     "all" | "pending" | "reviewed"
   >(activeFilter ?? "all");
   const [clientSearch, setClientSearch] = useState(searchQuery ?? "");
+  const [showAllMobile, setShowAllMobile] = useState(false);
   const deferredClientSearch = useDeferredValue(clientSearch);
 
   const normalizedSearch = deferredClientSearch.trim().toLowerCase();
@@ -104,6 +105,10 @@ export default function ReviewerDashboard({
     actionHref: r.actionHref,
     actionLabel: r.actionLabel,
   }));
+
+  const displayedMobileCards = showAllMobile
+    ? mobileCards
+    : mobileCards.slice(0, 10);
 
   const statCard = (
     icon: React.ReactNode,
@@ -245,34 +250,34 @@ export default function ReviewerDashboard({
           <div className="text-xl md:text-2xl font-bold text-gray-900">
             Budgets to Review
           </div>
-          <div className="grid grid-cols-2 gap-3 md:gap-6 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-6 md:grid-cols-4">
             {statCard(
               <CheckCircle2 className="h-6 w-6 text-green-500" />,
               stats.reviewedToday,
               "Reviewed today",
               "bg-green-50",
-              "/dashboard/reviewer/review?status=reviewed",
+              "/dashboard/reviewer?status=reviewed",
             )}
             {statCard(
               <Clock className="h-6 w-6 text-yellow-500" />,
               stats.pendingReview,
               "Pending review",
               "bg-yellow-50",
-              "/dashboard/reviewer/review?status=pending",
+              "/dashboard/reviewer?status=pending",
             )}
             {statCard(
               <TrendingUp className="h-6 w-6 text-blue-500" />,
               stats.awaitingApproval,
               "Awaiting Approval",
               "bg-blue-50",
-              "/dashboard/reviewer/review?status=verified",
+              "/dashboard/reviewer?status=verified",
             )}
             {statCard(
               <AlertCircle className="h-6 w-6 text-orange-400" />,
               stats.needsRevision,
               "Needs revision",
               "bg-orange-50",
-              "/dashboard/reviewer/review?status=revision",
+              "/dashboard/reviewer?status=revision",
             )}
           </div>
         </>
@@ -292,7 +297,7 @@ export default function ReviewerDashboard({
           </div>
         ) : (
           <form
-            action="/dashboard/reviewer/review"
+            action="/dashboard/reviewer"
             method="GET"
             className="relative mb-3"
           >
@@ -316,33 +321,30 @@ export default function ReviewerDashboard({
               <button
                 type="button"
                 onClick={() => setClientFilter("all")}
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  clientFilter === "all"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${clientFilter === "all"
                     ? "bg-gray-800 text-white"
                     : "bg-white text-gray-600 border border-gray-200"
-                }`}
+                  }`}
               >
                 All
               </button>
               <button
                 type="button"
                 onClick={() => setClientFilter("pending")}
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  clientFilter === "pending"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${clientFilter === "pending"
                     ? "bg-blue-500 text-white"
                     : "bg-white text-blue-600 border border-blue-200"
-                }`}
+                  }`}
               >
                 Pending
               </button>
               <button
                 type="button"
                 onClick={() => setClientFilter("reviewed")}
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  clientFilter === "reviewed"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${clientFilter === "reviewed"
                     ? "bg-yellow-500 text-white"
                     : "bg-white text-yellow-600 border border-yellow-200"
-                }`}
+                  }`}
               >
                 Reviewed
               </button>
@@ -350,32 +352,29 @@ export default function ReviewerDashboard({
           ) : (
             <>
               <Link
-                href="/dashboard/reviewer/review"
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeFilter === "all"
+                href="/dashboard/reviewer"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === "all"
                     ? "bg-gray-800 text-white"
                     : "bg-white text-gray-600 border border-gray-200"
-                }`}
+                  }`}
               >
                 All
               </Link>
               <Link
-                href="/dashboard/reviewer/review?status=pending"
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeFilter === "pending"
+                href="/dashboard/reviewer?status=pending"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === "pending"
                     ? "bg-blue-500 text-white"
                     : "bg-white text-blue-600 border border-blue-200"
-                }`}
+                  }`}
               >
                 Pending
               </Link>
               <Link
-                href="/dashboard/reviewer/review?status=reviewed"
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeFilter === "reviewed"
+                href="/dashboard/reviewer?status=reviewed"
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === "reviewed"
                     ? "bg-yellow-500 text-white"
                     : "bg-white text-yellow-600 border border-yellow-200"
-                }`}
+                  }`}
               >
                 Reviewed
               </Link>
@@ -387,9 +386,17 @@ export default function ReviewerDashboard({
       {/* Mobile Card List (outside the white card on mobile) */}
       <div className="md:hidden">
         <MobileCardList
-          items={mobileCards}
+          items={displayedMobileCards}
           emptyMessage="No budgets to review right now."
         />
+        {!showAllMobile && mobileCards.length > 10 && (
+          <button
+            onClick={() => setShowAllMobile(true)}
+            className="w-full mt-4 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            View All ({mobileCards.length - 10} more)
+          </button>
+        )}
       </div>
 
       {/* Desktop Card Container */}
@@ -408,7 +415,7 @@ export default function ReviewerDashboard({
                 </div>
               ) : (
                 <form
-                  action="/dashboard/reviewer/review"
+                  action="/dashboard/reviewer"
                   method="GET"
                   className="relative w-full md:w-96"
                 >
@@ -450,27 +457,27 @@ export default function ReviewerDashboard({
                   </>
                 ) : (
                   <>
-                    {filterChip("All", "all", "/dashboard/reviewer/review")}
+                    {filterChip("All", "all", "/dashboard/reviewer")}
                     {filterChip(
                       "Pending",
                       "pending",
-                      "/dashboard/reviewer/review?status=pending",
+                      "/dashboard/reviewer?status=pending",
                     )}
                     {filterChip(
                       "Reviewed",
                       "reviewed",
-                      "/dashboard/reviewer/review?status=reviewed",
+                      "/dashboard/reviewer?status=reviewed",
                     )}
 
                     {(searchQuery ||
                       (activeFilter && activeFilter !== "all")) && (
-                      <Link
-                        href="/dashboard/reviewer/review"
-                        className="text-sm text-gray-600 hover:underline"
-                      >
-                        Clear
-                      </Link>
-                    )}
+                        <Link
+                          href="/dashboard/reviewer"
+                          className="text-sm text-gray-600 hover:underline"
+                        >
+                          Clear
+                        </Link>
+                      )}
                   </>
                 )}
               </div>
@@ -505,11 +512,10 @@ export default function ReviewerDashboard({
                   filterableRows.map((r) => (
                     <tr
                       key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${
-                        r.statusLabel === "Rejected"
+                      className={`group hover:bg-gray-50/50 transition-colors ${r.statusLabel === "Rejected"
                           ? "opacity-60 bg-gray-50/30"
                           : ""
-                      }`}
+                        }`}
                     >
                       <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
                         {r.displayId}

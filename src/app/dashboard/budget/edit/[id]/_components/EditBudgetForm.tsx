@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Trash2, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -351,8 +352,162 @@ export default function EditBudgetForm({
               </Button>
             </div>
 
-            {/* Cost Items Table */}
-            <div className="border border-gray-100 rounded-xl overflow-hidden ring-1 ring-gray-50">
+            {/* Cost Items (Mobile Cards) */}
+            <div className="space-y-4 md:hidden">
+              {[...existingItems, ...newItems].map((item, index) => {
+                const isExisting = index < existingItems.length;
+                const existingIndex = index;
+                const newIndex = index - existingItems.length;
+
+                return (
+                  <div
+                    key={
+                      isExisting
+                        ? `existing-${existingItems[existingIndex]?.id}`
+                        : `new-${newIndex}`
+                    }
+                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs font-semibold text-gray-500 uppercase">
+                          Category
+                        </Label>
+                        <Select
+                          value={item.category}
+                          onValueChange={(val) =>
+                            isExisting
+                              ? updateExistingItem(existingIndex, "category", val)
+                              : updateNewItem(newIndex, "category", val)
+                          }
+                        >
+                          <SelectTrigger className="border-gray-200 bg-white rounded-lg h-10 text-sm focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334]">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-gray-500 uppercase">
+                          Description
+                        </Label>
+                        <Input
+                          placeholder="Description"
+                          value={item.description}
+                          onChange={(e) =>
+                            isExisting
+                              ? updateExistingItem(
+                                  existingIndex,
+                                  "description",
+                                  e.target.value,
+                                )
+                              : updateNewItem(
+                                  newIndex,
+                                  "description",
+                                  e.target.value,
+                                )
+                          }
+                          className="border-gray-200 bg-white rounded-lg h-10 text-sm focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334]"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-500 uppercase">
+                            Qty
+                          </Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              isExisting
+                                ? updateExistingItem(
+                                    existingIndex,
+                                    "quantity",
+                                    parseInt(e.target.value) || 1,
+                                  )
+                                : updateNewItem(
+                                    newIndex,
+                                    "quantity",
+                                    parseInt(e.target.value) || 1,
+                                  )
+                            }
+                            className="border-gray-200 bg-white rounded-lg h-10 text-sm focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334]"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-500 uppercase">
+                            Unit Cost
+                          </Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ₱
+                            </span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.unitCost}
+                              onChange={(e) =>
+                                isExisting
+                                  ? updateExistingItem(
+                                      existingIndex,
+                                      "unitCost",
+                                      e.target.value,
+                                    )
+                                  : updateNewItem(
+                                      newIndex,
+                                      "unitCost",
+                                      e.target.value,
+                                    )
+                              }
+                              className="pl-7 border-gray-200 bg-white rounded-lg h-10 text-sm focus:ring-2 focus:ring-[#358334]/20 focus:border-[#358334]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-gray-500 uppercase">
+                          Total
+                        </Label>
+                        <div className="h-10 flex items-center text-sm font-semibold text-gray-900 rounded-lg border border-gray-200 bg-gray-50 px-3">
+                          ₱
+                          {(
+                            item.quantity *
+                            (parseFloat(item.unitCost as string) || 0)
+                          ).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          isExisting
+                            ? removeExistingItem(existingIndex)
+                            : removeNewItem(newIndex)
+                        }
+                        className="text-red-500 hover:text-red-700 inline-flex items-center gap-2 text-sm font-semibold"
+                      >
+                        <Trash2 className="h-4 w-4" /> Remove item
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Cost Items Table (Desktop) */}
+            <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden ring-1 ring-gray-50">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[800px]">
                   <thead>

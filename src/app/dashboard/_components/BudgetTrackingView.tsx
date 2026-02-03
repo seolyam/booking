@@ -224,9 +224,7 @@ export default function BudgetTrackingView({
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-gray-200 hover:text-gray-900 transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
+          {/* Notification bell removed */}
         </div>
       </div>
 
@@ -254,24 +252,24 @@ export default function BudgetTrackingView({
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-8 rounded-2xl bg-gray-50 p-6 md:grid-cols-4">
-          <div className="text-center">
+        <div className="mt-8 grid min-w-0 grid-cols-1 gap-4 rounded-2xl bg-gray-50 p-4 sm:grid-cols-2 md:grid-cols-4 md:gap-8 md:p-6">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Total Amount
             </div>
-            <div className="mt-2 text-xl font-bold text-gray-900">
+            <div className="mt-2 text-xl font-bold text-gray-900 break-words">
               {budget.totalAmount}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Requester
             </div>
-            <div className="mt-2 text-lg font-bold text-gray-900">
+            <div className="mt-2 w-full max-w-full overflow-hidden text-base font-bold text-gray-900 break-words md:text-lg">
               {budget.requester}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Created
             </div>
@@ -279,7 +277,7 @@ export default function BudgetTrackingView({
               {budget.createdDate}
             </div>
           </div>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Last Updated
             </div>

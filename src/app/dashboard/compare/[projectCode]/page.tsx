@@ -329,7 +329,7 @@ function ItemsTable({ items }: { items: LineItem[] }) {
 
 function NotesCard({ title, value }: { title: string; value: string | null }) {
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-5">
+    <div className="rounded-xl border border-black/10 bg-white p-4 md:p-5">
       <div className="text-xs font-semibold text-gray-600">{title}</div>
       <div className="mt-2 text-sm text-gray-900 whitespace-pre-wrap break-words overflow-hidden">
         {value && value.trim().length > 0 ? value : "—"}
@@ -349,7 +349,7 @@ function BudgetHeaderCard({
 }) {
   if (!budget) {
     return (
-      <div className="rounded-xl border border-black/10 bg-white p-5">
+      <div className="rounded-xl border border-black/10 bg-white p-4 md:p-5">
         <div className="text-xs font-semibold text-gray-600">
           {year} ({label})
         </div>
@@ -364,18 +364,18 @@ function BudgetHeaderCard({
   }
 
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-5">
+    <div className="rounded-xl border border-black/10 bg-white p-4 md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-xs font-semibold text-gray-600">
             {year} ({label})
           </div>
-          <div className="text-sm font-semibold text-gray-900 mt-1">
-            {formatPhp(budget.total_amount)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            Budget #{budget.budget_number} • {budget.user.department}
-          </div>
+            <div className="text-sm font-semibold text-gray-900 mt-1">
+              {formatPhp(budget.total_amount)}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Budget #{budget.budget_number} • {budget.user.department}
+            </div>
         </div>
         <div className="text-right">
           <div className="mb-2">
@@ -392,11 +392,13 @@ function BudgetHeaderCard({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-2 text-xs text-gray-600">
-        <div>
-          <span className="font-semibold text-gray-700">Requester:</span>{" "}
-          {budget.user.full_name ?? "—"} ({budget.user.email})
-        </div>
+        <div className="mt-4 grid grid-cols-1 gap-2 text-xs text-gray-600">
+          <div>
+            <span className="font-semibold text-gray-700">Requester:</span>{" "}
+            <span className="break-words">
+              {budget.user.full_name ?? "—"} ({budget.user.email})
+            </span>
+          </div>
         <div>
           <span className="font-semibold text-gray-700">Created:</span>{" "}
           {formatDateShort(budget.created_at)}
@@ -469,7 +471,7 @@ export default async function DetailedProjectComparisonPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="text-sm text-gray-500">
             <Link href="/dashboard/compare" className="hover:text-gray-700">
@@ -483,7 +485,7 @@ export default async function DetailedProjectComparisonPage({
           </h1>
         </div>
 
-        <div className="text-right">
+        <div className="text-left sm:text-right">
           <div className="text-xs text-gray-600">Δ amount</div>
           <div
             className={

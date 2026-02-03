@@ -327,8 +327,8 @@ function CompareSection({
   const deltaCount = currentSummary.count - lastSummary.count;
 
   return (
-    <section className="rounded-xl border border-black/10 bg-white">
-      <div className="flex items-start justify-between gap-4 p-6 border-b border-black/10">
+    <section className="rounded-xl border border-black/10 bg-white overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-4 md:p-6 border-b border-black/10">
         <div>
           <div className="flex items-center gap-2">
             <span className={typePill(type)}>{title}</span>
@@ -349,7 +349,7 @@ function CompareSection({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 md:p-6">
         <div className="rounded-lg border border-black/10 bg-gray-50 p-4">
           <div className="text-xs text-gray-600">{lastYear} total</div>
           <div className="text-xl font-semibold text-gray-900">
@@ -672,10 +672,10 @@ export default async function CompareProjectsPage() {
   const opexLastSummary = buildSummaryFromMatched(matchedOpex, "last");
 
   return (
-    <div className="-m-8 p-6 md:p-8 space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="md:-m-8 md:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Compare Projects</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Compare Projects</h1>
           <div className="text-sm text-gray-600 mt-1">
             CapEx ↔ CapEx and OpEx ↔ OpEx, matched by project code (e.g., OpEx-1
             vs OpEx-1).
@@ -683,7 +683,7 @@ export default async function CompareProjectsPage() {
         </div>
         <Link
           href="/dashboard"
-          className="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+          className="inline-flex items-center justify-center w-full sm:w-auto rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
         >
           Back
         </Link>

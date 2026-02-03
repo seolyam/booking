@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 // import { FolderPlus, Building2 } from "lucide-react"; // DISABLED - for project feature
 import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -416,16 +417,13 @@ export default function CreateBudgetPage() {
   return (
     <div className="w-full max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900">
-            Create Budget Request
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Fill in the details below to create your budget request
-          </p>
-        </div>
-        <Bell className="h-6 w-6 text-gray-400" />
+      <div className="mb-10">
+        <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
+          Create Budget Request
+        </h1>
+        <p className="text-gray-500 mt-1 font-medium text-sm md:text-base">
+          Fill in the details below to create your budget request
+        </p>
       </div>
 
       {error && (
@@ -450,18 +448,26 @@ export default function CreateBudgetPage() {
           </h2>
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label className="text-gray-700 font-medium mb-2 block">
-                Budget Request Name <span className="text-red-500">*</span>
-              </Label>
+              <div className="flex justify-between">
+                <Label className="text-gray-700 font-medium mb-2 block">
+                  Budget Request Name <span className="text-red-500">*</span>
+                </Label>
+                <span className="text-xs text-gray-500">
+                  {budgetTitle.length}/30
+                </span>
+              </div>
               <Input
-                placeholder="e.g., HV Test Equipment Upgrade (Q2 2026)"
+                placeholder="e.g., HV Equipment Upgrade"
                 value={budgetTitle}
-                onChange={(e) => setBudgetTitle(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 30) {
+                    setBudgetTitle(e.target.value);
+                  }
+                }}
                 className="border-gray-300"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Give this request a clear, concise name. It is separate from the
-                project name.
+                Keep it short and descriptive (max 30 characters).
               </p>
             </div>
           </div>
@@ -481,17 +487,15 @@ export default function CreateBudgetPage() {
             <button
               type="button"
               onClick={() => setBudgetType("capex")}
-              className={`p-4 border-2 rounded-lg text-left transition-all ${
-                budgetType === "capex"
-                  ? "border-blue-400 bg-blue-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
-              }`}
+              className={`p-4 border-2 rounded-lg text-left transition-all ${budgetType === "capex"
+                ? "border-blue-400 bg-blue-50"
+                : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div
-                  className={`font-semibold text-lg ${
-                    budgetType === "capex" ? "text-blue-700" : "text-gray-900"
-                  }`}
+                  className={`font-semibold text-lg ${budgetType === "capex" ? "text-blue-700" : "text-gray-900"
+                    }`}
                 >
                   CapEx
                 </div>
@@ -502,16 +506,14 @@ export default function CreateBudgetPage() {
                 )}
               </div>
               <div
-                className={`text-sm mt-1 ${
-                  budgetType === "capex" ? "text-blue-600" : "text-gray-600"
-                }`}
+                className={`text-sm mt-1 ${budgetType === "capex" ? "text-blue-600" : "text-gray-600"
+                  }`}
               >
                 Capital Expenditure - Long term assets and infrastructure
               </div>
               <div
-                className={`text-xs mt-2 ${
-                  budgetType === "capex" ? "text-blue-500" : "text-gray-400"
-                }`}
+                className={`text-xs mt-2 ${budgetType === "capex" ? "text-blue-500" : "text-gray-400"
+                  }`}
               >
                 Examples: Heavy Machinery, Vehicles, Buildings
               </div>
@@ -521,17 +523,15 @@ export default function CreateBudgetPage() {
             <button
               type="button"
               onClick={() => setBudgetType("opex")}
-              className={`p-4 border-2 rounded-lg text-left transition-all ${
-                budgetType === "opex"
-                  ? "border-purple-400 bg-purple-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
-              }`}
+              className={`p-4 border-2 rounded-lg text-left transition-all ${budgetType === "opex"
+                ? "border-purple-400 bg-purple-50"
+                : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div
-                  className={`font-semibold text-lg ${
-                    budgetType === "opex" ? "text-purple-700" : "text-gray-900"
-                  }`}
+                  className={`font-semibold text-lg ${budgetType === "opex" ? "text-purple-700" : "text-gray-900"
+                    }`}
                 >
                   OpEx
                 </div>
@@ -542,16 +542,14 @@ export default function CreateBudgetPage() {
                 )}
               </div>
               <div
-                className={`text-sm mt-1 ${
-                  budgetType === "opex" ? "text-purple-600" : "text-gray-600"
-                }`}
+                className={`text-sm mt-1 ${budgetType === "opex" ? "text-purple-600" : "text-gray-600"
+                  }`}
               >
                 Operating Expenditure - Day-to-day operational costs
               </div>
               <div
-                className={`text-xs mt-2 ${
-                  budgetType === "opex" ? "text-purple-500" : "text-gray-400"
-                }`}
+                className={`text-xs mt-2 ${budgetType === "opex" ? "text-purple-500" : "text-gray-400"
+                  }`}
               >
                 Examples: Office Supplies, Utilities, Subscriptions
               </div>
@@ -563,9 +561,8 @@ export default function CreateBudgetPage() {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Generated ID:</span>
                 <span
-                  className={`font-mono font-semibold ${
-                    budgetType === "capex" ? "text-blue-600" : "text-purple-600"
-                  }`}
+                  className={`font-mono font-semibold ${budgetType === "capex" ? "text-blue-600" : "text-purple-600"
+                    }`}
                 >
                   {budgetIdPreview}
                 </span>
@@ -598,8 +595,143 @@ export default function CreateBudgetPage() {
             </div>
           )}
 
+          {/* Cost Items (Mobile Cards) */}
+          <div className="space-y-4 md:hidden">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+              >
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-semibold text-gray-500 uppercase">
+                      Category
+                    </Label>
+                    <Select
+                      value={item.category}
+                      onValueChange={(val) =>
+                        updateItem(item.id, "category", val)
+                      }
+                      disabled={!budgetType || isLoadingCategories}
+                    >
+                      <SelectTrigger className="border-gray-300 w-full">
+                        <SelectValue
+                          placeholder={
+                            isLoadingCategories
+                              ? "Loading..."
+                              : "Select Category"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent position="popper" sideOffset={5}>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.name}>
+                            <div className="flex items-center gap-2">
+                              <span>{cat.name}</span>
+                              {cat.allowed_type !== "BOTH" && (
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                    cat.allowed_type === "CAPEX"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-purple-100 text-purple-700"
+                                  }`}
+                                >
+                                  {cat.allowed_type}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-gray-500 uppercase">
+                      Description
+                    </Label>
+                    <Input
+                      placeholder="Item Description"
+                      value={item.description}
+                      onChange={(e) =>
+                        updateItem(item.id, "description", e.target.value)
+                      }
+                      className="border-gray-300"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">
+                        Quantity
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        min={1}
+                        placeholder="0"
+                        value={item.quantity}
+                        onKeyDown={preventNonNumericKeys}
+                        onChange={(e) => {
+                          const v = sanitizeInteger(e.target.value);
+                          updateItem(item.id, "quantity", v);
+                        }}
+                        className="border-gray-300 w-full"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">
+                        Unit Cost
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        pattern="^\\d*\\.?\\d{0,2}$"
+                        min={0}
+                        step="0.01"
+                        value={item.unitCost}
+                        onKeyDown={preventNonNumericKeys}
+                        onChange={(e) => {
+                          const v = sanitizeCurrency(e.target.value);
+                          updateItem(item.id, "unitCost", v);
+                        }}
+                        className="border-gray-300 w-full"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-gray-500 uppercase">
+                      Total Cost
+                    </Label>
+                    <Input
+                      value={`₱ ${(
+                        (parseInt(item.quantity as string) || 0) *
+                        (parseFloat(item.unitCost as string) || 0)
+                      ).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`}
+                      disabled
+                      className="bg-gray-50 border-gray-300 text-gray-700 w-full"
+                    />
+                  </div>
+                </div>
+                {items.length > 1 && (
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.id)}
+                      className="text-red-500 hover:text-red-700 inline-flex items-center gap-2 text-sm font-semibold"
+                    >
+                      <Trash2 className="h-4 w-4" /> Remove item
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
           {/* Cost Items Table */}
-          <div className="border border-gray-200 rounded-lg">
+          <div className="hidden md:block border border-gray-200 rounded-lg">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -654,11 +786,10 @@ export default function CreateBudgetPage() {
                                   <span>{cat.name}</span>
                                   {cat.allowed_type !== "BOTH" && (
                                     <span
-                                      className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                        cat.allowed_type === "CAPEX"
-                                          ? "bg-blue-100 text-blue-700"
-                                          : "bg-purple-100 text-purple-700"
-                                      }`}
+                                      className={`text-[10px] px-1.5 py-0.5 rounded ${cat.allowed_type === "CAPEX"
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-purple-100 text-purple-700"
+                                        }`}
                                     >
                                       {cat.allowed_type}
                                     </span>
@@ -843,10 +974,10 @@ export default function CreateBudgetPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-4 pb-8">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 pb-8">
             <Button
               type="button"
-              className="bg-orange-600 hover:bg-orange-700 text-white"
+              className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white order-3 md:order-1"
               onClick={() => router.push("/dashboard/requests")}
               disabled={isSaving}
             >
@@ -856,17 +987,16 @@ export default function CreateBudgetPage() {
             <Button
               type="button"
               variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="w-full md:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 order-2"
               onClick={() => persistBudget("draft")}
               disabled={isSaving}
             >
               <Save className="h-4 w-4 mr-2" /> Save as draft
-
             </Button>
 
             <Button
               type="button"
-              className="bg-green-600 hover:bg-green-700 text-white ml-auto"
+              className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white md:ml-auto order-1 md:order-3"
               onClick={() => persistBudget("submit")}
               disabled={isSaving}
             >

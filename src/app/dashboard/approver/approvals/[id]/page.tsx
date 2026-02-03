@@ -246,51 +246,53 @@ export default async function ApproverReviewDetailPage({
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20">
+      {/* Floating Action Button for Decision */}
+      <div className="fixed bottom-6 right-6 z-50 shadow-2xl rounded-xl">
+        <ApprovalDecisionButton
+          budgetId={budget.id}
+          budgetStatus={budget.status}
+          redirectHref="/dashboard/approver/approvals"
+        />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard/approver/approvals"
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6 text-gray-900" />
-            </Link>
-            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 md:gap-0">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/approver/approvals"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6 text-gray-900" />
+          </Link>
+          <div className="space-y-1">
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
               Budget approval review
             </h1>
+            <p className="text-gray-500 font-medium text-sm md:text-base">
+              Review and verify budget details before forwarding to approver
+            </p>
           </div>
-          <p className="text-gray-500 font-medium ml-12">
-            Review and verify budget details before forwarding to approver
-          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <ApprovalDecisionButton
-            budgetId={budget.id}
-            budgetStatus={budget.status}
-            redirectHref="/dashboard/approver/approvals"
-          />
-          <button className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
-            <Bell className="w-5 h-5 text-gray-900" />
-          </button>
+        <div className="flex items-center gap-3 self-start md:self-auto mt-4 md:mt-2">
+          {/* Action button will be a floating action button (FAB) */}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10 items-start">
         {/* Main Content Area */}
-        <div className="lg:col-span-8 space-y-10">
+        <div className="lg:col-span-8 space-y-6 md:space-y-10">
           {/* Project Info Card */}
-          <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
+          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
             {/* Status Pill */}
-            <div className="absolute top-10 right-10 flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full border border-orange-100">
+            <div className="md:absolute md:top-10 md:right-10 flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full border border-orange-100 w-fit mb-6 md:mb-0">
               <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
               <span className="text-sm font-bold text-orange-600">Pending</span>
             </div>
 
             <div className="space-y-8">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-3xl font-bold text-gray-900 leading-tight">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
                     {items[0]?.description || "Substation Transformer Upgrade"}
                   </h2>
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
@@ -303,12 +305,12 @@ export default async function ApproverReviewDetailPage({
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-10 gap-x-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 md:gap-y-10 gap-x-12">
                 <div className="space-y-2">
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Requester
                   </p>
-                  <p className="text-xl font-semibold text-gray-900">
+                  <p className="text-lg md:text-xl font-semibold text-gray-900 break-words">
                     {requester?.full_name || "Lebron James"}
                   </p>
                 </div>
@@ -316,7 +318,7 @@ export default async function ApproverReviewDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Total amount
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl md:text-3xl font-bold text-gray-900">
                     {formatPhp(budget.total_amount)}
                   </p>
                 </div>
@@ -324,7 +326,7 @@ export default async function ApproverReviewDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Submitted
                   </p>
-                  <p className="text-xl font-semibold text-gray-900">
+                  <p className="text-lg md:text-xl font-semibold text-gray-900">
                     {formatDate(budget.created_at)}
                   </p>
                 </div>
@@ -332,7 +334,7 @@ export default async function ApproverReviewDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Timeline
                   </p>
-                  <p className="text-xl font-semibold text-gray-900">
+                  <p className="text-lg md:text-xl font-semibold text-gray-900">
                     {budget.start_date || budget.end_date ? (
                       <>
                         {budget.start_date
@@ -353,7 +355,7 @@ export default async function ApproverReviewDetailPage({
           </div>
 
           {/* Cost Breakdown */}
-          <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
+          <div className="bg-white rounded-[2rem] md:rounded-4xl p-6 md:p-10 border border-gray-100 shadow-sm space-y-8">
             <div className="flex items-center gap-3">
               <span className="text-xl font-bold text-gray-900">
                 ₱ Cost Breakdown
@@ -397,7 +399,7 @@ export default async function ApproverReviewDetailPage({
           </div>
 
           {/* Project Timeline & Milestones */}
-          <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
+          <div className="bg-white rounded-[2rem] md:rounded-4xl p-6 md:p-10 border border-gray-100 shadow-sm space-y-8">
             <div className="flex items-center gap-3">
               <Calendar className="w-6 h-6 text-gray-900" />
               <h2 className="text-xl font-bold text-gray-900">
@@ -429,7 +431,7 @@ export default async function ApproverReviewDetailPage({
 
           {/* Variance Explanation */}
           {budget.variance_explanation && (
-            <div className="bg-white rounded-4xl p-10 border border-gray-100 shadow-sm space-y-8">
+            <div className="bg-white rounded-[2rem] md:rounded-4xl p-6 md:p-10 border border-gray-100 shadow-sm space-y-8">
               <div className="flex items-center gap-3">
                 <AlertCircle className="w-6 h-6 text-gray-900" />
                 <h2 className="text-xl font-bold text-gray-900">

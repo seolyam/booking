@@ -299,7 +299,7 @@ export default async function ReviewBudgetDetailPage({
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">
         <div className="space-y-1">
           <div className="flex items-center gap-4">
             <Link
@@ -308,26 +308,26 @@ export default async function ReviewBudgetDetailPage({
             >
               <ChevronLeft className="w-6 h-6 text-gray-900" />
             </Link>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">
               Review Budget Request
             </h1>
           </div>
-          <p className="text-gray-500 font-medium ml-12">
+          <p className="text-gray-500 font-medium ml-12 text-sm md:text-base">
             Review and verify budget details before forwarding to approver
           </p>
         </div>
-        <button className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
+        <button className="hidden md:block p-3 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
           <Bell className="w-5 h-5 text-gray-900" />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10 items-start">
         {/* Main Content */}
-        <div className="lg:col-span-8 space-y-10">
+        <div className="lg:col-span-8 space-y-6 md:space-y-10">
           {/* Project Info Card */}
-          <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
+          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
             <div
-              className={`absolute top-10 right-10 flex items-center gap-2 px-4 py-2 rounded-full border ${statusCardClass}`}
+              className={`md:absolute md:top-10 md:right-10 flex items-center gap-2 px-4 py-2 rounded-full border w-fit mb-6 md:mb-0 ${statusCardClass}`}
             >
               <Clock className="w-4 h-4" />
               <span className="text-sm font-bold">{displayStatusLabel}</span>
@@ -335,8 +335,8 @@ export default async function ReviewBudgetDetailPage({
 
             <div className="space-y-8">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-3xl font-bold text-gray-900 leading-tight">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
                     {items[0]?.description || "Budget Request"}
                   </h2>
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
@@ -349,12 +349,12 @@ export default async function ReviewBudgetDetailPage({
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-10 gap-x-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 md:gap-y-10 gap-x-12">
                 <div className="space-y-2">
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Requester
                   </p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-lg md:text-xl font-bold text-gray-900 break-words">
                     {displayName(requester?.full_name, requester?.email)}
                   </p>
                 </div>
@@ -362,7 +362,7 @@ export default async function ReviewBudgetDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Total amount
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl md:text-3xl font-bold text-gray-900">
                     {formatPhp(budget.total_amount)}
                   </p>
                 </div>
@@ -370,7 +370,7 @@ export default async function ReviewBudgetDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Submitted
                   </p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-lg md:text-xl font-bold text-gray-900">
                     {formatDate(budget.created_at)}
                   </p>
                 </div>
@@ -378,7 +378,7 @@ export default async function ReviewBudgetDetailPage({
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                     Timeline
                   </p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-lg md:text-xl font-bold text-gray-900">
                     {budget.start_date || budget.end_date ? (
                       <>
                         {budget.start_date
@@ -399,7 +399,7 @@ export default async function ReviewBudgetDetailPage({
           </div>
 
           {/* Cost Breakdown */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <span className="text-lg font-bold text-gray-900">
                 ₱ Cost Breakdown
@@ -441,7 +441,7 @@ export default async function ReviewBudgetDetailPage({
           </div>
 
           {/* Project Timeline & Milestones */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm space-y-6">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-gray-700" />
               <h2 className="text-lg font-bold text-gray-900">
@@ -473,7 +473,7 @@ export default async function ReviewBudgetDetailPage({
 
           {/* Variance Explanation */}
           {budget.variance_explanation && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <AlertCircle className="w-5 h-5 text-gray-700" />
                 <h2 className="text-lg font-bold text-gray-900">

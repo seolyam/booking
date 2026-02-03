@@ -17,6 +17,7 @@ const client =
     max: 10, // Limit connection pool size
     idle_timeout: 20, // Close idle connections after 20 seconds
     connect_timeout: 10, // Timeout after 10 seconds if can't connect
+    ssl: "require",
   });
 
 if (process.env.NODE_ENV !== "production") {

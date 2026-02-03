@@ -4,6 +4,10 @@ import Link from "next/link";
 import { Search, Eye, ChevronUp, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import type { ApproverDashboardRow } from "./ApproverDashboard";
+import {
+  MobileCardList,
+  type MobileCardData,
+} from "@/components/ui/mobile-card";
 
 type SortKey = "date" | "amount";
 
@@ -19,6 +23,8 @@ export default function ApproverApprovalsList({
     useState<ApproverDashboardRow["statusLabel"]>(activeStatus);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const [showAllMobile, setShowAllMobile] = useState(false);
 
   const filteredRows = initialRows.filter((r) => {
     const matchesSearch =
@@ -64,6 +70,41 @@ export default function ApproverApprovalsList({
 
     return (parseDateLike(a.dateLabel) - parseDateLike(b.dateLabel)) * dir;
   });
+
+  const mobileCards: MobileCardData[] = sortedRows.map((r) => {
+    const isPending = r.statusLabel === "Pending";
+    const href = `/dashboard/approver/approvals/${encodeURIComponent(
+      r.displayId,
+    )}`;
+
+    return {
+      id: r.budgetId,
+      displayId: r.displayId,
+      title: r.projectName,
+      subtitle: r.projectSub,
+      type: r.type,
+      amount: r.amount,
+      status: {
+        label: r.statusLabel,
+        variant:
+          r.statusLabel === "Approved"
+            ? "success"
+            : r.statusLabel === "Pending"
+              ? "info"
+              : "error",
+      },
+      date:
+        currentStatus === "Approved"
+          ? formatIsoShort(r.approvedAt)
+          : r.dateLabel,
+      actionHref: href,
+      actionLabel: isPending ? "Review" : "View",
+    };
+  });
+
+  const displayedMobileCards = showAllMobile
+    ? mobileCards
+    : mobileCards.slice(0, 10);
 
   const onSortHeaderClick = (key: SortKey) => {
     if (sortKey === key) {
@@ -183,128 +224,141 @@ export default function ApproverApprovalsList({
           </div>
         </div>
 
-        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <table className="w-full text-sm min-w-[700px]">
-            <thead>
-              <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
-                <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
-                <th className="pb-4 pr-4 font-bold">TYPE</th>
-                <th className="pb-4 pr-4 font-bold text-center">
-                  {sortLabel("amount", "AMOUNT")}
-                </th>
-                <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
-                <th className="pb-4 pr-4 font-bold text-center">
-                  {sortLabel(
-                    "date",
-                    currentStatus === "Approved" ? "DATE APPROVED" : "DATE",
-                  )}
-                </th>
-                <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {sortedRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="py-20 text-center text-gray-400 font-medium"
-                  >
-                    No proposals found with the current filters.
-                  </td>
+        <div className="md:hidden">
+          <MobileCardList
+            items={displayedMobileCards}
+            emptyMessage="No proposals found with the current filters."
+          />
+          {!showAllMobile && mobileCards.length > 10 && (
+            <button
+              onClick={() => setShowAllMobile(true)}
+              className="w-full mt-4 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm shadow-sm hover:bg-gray-50 transition-colors"
+            >
+              View All ({mobileCards.length - 10} more)
+            </button>
+          )}
+        </div>
+
+        <div className="hidden md:block">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <table className="w-full text-sm min-w-[700px]">
+              <thead>
+                <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                  <th className="pb-4 pl-4 pr-4 font-bold">BUDGET ID</th>
+                  <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
+                  <th className="pb-4 pr-4 font-bold">TYPE</th>
+                  <th className="pb-4 pr-4 font-bold text-center">
+                    {sortLabel("amount", "AMOUNT")}
+                  </th>
+                  <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
+                  <th className="pb-4 pr-4 font-bold text-center">
+                    {sortLabel(
+                      "date",
+                      currentStatus === "Approved" ? "DATE APPROVED" : "DATE",
+                    )}
+                  </th>
+                  <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
                 </tr>
-              ) : (
-                sortedRows.map((r) => {
-                  const isRejected = r.statusLabel === "Rejected";
-
-                  return (
-                    <tr
-                      key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${
-                        isRejected ? "bg-gray-50/30" : ""
-                      }`}
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {sortedRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="py-20 text-center text-gray-400 font-medium"
                     >
-                      <td
-                        className={`py-5 pr-4 font-bold text-gray-400 text-xs ${
-                          isRejected ? "opacity-60" : ""
-                        }`}
-                      >
-                        {r.displayId}
-                      </td>
-                      <td
-                        className={`py-5 pr-4 ${
-                          isRejected ? "opacity-60" : ""
-                        }`}
-                      >
-                        <div className="font-medium text-gray-900 leading-tight">
-                          {r.projectName}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-0.5 font-normal">
-                          {r.projectSub}
-                        </div>
-                      </td>
-                      <td
-                        className={`py-5 pr-4 ${
-                          isRejected ? "opacity-60" : ""
-                        }`}
-                      >
-                        {typePill(r.type)}
-                      </td>
-                      <td
-                        className={`py-5 pr-4 text-gray-900 font-medium text-center ${
-                          isRejected ? "opacity-60" : ""
-                        }`}
-                      >
-                        {r.amount}
-                      </td>
-                      <td
-                        className={`py-5 pr-4 text-center ${
-                          isRejected ? "opacity-60" : ""
-                        }`}
-                      >
-                        {statusPill(r.statusLabel)}
-                      </td>
-                      <td
-                        className={`py-5 pr-4 text-gray-400 font-bold text-xs text-center ${
-                          isRejected ? "opacity-60" : ""
-                        }`}
-                      >
-                        {currentStatus === "Approved"
-                          ? formatIsoShort(r.approvedAt)
-                          : r.dateLabel}
-                      </td>
-                      <td className="py-5 pr-0 text-center">
-                        {(() => {
-                          const isPending = r.statusLabel === "Pending";
-                          const href = isPending
-                            ? `/dashboard/approver/approvals/${encodeURIComponent(
-                                r.displayId,
-                              )}`
-                            : `/dashboard/budget/${encodeURIComponent(
-                                r.displayId,
-                              )}`;
+                      No proposals found with the current filters.
+                    </td>
+                  </tr>
+                ) : (
+                  sortedRows.map((r, index) => {
+                    const isRejected = r.statusLabel === "Rejected";
 
-                          return (
-                            <Link
-                              href={href}
-                              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
-                                isPending
-                                  ? "bg-orange-500 text-white hover:bg-orange-600"
-                                  : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                              }`}
-                            >
-                              {isPending ? "Review" : "View"}{" "}
-                              <Eye className="h-3.5 w-3.5" />
-                            </Link>
-                          );
-                        })()}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                    return (
+                      <tr
+                        key={r.budgetId}
+                        className={`group hover:bg-gray-50/50 transition-colors ${
+                          isRejected ? "bg-gray-50/30" : ""
+                        } ${index >= 10 && !showAllMobile ? "hidden md:table-row" : ""}`}
+                      >
+                        <td
+                          className={`py-5 pl-4 pr-4 font-bold text-gray-400 text-xs ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {r.displayId}
+                        </td>
+                        <td
+                          className={`py-5 pr-4 ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          <div className="font-medium text-gray-900 leading-tight">
+                            {r.projectName}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5 font-normal">
+                            {r.projectSub}
+                          </div>
+                        </td>
+                        <td
+                          className={`py-5 pr-4 ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {typePill(r.type)}
+                        </td>
+                        <td
+                          className={`py-5 pr-4 text-gray-900 font-medium text-center ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {r.amount}
+                        </td>
+                        <td
+                          className={`py-5 pr-4 text-center ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {statusPill(r.statusLabel)}
+                        </td>
+                        <td
+                          className={`py-5 pr-4 text-gray-400 font-bold text-xs text-center ${
+                            isRejected ? "opacity-60" : ""
+                          }`}
+                        >
+                          {currentStatus === "Approved"
+                            ? formatIsoShort(r.approvedAt)
+                            : r.dateLabel}
+                        </td>
+                        <td className="py-5 pr-0 text-center">
+                          {(() => {
+                            const isPending = r.statusLabel === "Pending";
+                          const href = `/dashboard/approver/approvals/${encodeURIComponent(
+                              r.displayId,
+                            )}`;
+
+                            return (
+                              <Link
+                                href={href}
+                                className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
+                                  isPending
+                                    ? "bg-orange-500 text-white hover:bg-orange-600"
+                                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                                }`}
+                              >
+                                {isPending ? "Review" : "View"}{" "}
+                                <Eye className="h-3.5 w-3.5" />
+                              </Link>
+                            );
+                          })()}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

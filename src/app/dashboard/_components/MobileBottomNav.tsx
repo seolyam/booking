@@ -11,6 +11,11 @@ import {
   CheckSquare,
   ClipboardCheck,
   Users,
+  Shield,
+  User,
+  FileSearch,
+  CheckCircle,
+  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "./nav";
@@ -55,6 +60,13 @@ function getNavItems(role: Role): NavItemConfig[] {
         p.startsWith("/dashboard/budget") &&
         !p.startsWith("/dashboard/budget/create"),
     },
+    {
+      key: "compare",
+      label: "Compare",
+      href: "/dashboard/compare",
+      icon: FileSearch,
+      activeMatch: (p) => p.startsWith("/dashboard/compare"),
+    },
   ];
 
   const reviewerItems: NavItemConfig[] = [
@@ -68,7 +80,7 @@ function getNavItems(role: Role): NavItemConfig[] {
     {
       key: "review",
       label: "Review",
-      href: "/dashboard/reviewer/review",
+      href: "/dashboard/reviewer",
       icon: CheckSquare,
       activeMatch: (p) => p.startsWith("/dashboard/reviewer"),
     },
@@ -78,6 +90,13 @@ function getNavItems(role: Role): NavItemConfig[] {
       href: "/dashboard/budget",
       icon: List,
       activeMatch: (p) => p.startsWith("/dashboard/budget"),
+    },
+    {
+      key: "compare",
+      label: "Compare",
+      href: "/dashboard/compare",
+      icon: FileSearch,
+      activeMatch: (p) => p.startsWith("/dashboard/compare"),
     },
   ];
 
@@ -103,6 +122,13 @@ function getNavItems(role: Role): NavItemConfig[] {
       icon: List,
       activeMatch: (p) => p.startsWith("/dashboard/budget"),
     },
+    {
+      key: "compare",
+      label: "Compare",
+      href: "/dashboard/compare",
+      icon: FileSearch,
+      activeMatch: (p) => p.startsWith("/dashboard/compare"),
+    },
   ];
 
   const superadminItems: NavItemConfig[] = [
@@ -123,7 +149,7 @@ function getNavItems(role: Role): NavItemConfig[] {
     {
       key: "review",
       label: "Review",
-      href: "/dashboard/reviewer/review",
+      href: "/dashboard/reviewer",
       icon: CheckSquare,
       activeMatch: (p) => p.startsWith("/dashboard/reviewer"),
     },
@@ -133,6 +159,13 @@ function getNavItems(role: Role): NavItemConfig[] {
       href: "/dashboard/approver/approvals",
       icon: ClipboardCheck,
       activeMatch: (p) => p.startsWith("/dashboard/approver"),
+    },
+    {
+      key: "compare",
+      label: "Compare",
+      href: "/dashboard/compare",
+      icon: FileSearch,
+      activeMatch: (p) => p.startsWith("/dashboard/compare"),
     },
   ];
 
@@ -144,49 +177,155 @@ function getNavItems(role: Role): NavItemConfig[] {
 
 export default function MobileBottomNav({ role }: { role: Role }) {
   const pathname = usePathname() ?? "/dashboard";
-  const items = getNavItems(role);
+  const [activeRole, setActiveRole] = React.useState<Role | null>(null);
+
+  // For non-superadmins, render standard nav
+  if (role !== "superadmin") {
+    const items = getNavItems(role);
+    return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:hidden pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around h-16 px-2">
+          {items.map((item) => (
+            <NavButton key={item.key} item={item} pathname={pathname} />
+          ))}
+        </div>
+      </nav>
+    );
+  }
+
+  // Superadmin: Role Selection vs Role Menu
+  const isRoleSelection = activeRole === null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg md:hidden pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around h-16 px-2">
-        {items.map((item) => {
-          const isActive = item.activeMatch
-            ? item.activeMatch(pathname)
-            : pathname === item.href;
-
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "relative flex flex-col items-center justify-center flex-1 py-2 px-1 min-h-14 rounded-lg transition-colors",
-                isActive
-                  ? "text-[#358334]"
-                  : "text-gray-500 hover:text-gray-700 active:bg-gray-100",
-              )}
+        {isRoleSelection ? (
+          <>
+            <RoleButton
+              icon={Shield}
+              label="Super Admin"
+              onClick={() => setActiveRole("superadmin")}
+            />
+            <RoleButton
+              icon={User}
+              label="Requester"
+              onClick={() => setActiveRole("requester")}
+            />
+            <RoleButton
+              icon={FileSearch}
+              label="Reviewer"
+              onClick={() => setActiveRole("reviewer")}
+            />
+            <RoleButton
+              icon={CheckCircle}
+              label="Approver"
+              onClick={() => setActiveRole("approver")}
+            />
+          </>
+        ) : (
+          <>
+            {/* Back Button */}
+            <button
+              onClick={() => setActiveRole(null)}
+              className="relative flex flex-col items-center justify-center flex-1 py-2 px-1 min-h-14 rounded-lg transition-colors text-gray-500 hover:text-gray-700 active:bg-gray-100"
             >
-              <item.icon
-                className={cn(
-                  "h-5 w-5 mb-1",
-                  isActive ? "text-[#358334]" : "text-gray-400",
-                )}
-              />
-              <span
-                className={cn(
-                  "text-[10px] font-medium",
-                  isActive ? "font-semibold" : "",
-                )}
-              >
-                {item.label}
-              </span>
-              {isActive && (
-                <div className="absolute bottom-1 w-1 h-1 rounded-full bg-[#358334]" />
-              )}
-            </Link>
-          );
-        })}
+              <ArrowLeft className="h-5 w-5 mb-1 text-gray-400" />
+              <span className="text-[10px] font-medium">Back</span>
+            </button>
+
+            {/* Role Items */}
+            {getNavItems(activeRole).map((item) => (
+              <NavButton key={item.key} item={item} pathname={pathname} />
+            ))}
+          </>
+        )}
       </div>
     </nav>
+  );
+}
+
+// Helper components
+function RoleButton({
+  icon: Icon,
+  label,
+  onClick,
+  isActive = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  isActive?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "relative flex flex-col items-center justify-center flex-1 py-2 px-1 min-h-14 rounded-lg transition-colors",
+        isActive
+          ? "text-[#358334]"
+          : "text-gray-500 hover:text-gray-700 active:bg-gray-100",
+      )}
+    >
+      <Icon
+        className={cn(
+          "h-5 w-5 mb-1",
+          isActive ? "text-[#358334]" : "text-gray-400",
+        )}
+      />
+      <span
+        className={cn(
+          "text-[10px] font-medium",
+          isActive ? "font-semibold" : "",
+        )}
+      >
+        {label}
+      </span>
+      {isActive && (
+        <div className="absolute bottom-1 w-1 h-1 rounded-full bg-[#358334]" />
+      )}
+    </button>
+  );
+}
+
+function NavButton({
+  item,
+  pathname,
+}: {
+  item: NavItemConfig;
+  pathname: string;
+}) {
+  const isActive = item.activeMatch
+    ? item.activeMatch(pathname)
+    : pathname === item.href;
+
+  return (
+    <Link
+      href={item.href}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "relative flex flex-col items-center justify-center flex-1 py-2 px-1 min-h-14 rounded-lg transition-colors",
+        isActive
+          ? "text-[#358334]"
+          : "text-gray-500 hover:text-gray-700 active:bg-gray-100",
+      )}
+    >
+      <item.icon
+        className={cn(
+          "h-5 w-5 mb-1",
+          isActive ? "text-[#358334]" : "text-gray-400",
+        )}
+      />
+      <span
+        className={cn(
+          "text-[10px] font-medium",
+          isActive ? "font-semibold" : "",
+        )}
+      >
+        {item.label}
+      </span>
+      {isActive && (
+        <div className="absolute bottom-1 w-1 h-1 rounded-full bg-[#358334]" />
+      )}
+    </Link>
   );
 }

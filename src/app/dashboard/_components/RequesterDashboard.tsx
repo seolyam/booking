@@ -1,7 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Clock, FileText, Eye } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, FileText, Eye, Pencil } from "lucide-react";
+import {
+  MobileCardList,
+  type MobileCardData,
+} from "@/components/ui/mobile-card";
 
 type DashboardRow = {
   budgetId: string;
@@ -28,6 +33,35 @@ export default function RequesterDashboard({
   };
   rows: DashboardRow[];
 }) {
+  const [showAllMobile, setShowAllMobile] = useState(false);
+
+  const mobileCards: MobileCardData[] = rows.map((r) => ({
+    id: r.budgetId,
+    displayId: r.displayId,
+    title: r.projectName,
+    subtitle: r.projectSub,
+    type: r.type,
+    amount: r.amount,
+    status: {
+      label: r.statusLabel,
+      variant:
+        r.statusLabel === "Approved" || r.statusLabel === "Verified"
+          ? "success"
+          : r.statusLabel === "Pending"
+            ? "info"
+            : r.statusLabel === "Revision"
+              ? "warning"
+              : "error",
+    },
+    date: r.dateLabel,
+    actionHref: r.actionHref,
+    actionLabel: r.actionLabel,
+  }));
+
+  const displayedMobileCards = showAllMobile
+    ? mobileCards
+    : mobileCards.slice(0, 10);
+
   const statCard = (
     icon: React.ReactNode,
     value: number,
@@ -88,7 +122,7 @@ export default function RequesterDashboard({
 
   return (
     <div className="space-y-6 md:space-y-10">
-      <div className="grid grid-cols-2 gap-3 md:gap-6 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-6 md:grid-cols-4">
         {statCard(
           <FileText className="h-6 w-6 text-blue-500" />,
           stats.totalSubmitted,
@@ -133,82 +167,99 @@ export default function RequesterDashboard({
             </Link>
           </div>
 
-          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <table className="w-full text-sm min-w-[700px]">
-              <thead>
-                <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                  <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
-                  <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
-                  <th className="pb-4 pr-4 font-bold">TYPE</th>
-                  <th className="pb-4 pr-4 font-bold text-center">AMOUNT</th>
-                  <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
-                  <th className="pb-4 pr-4 font-bold text-center">DATE</th>
-                  <th className="pb-4 pr-0 font-bold text-right">ACTION</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {rows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="py-12 text-center text-gray-400 font-medium"
-                    >
-                      No budget requests yet.
-                    </td>
+          <div className="md:hidden">
+            <MobileCardList
+              items={displayedMobileCards}
+              emptyMessage="No budget requests yet."
+            />
+            {!showAllMobile && mobileCards.length > 10 && (
+              <button
+                onClick={() => setShowAllMobile(true)}
+                className="w-full mt-4 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm shadow-sm hover:bg-gray-50 transition-colors"
+              >
+                View All ({mobileCards.length - 10} more)
+              </button>
+            )}
+          </div>
+
+          <div className="hidden md:block">
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <table className="w-full text-sm min-w-[700px]">
+                <thead>
+                  <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                    <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
+                    <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
+                    <th className="pb-4 pr-4 font-bold">TYPE</th>
+                    <th className="pb-4 pr-4 font-bold text-center">AMOUNT</th>
+                    <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
+                    <th className="pb-4 pr-4 font-bold text-center">DATE</th>
+                    <th className="pb-4 pr-0 font-bold text-right">ACTION</th>
                   </tr>
-                ) : (
-                  rows.map((r) => (
-                    <tr
-                      key={r.budgetId}
-                      className={`group hover:bg-gray-50/50 transition-colors ${
-                        r.statusLabel === "Rejected"
-                          ? "opacity-60 bg-gray-50/30"
-                          : ""
-                      }`}
-                    >
-                      <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
-                        {r.displayId}
-                      </td>
-                      <td className="py-5 pr-4">
-                        <div className="font-bold text-gray-900 leading-tight">
-                          {r.projectName}
-                        </div>
-                        <div className="text-xs font-semibold text-gray-400 mt-0.5">
-                          {r.projectSub}
-                        </div>
-                      </td>
-                      <td className="py-5 pr-4">{typePill(r.type)}</td>
-                      <td className="py-5 pr-4 text-gray-900 font-bold text-center">
-                        {r.amount}
-                      </td>
-                      <td className="py-5 pr-4 text-center">
-                        {statusPill(r.statusLabel)}
-                      </td>
-                      <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
-                        {r.dateLabel}
-                      </td>
-                      <td className="py-5 pr-0 text-right">
-                        <Link
-                          href={r.actionHref}
-                          className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition-colors shadow-sm ${
-                            r.actionLabel === "Edit"
-                              ? "bg-orange-600 hover:bg-orange-700"
-                              : "bg-gray-700 hover:bg-gray-800"
-                          }`}
-                        >
-                          {r.actionLabel}{" "}
-                          {r.actionLabel === "Edit" ? (
-                            <span>✏️</span>
-                          ) : (
-                            <Eye className="h-3.5 w-3.5" />
-                          )}
-                        </Link>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-12 text-center text-gray-400 font-medium"
+                      >
+                        No budget requests yet.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    rows.map((r, index) => (
+                      <tr
+                        key={r.budgetId}
+                        className={`group hover:bg-gray-50/50 transition-colors ${
+                          r.statusLabel === "Rejected"
+                            ? "opacity-60 bg-gray-50/30"
+                            : ""
+                        } ${index >= 10 && !showAllMobile ? "hidden md:table-row" : ""}`}
+                      >
+                        <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
+                          {r.displayId}
+                        </td>
+                        <td className="py-5 pr-4">
+                          <div className="font-bold text-gray-900 leading-tight">
+                            {r.projectName}
+                          </div>
+                          <div className="text-xs font-semibold text-gray-400 mt-0.5">
+                            {r.projectSub}
+                          </div>
+                        </td>
+                        <td className="py-5 pr-4">{typePill(r.type)}</td>
+                        <td className="py-5 pr-4 text-gray-900 font-bold text-center">
+                          {r.amount}
+                        </td>
+                        <td className="py-5 pr-4 text-center">
+                          {statusPill(r.statusLabel)}
+                        </td>
+                        <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
+                          {r.dateLabel}
+                        </td>
+                        <td className="py-5 pr-0 text-right">
+                          <Link
+                            href={r.actionHref}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition-colors shadow-sm ${
+                              r.actionLabel === "Edit"
+                                ? "bg-orange-600 hover:bg-orange-700"
+                                : "bg-gray-700 hover:bg-gray-800"
+                            }`}
+                          >
+                            {r.actionLabel}{" "}
+                            {r.actionLabel === "Edit" ? (
+                              <span><Pencil className="h-3.5 w-3.5" /></span>
+                            ) : (
+                              <Eye className="h-3.5 w-3.5" />
+                            )}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
