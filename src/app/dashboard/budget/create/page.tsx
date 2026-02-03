@@ -843,10 +843,10 @@ export default function CreateBudgetPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-4 pb-8">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 pb-8">
             <Button
               type="button"
-              className="bg-orange-600 hover:bg-orange-700 text-white"
+              className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white order-3 md:order-1"
               onClick={() => router.push("/dashboard/requests")}
               disabled={isSaving}
             >
@@ -856,17 +856,16 @@ export default function CreateBudgetPage() {
             <Button
               type="button"
               variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="w-full md:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 order-2"
               onClick={() => persistBudget("draft")}
               disabled={isSaving}
             >
               <Save className="h-4 w-4 mr-2" /> Save as draft
-
             </Button>
 
             <Button
               type="button"
-              className="bg-green-600 hover:bg-green-700 text-white ml-auto"
+              className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white md:ml-auto order-1 md:order-3"
               onClick={() => persistBudget("submit")}
               disabled={isSaving}
             >
