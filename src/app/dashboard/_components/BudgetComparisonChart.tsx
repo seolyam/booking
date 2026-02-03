@@ -10,12 +10,14 @@ interface DonutComparisonChartProps {
     currentAmount: number;
     historicalAverage: number;
     size?: number;
+    label?: string;
 }
 
 export default function BudgetComparisonChart({
     currentAmount,
     historicalAverage,
     size = 160,
+    label = "Variance",
 }: DonutComparisonChartProps) {
     const avg = historicalAverage > 0 ? historicalAverage : 1;
     const ratio = currentAmount / avg;
@@ -107,7 +109,7 @@ export default function BudgetComparisonChart({
 
             <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-xs font-bold text-gray-400 uppercase">Vs Avg</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase">{label}</p>
                     <p className="text-lg font-bold text-gray-900">{deltaLabel}</p>
                 </div>
             </div>

@@ -9,8 +9,9 @@ import {
   budgetItems,
   users,
   reviewChecklists,
+  archivedBudgets,
 } from "@/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import ReviewPageClient from "./ReviewPageClient";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
 import { Calendar, AlertCircle, ChevronLeft, Bell, Clock } from "lucide-react";
@@ -84,6 +85,8 @@ export default async function ReviewBudgetDetailPage({
       user_id: budgets.user_id,
       start_date: budgets.start_date,
       end_date: budgets.end_date,
+      fiscal_year: budgets.fiscal_year,
+      project_code: budgets.project_code,
     })
     .from(budgets)
     .where(eq(budgets.id, id))
@@ -186,86 +189,82 @@ export default async function ReviewBudgetDetailPage({
     checklist.map((c) => [c.item_key, c.is_checked]),
   );
 
-  // Fetch similar approved budgets for comparison
-  const similarBudgets = await db
-    .select({
-      id: budgets.id,
-      total_amount: budgets.total_amount,
-      created_at: budgets.created_at,
-      user_id: budgets.user_id,
-    })
-    .from(budgets)
-    .where(
-      and(
-        eq(budgets.budget_type, budget.budget_type),
-        eq(budgets.status, "approved"),
-      ),
-    )
-    .limit(5);
+  // Determine Fiscal Year Context
+  // If fiscal_year is set in the record, use it. Otherwise, assume current year (e.g., 2025).
+  // Note: fiscal_year is now selected above.
+  const currentYear = budget.fiscal_year;
+  const lastYear = currentYear - 1;
 
-  // Filter by department (need to join but we have user_id)
-  const similarActorIds = [...new Set(similarBudgets.map((b) => b.user_id))];
-  const similarUsers =
-    similarActorIds.length > 0
-      ? await db
+  // Fetch Previous Year's Budget for the SAME Project Code
+  // Strategy: Check 'archived_budgets' first (approved/finalized history).
+  // If not found, check active 'budgets' table (maybe it's still live but from last year).
+
+  let lastYearBudgetRecord = null;
+  let lastYearAmount: number | null = null;
+
+  if (budget.project_code) {
+    // 1. Check Archives
+    const archivedMatches = await db
+      .select({
+        id: archivedBudgets.id,
+        total_amount: archivedBudgets.total_amount,
+        created_at: archivedBudgets.created_at, // use created_at as proxy for date if needed, or archived_at
+        status: archivedBudgets.status,
+        project_code: archivedBudgets.project_code,
+      })
+      .from(archivedBudgets)
+      .where(
+        and(
+          eq(archivedBudgets.project_code, budget.project_code),
+          eq(archivedBudgets.fiscal_year, lastYear),
+          eq(archivedBudgets.status, "approved"), // We generally only care about approved history
+        ),
+      )
+      .orderBy(desc(archivedBudgets.created_at))
+      .limit(1);
+
+    if (archivedMatches.length > 0) {
+      const match = archivedMatches[0];
+      lastYearBudgetRecord = {
+        id: match.id,
+        date: formatDate(match.created_at),
+        status: match.status,
+        projectCode: match.project_code || "N/A",
+      };
+      lastYearAmount = Number(match.total_amount);
+    } else {
+      // 2. Check Active Budgets (Fallback)
+      const activeMatches = await db
         .select({
-          id: users.id,
-          full_name: users.full_name,
-          department: users.department,
+          id: budgets.id,
+          total_amount: budgets.total_amount,
+          created_at: budgets.created_at,
+          status: budgets.status,
+          project_code: budgets.project_code,
         })
-        .from(users)
+        .from(budgets)
         .where(
           and(
-            inArray(users.id, similarActorIds),
-            eq(users.department, requester?.department || "Finance"),
+            eq(budgets.project_code, budget.project_code),
+            eq(budgets.fiscal_year, lastYear),
+            eq(budgets.status, "approved"),
           ),
         )
-      : [];
+        .orderBy(desc(budgets.created_at))
+        .limit(1);
 
-  const similarUserMap = new Map(similarUsers.map((u) => [u.id, u]));
-  const filteredSimilar = similarBudgets.filter((b) =>
-    similarUserMap.has(b.user_id),
-  );
-
-  // Fetch descriptions for similar budgets (simplified: just first item)
-  const similarBudgetIds = filteredSimilar.map((b) => b.id);
-  const similarItems =
-    similarBudgetIds.length > 0
-      ? await db
-        .select({
-          budget_id: budgetItems.budget_id,
-          description: budgetItems.description,
-        })
-        .from(budgetItems)
-        .where(inArray(budgetItems.budget_id, similarBudgetIds))
-      : [];
-
-  const similarItemsMap = new Map();
-  similarItems.forEach((it) => {
-    if (!similarItemsMap.has(it.budget_id)) {
-      similarItemsMap.set(it.budget_id, it.description);
+      if (activeMatches.length > 0) {
+        const match = activeMatches[0];
+        lastYearBudgetRecord = {
+          id: match.id,
+          date: formatDate(match.created_at),
+          status: match.status,
+          projectCode: match.project_code || "N/A",
+        };
+        lastYearAmount = Number(match.total_amount);
+      }
     }
-  });
-
-  const comparisonData = filteredSimilar.map((b) => ({
-    id: b.id,
-    name: similarItemsMap.get(b.id) || "Previous Project",
-    amount: b.total_amount,
-    date: formatDate(b.created_at),
-    requester: similarUserMap.get(b.user_id)?.full_name || "Unknown",
-    profit: "5%", // Example placeholder as requested
-  }));
-
-  const historicalAmounts = comparisonData.map((d) => Number(d.amount));
-  const historicalAverage =
-    historicalAmounts.length > 0
-      ? historicalAmounts.reduce((a, b) => a + b, 0) / historicalAmounts.length
-      : 275000; // Placeholder as in image if none found
-
-  const historicalMin =
-    historicalAmounts.length > 0 ? Math.min(...historicalAmounts) : 170500;
-  const historicalMax =
-    historicalAmounts.length > 0 ? Math.max(...historicalAmounts) : 340650;
+  }
 
   const statusLabelMap: Record<string, string> = {
     draft: "Draft",
@@ -489,12 +488,12 @@ export default async function ReviewBudgetDetailPage({
           {/* Budget Comparison Analysis */}
           <BudgetComparisonAnalysis
             currentAmount={Number(budget.total_amount)}
-            historicalAverage={historicalAverage}
-            historicalMin={historicalMin}
-            historicalMax={historicalMax}
-            similarProjects={comparisonData}
             departmentName={requester?.department || "Unknown"}
             budgetType={typeLabel}
+            lastYearAmount={lastYearAmount}
+            lastYearBudget={lastYearBudgetRecord}
+            currentYear={currentYear}
+            lastYear={lastYear}
           />
         </div>
 
