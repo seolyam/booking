@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, Clock, FileText, Eye } from "lucide-react";
 
@@ -28,6 +29,8 @@ export default function RequesterDashboard({
   };
   rows: DashboardRow[];
 }) {
+  const [showAllMobile, setShowAllMobile] = useState(false);
+
   const statCard = (
     icon: React.ReactNode,
     value: number,
@@ -157,14 +160,14 @@ export default function RequesterDashboard({
                     </td>
                   </tr>
                 ) : (
-                  rows.map((r) => (
+                  rows.map((r, index) => (
                     <tr
                       key={r.budgetId}
                       className={`group hover:bg-gray-50/50 transition-colors ${
                         r.statusLabel === "Rejected"
                           ? "opacity-60 bg-gray-50/30"
                           : ""
-                      }`}
+                      } ${index >= 10 && !showAllMobile ? "hidden md:table-row" : ""}`}
                     >
                       <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
                         {r.displayId}
@@ -210,6 +213,15 @@ export default function RequesterDashboard({
               </tbody>
             </table>
           </div>
+
+          {!showAllMobile && rows.length > 10 && (
+            <button
+              onClick={() => setShowAllMobile(true)}
+              className="w-full md:hidden py-3 bg-white border-t border-gray-100 text-gray-500 font-medium text-sm hover:bg-gray-50 transition-colors"
+            >
+              View All ({rows.length - 10} more)
+            </button>
+          )}
         </div>
 
         <div className="px-4 md:px-8 py-4 md:py-6 border-t border-gray-50 flex justify-end">

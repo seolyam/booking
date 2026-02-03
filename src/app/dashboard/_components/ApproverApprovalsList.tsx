@@ -20,6 +20,8 @@ export default function ApproverApprovalsList({
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
+  const [showAllMobile, setShowAllMobile] = useState(false);
+
   const filteredRows = initialRows.filter((r) => {
     const matchesSearch =
       r.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -187,7 +189,7 @@ export default function ApproverApprovalsList({
           <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
+                <th className="pb-4 pl-4 pr-4 font-bold">BUDGET ID</th>
                 <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
                 <th className="pb-4 pr-4 font-bold">TYPE</th>
                 <th className="pb-4 pr-4 font-bold text-center">
@@ -214,7 +216,7 @@ export default function ApproverApprovalsList({
                   </td>
                 </tr>
               ) : (
-                sortedRows.map((r) => {
+                sortedRows.map((r, index) => {
                   const isRejected = r.statusLabel === "Rejected";
 
                   return (
@@ -222,10 +224,10 @@ export default function ApproverApprovalsList({
                       key={r.budgetId}
                       className={`group hover:bg-gray-50/50 transition-colors ${
                         isRejected ? "bg-gray-50/30" : ""
-                      }`}
+                      } ${index >= 10 && !showAllMobile ? "hidden md:table-row" : ""}`}
                     >
                       <td
-                        className={`py-5 pr-4 font-bold text-gray-400 text-xs ${
+                        className={`py-5 pl-4 pr-4 font-bold text-gray-400 text-xs ${
                           isRejected ? "opacity-60" : ""
                         }`}
                       >
@@ -306,6 +308,15 @@ export default function ApproverApprovalsList({
             </tbody>
           </table>
         </div>
+        
+        {!showAllMobile && sortedRows.length > 10 && (
+            <button
+              onClick={() => setShowAllMobile(true)}
+              className="w-full md:hidden py-3 bg-white border-t border-gray-100 text-gray-500 font-medium text-sm hover:bg-gray-50 transition-colors"
+            >
+              View All ({sortedRows.length - 10} more)
+            </button>
+          )}
       </div>
     </div>
   );
