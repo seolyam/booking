@@ -336,54 +336,58 @@ export default async function ApproverReviewDetailPage({
         <div className="lg:col-span-8 space-y-6 md:space-y-10">
           {/* Project Info Card */}
           <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
-            {/* Status Pill */}
-            {(() => {
-              const s = budget.status;
-              let colorClass = "bg-gray-100 text-gray-500 border-gray-200";
-              let dotClass = "bg-gray-400";
-              let label = "Unknown";
-
-              if (s === "approved") {
-                colorClass = "bg-green-50 text-green-700 border-green-100";
-                dotClass = "bg-green-500";
-                label = "Approved";
-              } else if (s === "rejected") {
-                colorClass = "bg-red-50 text-red-700 border-red-100";
-                dotClass = "bg-red-500";
-                label = "Rejected";
-              } else if (s === "revision_requested") {
-                colorClass = "bg-orange-50 text-orange-700 border-orange-100";
-                dotClass = "bg-orange-500";
-                label = "Revision";
-              } else {
-                 // Pending / Submitted / Verified
-                 colorClass = "bg-blue-50 text-blue-700 border-blue-100";
-                 dotClass = "bg-blue-500";
-                 label = "Pending Approval";
-              }
-
-              return (
-                <div className={`md:absolute md:top-10 md:right-10 flex items-center gap-2 px-4 py-2 rounded-full border w-fit mb-6 md:mb-0 ${colorClass}`}>
-                  <div className={`w-2 h-2 rounded-full ${dotClass} ${s !== 'approved' && s !== 'rejected' ? 'animate-pulse' : ''}`} />
-                  <span className="text-sm font-bold">{label}</span>
-                </div>
-              );
-            })()}
-
             <div className="space-y-8">
-              <div>
-                <div className="flex flex-wrap items-center gap-3 mb-2">
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
-                    {items[0]?.description || "Substation Transformer Upgrade"}
-                  </h2>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                    {typeLabel}
-                  </span>
+              {/* Header: Title + Status */}
+              <div className="flex flex-row justify-between items-start gap-4">
+                {/* Title Section */}
+                <div className="flex-1 min-w-0 mr-4">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight break-words">
+                      {items[0]?.description || "Substation Transformer Upgrade"}
+                    </h2>
+                    <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider flex-shrink-0">
+                      {typeLabel}
+                    </span>
+                  </div>
+                  <p className="text-gray-400 font-medium text-sm tracking-wide">
+                    PROJ-{budget.id.slice(0, 8).toUpperCase()} -{" "}
+                    {requester?.department || "Infrastructure Department"}
+                  </p>
                 </div>
-                <p className="text-gray-400 font-medium text-sm tracking-wide">
-                  PROJ-{budget.id.slice(0, 8).toUpperCase()} -{" "}
-                  {requester?.department || "Infrastructure Department"}
-                </p>
+
+                {/* Status Pill */}
+                {(() => {
+                  const s = budget.status;
+                  let colorClass = "bg-gray-100 text-gray-500 border-gray-200";
+                  let dotClass = "bg-gray-400";
+                  let label = "Unknown";
+
+                  if (s === "approved") {
+                    colorClass = "bg-green-50 text-green-700 border-green-100";
+                    dotClass = "bg-green-500";
+                    label = "Approved";
+                  } else if (s === "rejected") {
+                    colorClass = "bg-red-50 text-red-700 border-red-100";
+                    dotClass = "bg-red-500";
+                    label = "Rejected";
+                  } else if (s === "revision_requested") {
+                    colorClass = "bg-orange-50 text-orange-700 border-orange-100";
+                    dotClass = "bg-orange-500";
+                    label = "Revision";
+                  } else {
+                    // Pending / Submitted / Verified
+                    colorClass = "bg-blue-50 text-blue-700 border-blue-100";
+                    dotClass = "bg-blue-500";
+                    label = "Pending Approval";
+                  }
+
+                  return (
+                    <div className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border w-fit ${colorClass}`}>
+                      <div className={`w-2 h-2 rounded-full ${dotClass} ${s !== 'approved' && s !== 'rejected' ? 'animate-pulse' : ''}`} />
+                      <span className="text-sm font-bold whitespace-nowrap">{label}</span>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 md:gap-y-10 gap-x-12">
