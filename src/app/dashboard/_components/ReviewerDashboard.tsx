@@ -52,6 +52,7 @@ export default function ReviewerDashboard({
     "all" | "pending" | "reviewed"
   >(activeFilter ?? "all");
   const [clientSearch, setClientSearch] = useState(searchQuery ?? "");
+  const [showAllMobile, setShowAllMobile] = useState(false);
   const deferredClientSearch = useDeferredValue(clientSearch);
 
   const normalizedSearch = deferredClientSearch.trim().toLowerCase();
@@ -104,6 +105,10 @@ export default function ReviewerDashboard({
     actionHref: r.actionHref,
     actionLabel: r.actionLabel,
   }));
+
+  const displayedMobileCards = showAllMobile
+    ? mobileCards
+    : mobileCards.slice(0, 10);
 
   const statCard = (
     icon: React.ReactNode,
@@ -387,9 +392,17 @@ export default function ReviewerDashboard({
       {/* Mobile Card List (outside the white card on mobile) */}
       <div className="md:hidden">
         <MobileCardList
-          items={mobileCards}
+          items={displayedMobileCards}
           emptyMessage="No budgets to review right now."
         />
+        {!showAllMobile && mobileCards.length > 10 && (
+          <button
+            onClick={() => setShowAllMobile(true)}
+            className="w-full mt-4 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            View All ({mobileCards.length - 10} more)
+          </button>
+        )}
       </div>
 
       {/* Desktop Card Container */}
