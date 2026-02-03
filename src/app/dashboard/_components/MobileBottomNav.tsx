@@ -155,7 +155,7 @@ export default function MobileBottomNav({ role }: { role: Role }) {
   if (role !== "superadmin") {
     const items = getNavItems(role);
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg md:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:hidden pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-around h-16 px-2">
           {items.map((item) => (
             <NavButton key={item.key} item={item} pathname={pathname} />
@@ -169,7 +169,7 @@ export default function MobileBottomNav({ role }: { role: Role }) {
   const isRoleSelection = activeRole === null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg md:hidden pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around h-16 px-2">
         {isRoleSelection ? (
           <>
