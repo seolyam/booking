@@ -4,7 +4,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { ArrowLeft, Bell, Wallet, Calendar, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Wallet, Calendar, CheckCircle2, XCircle } from "lucide-react";
 
 import WorkflowProgress, {
   type WorkflowEvent,

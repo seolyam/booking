@@ -3,7 +3,6 @@
 import React from "react";
 import {
   ArrowLeft,
-  Bell,
   CheckCircle2,
   XCircle,
   Wallet,

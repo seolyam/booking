@@ -244,20 +244,20 @@ export default function ApproverApprovalsList({
             <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                  <th className="pb-4 pl-4 pr-4 font-bold">BUDGET ID</th>
-                  <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
-                  <th className="pb-4 pr-4 font-bold">TYPE</th>
-                  <th className="pb-4 pr-4 font-bold text-center">
+                  <th className="py-6 pl-4 pr-4 font-bold">BUDGET ID</th>
+                  <th className="py-6 pr-4 font-bold">PROJECT NAME</th>
+                  <th className="py-6 pr-4 font-bold">TYPE</th>
+                  <th className="py-6 pr-4 font-bold text-center">
                     {sortLabel("amount", "AMOUNT")}
                   </th>
-                  <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
-                  <th className="pb-4 pr-4 font-bold text-center">
+                  <th className="py-6 pr-4 font-bold text-center">STATUS</th>
+                  <th className="py-6 pr-4 font-bold text-center">
                     {sortLabel(
                       "date",
                       currentStatus === "Approved" ? "DATE APPROVED" : "DATE",
                     )}
                   </th>
-                  <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
+                  <th className="py-6 pr-0 font-bold text-center">ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">

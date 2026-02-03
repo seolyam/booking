@@ -2,7 +2,14 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { auditLogs, budgets, budgetItems, users } from "@/db/schema";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  sql,
+} from "drizzle-orm";
 import ReviewerDashboard, {
   type ReviewerDashboardRow,
 } from "../_components/ReviewerDashboard";
@@ -28,12 +35,23 @@ function formatDateShort(d: Date) {
   return `${month}-${day}-${yy}`;
 }
 
-export default async function ReviewerDashboardPage() {
+export default async function ReviewerDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const user = await getAuthUser();
 
   if (!user) {
     redirect("/login");
   }
+
+  const { q, status } = await searchParams;
+  const searchQuery = typeof q === "string" ? q : "";
+  const activeFilter =
+    typeof status === "string" && ["pending", "reviewed"].includes(status)
+      ? (status as "pending" | "reviewed")
+      : "all";
 
   const appUser = await getOrCreateAppUserFromAuthUser({
     id: user.id,
@@ -82,7 +100,8 @@ export default async function ReviewerDashboardPage() {
     .where(eq(budgets.status, "revision_requested"));
   const needsRevision = Number(needsRevisionResult[0]?.count ?? 0);
 
-  // Get review queue
+  // Get review queue - Fetch all relevant items for client-side filtering
+  // This matches the pattern in RequestsPage for "fast" responsiveness
   const reviewQueue = await db
     .select({
       id: budgets.id,
@@ -92,6 +111,7 @@ export default async function ReviewerDashboardPage() {
       status: budgets.status,
       created_at: budgets.created_at,
       department: users.department,
+      project_code: budgets.project_code,
     })
     .from(budgets)
     .leftJoin(users, eq(budgets.user_id, users.id))
@@ -105,7 +125,7 @@ export default async function ReviewerDashboardPage() {
       ]),
     )
     .orderBy(desc(budgets.created_at))
-    .limit(20);
+    .limit(200);
 
   const budgetIds = reviewQueue.map((b) => b.id);
   const items =
@@ -175,6 +195,10 @@ export default async function ReviewerDashboardPage() {
         needsRevision,
       }}
       rows={rows}
+      activeFilter={activeFilter}
+      searchQuery={searchQuery}
+      enableClientFiltering={true}
     />
   );
 }
+

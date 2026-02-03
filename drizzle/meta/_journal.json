@@ -15,6 +15,13 @@
       "when": 1770015957368,
       "tag": "0001_nasty_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770126466035,
+      "tag": "0002_gray_turbo",
+      "breakpoints": true
     }
   ]
 }

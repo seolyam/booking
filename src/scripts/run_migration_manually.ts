@@ -1,13 +1,17 @@
 
 import { config } from "dotenv";
 config({ path: ".env.local" });
-import { db } from "@/db";
+// db import moved to main()
+
 import { sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 
 async function main() {
     console.log("Running migration manually...");
+    
+    // Dynamic import to ensure env vars are loaded first
+    const { db } = await import("@/db");
 
     // Find the migration file
     const migrationDir = path.join(process.cwd(), "drizzle");
@@ -31,7 +35,9 @@ async function main() {
             try {
                 await db.execute(sql.raw(trimmed));
                 console.log("Executed statement.");
-            } catch (e: any) {
+            } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+                console.error("Error executing statement:", e);
+                if (e.cause) console.error("Cause:", e.cause);
                 // Ignore "already exists" errors if we are re-running or if partial state exists
                 if (e.code === "42710" || e.code === "42P07") { // duplicate_object or duplicate_table
                     console.log("Skipping duplicate object/table");

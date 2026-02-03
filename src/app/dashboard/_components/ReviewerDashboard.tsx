@@ -28,13 +28,18 @@ export type ReviewerDashboardRow = {
   actionHref: string;
 };
 
+type ReviewerFilter = "all" | "pending" | "reviewed" | "rejected";
+
+function normalizeDigits(value: string) {
+  return value.replace(/[^0-9]/g, "");
+}
+
 export default function ReviewerDashboard({
   stats,
   rows,
   showStats = true,
-  activeFilter,
-  searchQuery,
-  enableClientFiltering = false,
+  activeFilter = "all",
+  searchQuery = "",
 }: {
   stats: {
     reviewedToday: number;
@@ -44,39 +49,45 @@ export default function ReviewerDashboard({
   };
   rows: ReviewerDashboardRow[];
   showStats?: boolean;
-  activeFilter?: "all" | "pending" | "reviewed";
+  activeFilter?: ReviewerFilter;
   searchQuery?: string;
-  enableClientFiltering?: boolean;
+  enableClientFiltering?: boolean; // Deprecated but kept for compatibility
 }) {
-  const [clientFilter, setClientFilter] = useState<
-    "all" | "pending" | "reviewed"
-  >(activeFilter ?? "all");
-  const [clientSearch, setClientSearch] = useState(searchQuery ?? "");
+  const [clientFilter, setClientFilter] = useState<ReviewerFilter>(
+    activeFilter,
+  );
+  const [clientSearch, setClientSearch] = useState(searchQuery);
   const [showAllMobile, setShowAllMobile] = useState(false);
   const deferredClientSearch = useDeferredValue(clientSearch);
 
   const normalizedSearch = deferredClientSearch.trim().toLowerCase();
+  const normalizedSearchDigits = normalizeDigits(normalizedSearch);
 
   const filterableRows = useMemo(() => {
-    if (!enableClientFiltering) return rows;
-
     return rows.filter((r) => {
-      const matchesFilter =
-        clientFilter === "all"
-          ? true
-          : clientFilter === "pending"
-            ? r.statusLabel === "Pending"
-            : r.statusLabel === "Reviewed";
+      // 1. Filter by Status
+      if (clientFilter === "pending") {
+        if (r.statusLabel !== "Pending") return false;
+      } else if (clientFilter === "reviewed") {
+        if (r.statusLabel !== "Reviewed") return false;
+      } else if (clientFilter === "rejected") {
+        if (r.statusLabel !== "Rejected") return false;
+      }
 
-      if (!matchesFilter) return false;
+      // 2. Filter by Query
       if (!normalizedSearch) return true;
 
-      const haystack = `${r.displayId} ${r.projectName} ${r.projectSub}`
-        .toLowerCase()
-        .trim();
-      return haystack.includes(normalizedSearch);
+      const haystack = `${r.displayId} ${r.projectName} ${r.projectSub} ${r.amount} ${r.statusLabel} ${r.type}`
+        .toLowerCase();
+      
+      const amountDigits = normalizeDigits(r.amount);
+
+      return (
+        haystack.includes(normalizedSearch) ||
+        (normalizedSearchDigits.length >= 3 && amountDigits.includes(normalizedSearchDigits))
+      );
     });
-  }, [enableClientFiltering, rows, clientFilter, normalizedSearch]);
+  }, [rows, clientFilter, normalizedSearch, normalizedSearchDigits]);
 
   // Convert to mobile card data
   const mobileCards: MobileCardData[] = filterableRows.map((r) => ({
@@ -115,11 +126,18 @@ export default function ReviewerDashboard({
     value: number,
     label: string,
     iconBg: string,
-    href: string,
+    filterVal: ReviewerFilter | "verified" | "revision", // "verified"/"revision" link to dashboard generally but we use filters for main list
   ) => (
-    <Link
-      href={href}
-      className="rounded-xl md:rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group border border-gray-100/50 hover:-translate-y-1"
+    <button
+      onClick={() => {
+        // Simple heuristic: if clicking stat card, set relevant filter if applicable
+        if (filterVal === "pending" || filterVal === "reviewed" || filterVal === "all") {
+             setClientFilter(filterVal);
+        }
+        // For verified/revision, we don't have a direct filter yet in the simplified list, 
+        // but we could just scroll down. For now just standard button behavior.
+      }}
+      className="w-full text-left rounded-xl md:rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group border border-gray-100/50 hover:-translate-y-1"
     >
       <div
         className={`h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl flex items-center justify-center ${iconBg} transition-transform group-hover:scale-110 shadow-sm`}
@@ -132,7 +150,7 @@ export default function ReviewerDashboard({
       <div className="mt-0.5 md:mt-1 text-[10px] md:text-sm font-semibold text-gray-500 uppercase tracking-wide">
         {label}
       </div>
-    </Link>
+    </button>
   );
 
   const typePill = (type: "CapEx" | "OpEx") => {
@@ -170,54 +188,6 @@ export default function ReviewerDashboard({
     );
   };
 
-  const filterChip = (
-    label: string,
-    filter: "all" | "pending" | "reviewed",
-    href: string,
-  ) => {
-    const isActive = activeFilter === filter;
-    const baseClass =
-      "inline-flex items-center rounded-md px-3 py-1 text-xs font-medium transition-all";
-    const colorClass = isActive
-      ? filter === "pending"
-        ? "bg-blue-100 text-blue-700 ring-2 ring-blue-400"
-        : filter === "reviewed"
-          ? "bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400"
-          : "bg-gray-100 text-gray-700 ring-2 ring-gray-400"
-      : "bg-gray-100 text-gray-500 ring-1 ring-gray-300 hover:ring-2 hover:ring-gray-400";
-
-    return (
-      <Link href={href} className={`${baseClass} ${colorClass}`}>
-        {label}
-      </Link>
-    );
-  };
-
-  const filterBtn = (label: string, filter: "all" | "pending" | "reviewed") => {
-    const isActive = clientFilter === filter;
-
-    const baseClass =
-      "px-4 md:px-6 py-2 md:py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all border min-h-[44px] md:min-h-0";
-
-    const colorClass = isActive
-      ? filter === "pending"
-        ? "bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-400"
-        : filter === "reviewed"
-          ? "bg-yellow-50 text-yellow-700 border-yellow-200 ring-2 ring-yellow-400"
-          : "bg-gray-100 text-gray-700 border-gray-200 ring-2 ring-gray-400"
-      : "bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400";
-
-    return (
-      <button
-        type="button"
-        onClick={() => setClientFilter(filter)}
-        className={`${baseClass} ${colorClass}`}
-      >
-        {label}
-      </button>
-    );
-  };
-
   const actionButton = (r: ReviewerDashboardRow) => {
     const base =
       "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shadow-sm transition-all";
@@ -243,6 +213,8 @@ export default function ReviewerDashboard({
     );
   };
 
+  const hasFilters = clientSearch.trim().length > 0 || clientFilter !== "all";
+
   return (
     <div className="space-y-6 md:space-y-10">
       {showStats && (
@@ -256,28 +228,28 @@ export default function ReviewerDashboard({
               stats.reviewedToday,
               "Reviewed today",
               "bg-green-50",
-              "/dashboard/reviewer?status=reviewed",
+              "reviewed",
             )}
             {statCard(
               <Clock className="h-6 w-6 text-yellow-500" />,
               stats.pendingReview,
               "Pending review",
               "bg-yellow-50",
-              "/dashboard/reviewer?status=pending",
+              "pending",
             )}
             {statCard(
               <TrendingUp className="h-6 w-6 text-blue-500" />,
               stats.awaitingApproval,
               "Awaiting Approval",
               "bg-blue-50",
-              "/dashboard/reviewer?status=verified",
+              "all",
             )}
             {statCard(
               <AlertCircle className="h-6 w-6 text-orange-400" />,
               stats.needsRevision,
               "Needs revision",
               "bg-orange-50",
-              "/dashboard/reviewer?status=revision",
+              "all",
             )}
           </div>
         </>
@@ -285,7 +257,6 @@ export default function ReviewerDashboard({
 
       {/* Mobile-only search and filters */}
       <div className="md:hidden mb-4">
-        {enableClientFiltering ? (
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
@@ -295,29 +266,9 @@ export default function ReviewerDashboard({
               className="h-12 w-full rounded-xl bg-gray-100 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-[#358334]/20 focus:bg-white transition-all"
             />
           </div>
-        ) : (
-          <form
-            action="/dashboard/reviewer"
-            method="GET"
-            className="relative mb-3"
-          >
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              name="q"
-              defaultValue={searchQuery ?? ""}
-              placeholder="Search..."
-              className="h-12 w-full rounded-xl bg-gray-100 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-[#358334]/20 focus:bg-white transition-all"
-            />
-            {activeFilter && activeFilter !== "all" ? (
-              <input type="hidden" name="status" value={activeFilter} />
-            ) : null}
-          </form>
-        )}
 
         {/* Mobile Filter Chips */}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          {enableClientFiltering ? (
-            <>
               <button
                 type="button"
                 onClick={() => setClientFilter("all")}
@@ -348,42 +299,20 @@ export default function ReviewerDashboard({
               >
                 Reviewed
               </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/dashboard/reviewer"
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === "all"
-                    ? "bg-gray-800 text-white"
-                    : "bg-white text-gray-600 border border-gray-200"
+              <button
+                type="button"
+                onClick={() => setClientFilter("rejected")}
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${clientFilter === "rejected"
+                    ? "bg-red-500 text-white"
+                    : "bg-white text-red-600 border border-red-200"
                   }`}
               >
-                All
-              </Link>
-              <Link
-                href="/dashboard/reviewer?status=pending"
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === "pending"
-                    ? "bg-blue-500 text-white"
-                    : "bg-white text-blue-600 border border-blue-200"
-                  }`}
-              >
-                Pending
-              </Link>
-              <Link
-                href="/dashboard/reviewer?status=reviewed"
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === "reviewed"
-                    ? "bg-yellow-500 text-white"
-                    : "bg-white text-yellow-600 border border-yellow-200"
-                  }`}
-              >
-                Reviewed
-              </Link>
-            </>
-          )}
+                Rejected
+              </button>
         </div>
       </div>
 
-      {/* Mobile Card List (outside the white card on mobile) */}
+      {/* Mobile Card List */}
       <div className="md:hidden">
         <MobileCardList
           items={displayedMobileCards}
@@ -400,102 +329,86 @@ export default function ReviewerDashboard({
       </div>
 
       {/* Desktop Card Container */}
-      <div className="hidden md:block rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
-        <div className="p-4 md:p-8">
-          {(activeFilter !== undefined || searchQuery !== undefined) && (
-            <div className="mb-6 md:mb-8 flex flex-col md:flex-row gap-4 md:items-center">
-              {enableClientFiltering ? (
+      <div className="hidden md:block rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
+        <div className="p-5 md:p-6 border-b border-gray-100">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
                 <div className="relative w-full md:w-96">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     value={clientSearch}
                     onChange={(e) => setClientSearch(e.target.value)}
-                    placeholder="Search (BUD-#, project, department…)"
-                    className="h-11 md:h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400"
+                    placeholder="Search..."
+                    className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
                   />
                 </div>
-              ) : (
-                <form
-                  action="/dashboard/reviewer"
-                  method="GET"
-                  className="relative w-full md:w-96"
-                >
-                  <input
-                    name="q"
-                    defaultValue={searchQuery ?? ""}
-                    placeholder="Search (BUD-#, project, department…)"
-                    className="h-11 md:h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400"
-                  />
-                  {activeFilter && activeFilter !== "all" ? (
-                    <input type="hidden" name="status" value={activeFilter} />
-                  ) : null}
-                </form>
-              )}
 
-              <div className="flex flex-wrap items-center gap-3">
-                {enableClientFiltering ? (
-                  <>
+              <div className="flex flex-wrap items-center gap-2 md:gap-3">
                     <div className="flex flex-wrap gap-2 md:gap-3">
-                      {filterBtn("All", "all")}
-                      {filterBtn("Pending", "pending")}
-                      {filterBtn("Reviewed", "reviewed")}
+                        {[
+                          { label: "All", val: "all", color: "gray" },
+                          { label: "Pending", val: "pending", color: "blue" },
+                          { label: "Reviewed", val: "reviewed", color: "yellow" },
+                          { label: "Rejected", val: "rejected", color: "red" }
+                        ].map((tab) => {
+                          const isActive = clientFilter === tab.val;
+                          // Matching RequestListClient active styles
+                          const activeClass = 
+                             tab.color === "blue" ? "bg-blue-50 text-blue-700 border-blue-200 ring-blue-200"
+                             : tab.color === "yellow" ? "bg-yellow-50 text-yellow-700 border-yellow-200 ring-yellow-200"
+                             : tab.color === "red" ? "bg-red-50 text-red-700 border-red-200 ring-red-200"
+                             : "bg-gray-800 text-white border-gray-800 ring-gray-800"; // All active
+
+                          // Inactive style from RequestsListClient
+                          const inactiveClass = "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300";
+
+                          return (
+                            <button
+                              key={tab.val}
+                              type="button"
+                              onClick={() => setClientFilter(tab.val as ReviewerFilter)}
+                              className={`
+                                px-4 py-2 rounded-lg text-sm font-medium transition-all border
+                                ${isActive ? activeClass + " border ring-1" : inactiveClass}
+                              `}
+                            >
+                              {tab.label}
+                            </button>
+                          )
+                        })}
                     </div>
-                    {(clientSearch || clientFilter !== "all") && (
+                    
+                    {hasFilters && (
                       <button
                         type="button"
                         onClick={() => {
                           setClientSearch("");
                           setClientFilter("all");
                         }}
-                        className="text-sm text-gray-600 hover:underline"
+                         className="text-sm text-gray-500 hover:text-gray-900 ml-2"
                       >
-                        Clear
+                        Clear filters
                       </button>
                     )}
-                    <span className="text-xs font-medium text-gray-500">
-                      Showing {filterableRows.length} of {rows.length}
+                    
+                    <span className="text-xs font-medium text-gray-400 ml-2 border-l pl-3">
+                      {filterableRows.length} items
                     </span>
-                  </>
-                ) : (
-                  <>
-                    {filterChip("All", "all", "/dashboard/reviewer")}
-                    {filterChip(
-                      "Pending",
-                      "pending",
-                      "/dashboard/reviewer?status=pending",
-                    )}
-                    {filterChip(
-                      "Reviewed",
-                      "reviewed",
-                      "/dashboard/reviewer?status=reviewed",
-                    )}
-
-                    {(searchQuery ||
-                      (activeFilter && activeFilter !== "all")) && (
-                        <Link
-                          href="/dashboard/reviewer"
-                          className="text-sm text-gray-600 hover:underline"
-                        >
-                          Clear
-                        </Link>
-                      )}
-                  </>
-                )}
               </div>
             </div>
-          )}
+        </div>
 
           {/* Desktop Table */}
-          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                  <th className="pb-4 pr-4 font-bold">BUDGET ID</th>
-                  <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
-                  <th className="pb-4 pr-4 font-bold">TYPE</th>
-                  <th className="pb-4 pr-4 font-bold">AMOUNT</th>
-                  <th className="pb-4 pr-4 font-bold">STATUS</th>
-                  <th className="pb-4 pr-4 font-bold">DATE</th>
-                  <th className="pb-4 pr-0 font-bold text-right">ACTION</th>
+                  <th className="py-6 pl-8 pr-4 font-bold">BUDGET ID</th>
+                  <th className="py-6 pr-4 font-bold">PROJECT NAME</th>
+                  <th className="py-6 pr-4 font-bold">TYPE</th>
+                  <th className="py-6 pr-4 font-bold">AMOUNT</th>
+                  <th className="py-6 pr-4 font-bold">STATUS</th>
+                  <th className="py-6 pr-4 font-bold">DATE</th>
+                  <th className="py-6 pr-0 font-bold text-right pr-8">ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -505,7 +418,7 @@ export default function ReviewerDashboard({
                       colSpan={7}
                       className="py-12 text-center text-gray-400 font-medium"
                     >
-                      No budgets to review right now.
+                      {hasFilters ? "No budgets match your search." : "No budgets to review right now."}
                     </td>
                   </tr>
                 ) : (
@@ -517,7 +430,7 @@ export default function ReviewerDashboard({
                           : ""
                         }`}
                     >
-                      <td className="py-5 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
+                      <td className="py-5 pl-8 pr-4 font-bold text-gray-400 text-xs text-center md:text-left">
                         {r.displayId}
                       </td>
                       <td className="py-5 pr-4">
@@ -536,7 +449,7 @@ export default function ReviewerDashboard({
                       <td className="py-5 pr-4 text-gray-400 font-bold text-xs">
                         {r.dateLabel}
                       </td>
-                      <td className="py-5 pr-0 text-right">
+                      <td className="py-5 pr-8 text-right">
                         {actionButton(r)}
                       </td>
                     </tr>
@@ -545,7 +458,6 @@ export default function ReviewerDashboard({
               </tbody>
             </table>
           </div>
-        </div>
       </div>
     </div>
   );

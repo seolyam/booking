@@ -156,9 +156,9 @@ export default function RequesterDashboard({
       <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
         <div className="p-4 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-4 mb-6 md:mb-8">
-            <div className="text-lg md:text-xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
               My Budget Requests
-            </div>
+            </h1>
             <Link
               href="/dashboard/budget/create"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#358334] px-4 md:px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm min-h-[44px]"
@@ -184,7 +184,7 @@ export default function RequesterDashboard({
 
           <div className="hidden md:block">
             <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-              <table className="w-full text-sm min-w-[700px]">
+              <table className="w-full text-sm min-w-[900px]">
                 <thead>
                   <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
                     <th className="pb-4 pr-4 font-bold">BUDGET ID</th>

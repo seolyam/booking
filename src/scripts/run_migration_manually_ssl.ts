@@ -1,14 +1,18 @@
 
 import { config } from "dotenv";
 config({ path: ".env.local" });
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres"; // Using the installed package
+// import { drizzle } from "drizzle-orm/postgres-js"; // Moved to main
+// import postgres from "postgres"; // Moved to main
 import { sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 
 async function main() {
     console.log("Running migration manually with forced SSL...");
+
+    // Dynamic import to ensure env vars are loaded first
+    const { drizzle } = await import("drizzle-orm/postgres-js");
+    const postgres = (await import("postgres")).default;
 
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
@@ -49,7 +53,7 @@ async function main() {
             try {
                 await db.execute(sql.raw(trimmed));
                 console.log("Executed statement.");
-            } catch (e: any) {
+            } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
                 // Log but continue
                 console.log(`Error (ignoring if exists): ${e.message}`);
             }

@@ -37,10 +37,8 @@ export default function BudgetComparison({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const hasHistoricalData = historicalAverage && historicalMin && historicalMax;
-  
-  const departmentDisplay = "Operations department";
-
-  return (
+ 
+   return (
     <>
       {/* Compact Card View */}
       <div className="bg-white rounded-lg border border-gray-200 border-l-4 p-6">

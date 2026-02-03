@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 // import { useMemo, useCallback } from "react"; // DISABLED - for project feature
 import {
-  Bell,
   Trash2,
   Calendar,
   FileText,
