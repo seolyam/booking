@@ -98,7 +98,7 @@ export default function BudgetComparison({
         {/* Comparison Text */}
         <p className="text-xs text-gray-600 mt-6">
           {comparableBudgets.length > 0
-            ? `Compared against ${comparableBudgets.length} similar OpEx budgets from ${departmentDisplay}`
+            ? ""
             : "No similar budgets available for comparison yet"}
         </p>
       </div>

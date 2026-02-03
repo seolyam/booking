@@ -60,6 +60,13 @@ function getNavItems(role: Role): NavItemConfig[] {
         p.startsWith("/dashboard/budget") &&
         !p.startsWith("/dashboard/budget/create"),
     },
+    {
+      key: "compare",
+      label: "Compare",
+      href: "/dashboard/compare",
+      icon: FileSearch,
+      activeMatch: (p) => p.startsWith("/dashboard/compare"),
+    },
   ];
 
   const reviewerItems: NavItemConfig[] = [
@@ -84,6 +91,13 @@ function getNavItems(role: Role): NavItemConfig[] {
       icon: List,
       activeMatch: (p) => p.startsWith("/dashboard/budget"),
     },
+    {
+      key: "compare",
+      label: "Compare",
+      href: "/dashboard/compare",
+      icon: FileSearch,
+      activeMatch: (p) => p.startsWith("/dashboard/compare"),
+    },
   ];
 
   const approverItems: NavItemConfig[] = [
@@ -107,6 +121,13 @@ function getNavItems(role: Role): NavItemConfig[] {
       href: "/dashboard/budget",
       icon: List,
       activeMatch: (p) => p.startsWith("/dashboard/budget"),
+    },
+    {
+      key: "compare",
+      label: "Compare",
+      href: "/dashboard/compare",
+      icon: FileSearch,
+      activeMatch: (p) => p.startsWith("/dashboard/compare"),
     },
   ];
 
@@ -138,6 +159,13 @@ function getNavItems(role: Role): NavItemConfig[] {
       href: "/dashboard/approver/approvals",
       icon: ClipboardCheck,
       activeMatch: (p) => p.startsWith("/dashboard/approver"),
+    },
+    {
+      key: "compare",
+      label: "Compare",
+      href: "/dashboard/compare",
+      icon: FileSearch,
+      activeMatch: (p) => p.startsWith("/dashboard/compare"),
     },
   ];
 
