@@ -672,7 +672,7 @@ export default async function CompareProjectsPage() {
   const opexLastSummary = buildSummaryFromMatched(matchedOpex, "last");
 
   return (
-    <div className="-m-8 p-4 md:p-8 space-y-6">
+    <div className="md:-m-8 md:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Compare Projects</h1>

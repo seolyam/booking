@@ -54,7 +54,7 @@ function ComparisonCard({
 }) {
   if (!row) {
     return (
-      <div className="rounded-xl border border-black/10 bg-white p-5">
+      <div className="rounded-xl border border-black/10 bg-white p-4 md:p-5">
         <div className="flex items-center justify-between">
           <div className="text-xs font-semibold text-gray-600">
             {year} ({label})
@@ -71,7 +71,7 @@ function ComparisonCard({
   }
 
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-5">
+    <div className="rounded-xl border border-black/10 bg-white p-4 md:p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="text-xs font-semibold text-gray-600">
           {year} ({label})

@@ -329,7 +329,7 @@ function ItemsTable({ items }: { items: LineItem[] }) {
 
 function NotesCard({ title, value }: { title: string; value: string | null }) {
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-5">
+    <div className="rounded-xl border border-black/10 bg-white p-4 md:p-5">
       <div className="text-xs font-semibold text-gray-600">{title}</div>
       <div className="mt-2 text-sm text-gray-900 whitespace-pre-wrap break-words overflow-hidden">
         {value && value.trim().length > 0 ? value : "—"}
@@ -349,7 +349,7 @@ function BudgetHeaderCard({
 }) {
   if (!budget) {
     return (
-      <div className="rounded-xl border border-black/10 bg-white p-5">
+      <div className="rounded-xl border border-black/10 bg-white p-4 md:p-5">
         <div className="text-xs font-semibold text-gray-600">
           {year} ({label})
         </div>
@@ -364,7 +364,7 @@ function BudgetHeaderCard({
   }
 
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-5">
+    <div className="rounded-xl border border-black/10 bg-white p-4 md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-xs font-semibold text-gray-600">
