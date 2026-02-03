@@ -87,6 +87,8 @@ export default async function ApproverReviewDetailPage({
     start_date: budgets.start_date,
     end_date: budgets.end_date,
     budget_number: budgets.budget_number,
+    fiscal_year: budgets.fiscal_year,
+    project_code: budgets.project_code,
   };
 
   let budgetData =
@@ -214,11 +216,9 @@ export default async function ApproverReviewDetailPage({
   );
 
   // Comparison Logic: Fetch Last Year's Budget
-  const currentYear = new Date().getFullYear(); // Or use budget.fiscal_year if available, but usually comparison is relative to current wall clock year or fiscal year
-  // Actually, better to compare relative to the budget's own fiscal year if it exists, or created_at
-  const budgetFiscalYear = (budget as { fiscal_year?: number }).fiscal_year || budget.created_at.getFullYear();
+  const budgetFiscalYear = budget.fiscal_year || budget.created_at.getFullYear();
   const lastYear = budgetFiscalYear - 1;
-  const projectCode = (budget as { project_code?: string | null }).project_code;
+  const projectCode = budget.project_code;
 
   let lastYearBudgetRecord = null;
   let lastYearAmount = null;
