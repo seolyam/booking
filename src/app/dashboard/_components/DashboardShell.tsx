@@ -1065,7 +1065,7 @@ export default function DashboardShell({
       </div>
 
       {/* Mobile Content Area - only visible on small screens */}
-      <div className="md:hidden min-h-svh w-full overflow-x-hidden pt-15 pb-32 bg-linear-to-b from-[#C7C800] to-[#2F5E3D]">
+      <div className="md:hidden min-h-svh w-full overflow-x-hidden pt-15 pb-32 bg-[#F7F7F3]">
         <div className="px-3 py-3 w-full max-w-[100vw]">{children}</div>
       </div>
 
