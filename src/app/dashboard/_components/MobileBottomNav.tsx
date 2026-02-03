@@ -80,7 +80,7 @@ function getNavItems(role: Role): NavItemConfig[] {
     {
       key: "review",
       label: "Review",
-      href: "/dashboard/reviewer/review",
+      href: "/dashboard/reviewer",
       icon: CheckSquare,
       activeMatch: (p) => p.startsWith("/dashboard/reviewer"),
     },
@@ -149,7 +149,7 @@ function getNavItems(role: Role): NavItemConfig[] {
     {
       key: "review",
       label: "Review",
-      href: "/dashboard/reviewer/review",
+      href: "/dashboard/reviewer",
       icon: CheckSquare,
       activeMatch: (p) => p.startsWith("/dashboard/reviewer"),
     },

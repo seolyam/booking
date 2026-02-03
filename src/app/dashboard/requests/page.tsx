@@ -43,6 +43,7 @@ export default async function RequestsPage({
 
   if (!user) redirect("/login");
 
+
   const myBudgets = await db.query.budgets.findMany({
     where: eq(budgets.user_id, user.id),
     orderBy: [desc(budgets.created_at)],
@@ -54,12 +55,12 @@ export default async function RequestsPage({
     ids.length === 0
       ? []
       : await db
-          .select({
-            budget_id: budgetItems.budget_id,
-            description: budgetItems.description,
-          })
-          .from(budgetItems)
-          .where(inArray(budgetItems.budget_id, ids));
+        .select({
+          budget_id: budgetItems.budget_id,
+          description: budgetItems.description,
+        })
+        .from(budgetItems)
+        .where(inArray(budgetItems.budget_id, ids));
 
   const firstItem = new Map<string, string>();
   for (const it of items) {

@@ -302,6 +302,25 @@ export const reviewChecklists = pgTable("review_checklists", {
 // Relations
 // ============================================================================
 
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").default("info").notNull(), // info, success, warning, error
+  is_read: boolean("is_read").default(false).notNull(),
+  link: text("link"), // URL to navigate to
+  resource_id: uuid("resource_id"), // e.g. budget_id
+  resource_type: text("resource_type"), // e.g. 'budget'
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ============================================================================
+// Relations
+// ============================================================================
+
 export const projectsRelations = relations(projects, ({ one, many }) => ({
   creator: one(users, {
     fields: [projects.created_by],
@@ -348,6 +367,13 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   }),
 }));
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.user_id],
+    references: [users.id],
+  }),
+}));
+
 // Type exports for convenience
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
@@ -355,3 +381,5 @@ export type Budget = typeof budgets.$inferSelect;
 export type NewBudget = typeof budgets.$inferInsert;
 export type BudgetCategory = typeof budgetCategories.$inferSelect;
 export type BudgetItem = typeof budgetItems.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Clock, FileText, Eye } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, FileText, Eye, Pencil } from "lucide-react";
 import {
   MobileCardList,
   type MobileCardData,
@@ -248,7 +248,7 @@ export default function RequesterDashboard({
                           >
                             {r.actionLabel}{" "}
                             {r.actionLabel === "Edit" ? (
-                              <span>✏️</span>
+                              <span><Pencil className="h-3.5 w-3.5" /></span>
                             ) : (
                               <Eye className="h-3.5 w-3.5" />
                             )}

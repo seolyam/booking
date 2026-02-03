@@ -75,7 +75,7 @@ export default function ReviewDecisionModal({
 
       // Refresh to show updated status
       router.refresh();
-      router.push("/dashboard/reviewer/review");
+      router.push("/dashboard/reviewer");
     } catch (error) {
       console.error("Review action failed:", error);
       setErrorMessage("Failed to process review action. Please try again.");
@@ -117,34 +117,30 @@ export default function ReviewDecisionModal({
         <button
           onClick={() => setSelectedAction("verify")}
           disabled={!isReviewable}
-          className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${
-            selectedAction === "verify"
+          className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${selectedAction === "verify"
               ? "border-green-500 bg-green-50"
               : "border-gray-200 hover:border-gray-300"
-          } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
+            } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
             <CheckCircle
-              className={`h-5 w-5 shrink-0 mt-0.5 ${
-                selectedAction === "verify" ? "text-green-600" : "text-gray-400"
-              }`}
+              className={`h-5 w-5 shrink-0 mt-0.5 ${selectedAction === "verify" ? "text-green-600" : "text-gray-400"
+                }`}
             />
             <div>
               <div
-                className={`font-medium ${
-                  selectedAction === "verify"
+                className={`font-medium ${selectedAction === "verify"
                     ? "text-green-800"
                     : "text-gray-700"
-                }`}
+                  }`}
               >
                 Verify & Forward
               </div>
               <div
-                className={`text-sm ${
-                  selectedAction === "verify"
+                className={`text-sm ${selectedAction === "verify"
                     ? "text-green-600"
                     : "text-gray-500"
-                }`}
+                  }`}
               >
                 Approve and send to approver
               </div>
@@ -156,36 +152,32 @@ export default function ReviewDecisionModal({
         <button
           onClick={() => setSelectedAction("request_revision")}
           disabled={!isReviewable}
-          className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${
-            selectedAction === "request_revision"
+          className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${selectedAction === "request_revision"
               ? "border-orange-500 bg-orange-50"
               : "border-gray-200 hover:border-gray-300"
-          } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
+            } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
             <AlertTriangle
-              className={`h-5 w-5 shrink-0 mt-0.5 ${
-                selectedAction === "request_revision"
+              className={`h-5 w-5 shrink-0 mt-0.5 ${selectedAction === "request_revision"
                   ? "text-orange-600"
                   : "text-gray-400"
-              }`}
+                }`}
             />
             <div>
               <div
-                className={`font-medium ${
-                  selectedAction === "request_revision"
+                className={`font-medium ${selectedAction === "request_revision"
                     ? "text-orange-800"
                     : "text-gray-700"
-                }`}
+                  }`}
               >
                 Request Revision
               </div>
               <div
-                className={`text-sm ${
-                  selectedAction === "request_revision"
+                className={`text-sm ${selectedAction === "request_revision"
                     ? "text-orange-600"
                     : "text-gray-500"
-                }`}
+                  }`}
               >
                 Send back for changes
               </div>
@@ -197,30 +189,26 @@ export default function ReviewDecisionModal({
         <button
           onClick={() => setSelectedAction("reject")}
           disabled={!isReviewable}
-          className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${
-            selectedAction === "reject"
+          className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${selectedAction === "reject"
               ? "border-red-500 bg-red-50"
               : "border-gray-200 hover:border-gray-300"
-          } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
+            } ${!isReviewable ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="flex items-start gap-3">
             <XCircle
-              className={`h-5 w-5 shrink-0 mt-0.5 ${
-                selectedAction === "reject" ? "text-red-600" : "text-gray-400"
-              }`}
+              className={`h-5 w-5 shrink-0 mt-0.5 ${selectedAction === "reject" ? "text-red-600" : "text-gray-400"
+                }`}
             />
             <div>
               <div
-                className={`font-medium ${
-                  selectedAction === "reject" ? "text-red-800" : "text-gray-700"
-                }`}
+                className={`font-medium ${selectedAction === "reject" ? "text-red-800" : "text-gray-700"
+                  }`}
               >
                 Reject
               </div>
               <div
-                className={`text-sm ${
-                  selectedAction === "reject" ? "text-red-600" : "text-gray-500"
-                }`}
+                className={`text-sm ${selectedAction === "reject" ? "text-red-600" : "text-gray-500"
+                  }`}
               >
                 Deny this budget request
               </div>
@@ -342,13 +330,12 @@ export default function ReviewDecisionModal({
               <Button
                 onClick={handleConfirmedSubmit}
                 disabled={isSubmitting}
-                className={`flex-1 ${
-                  selectedAction === "verify"
+                className={`flex-1 ${selectedAction === "verify"
                     ? "bg-green-600 hover:bg-green-700"
                     : selectedAction === "reject"
                       ? "bg-red-600 hover:bg-red-700"
                       : "bg-orange-600 hover:bg-orange-700"
-                }`}
+                  }`}
               >
                 {isSubmitting ? "Processing..." : "Confirm"}
               </Button>

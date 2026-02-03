@@ -15,6 +15,8 @@ import {
 import { signOut } from "@/actions/auth";
 import { usePathname } from "next/navigation";
 
+import NotificationsPopover from "@/components/NotificationsPopover";
+
 import { buildNav, type NavItem, type Role } from "./nav";
 import MobileNavbar from "./MobileNavbar";
 import MobileBottomNav from "./MobileBottomNav";
@@ -842,32 +844,9 @@ export default function DashboardShell({
                   >
                     <div className="flex-1" />
                     <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-black/5"
-                        onClick={() =>
-                          isMaximized("main")
-                            ? restorePanel("main")
-                            : maximizePanel("main")
-                        }
-                        title={isMaximized("main") ? "Restore" : "Maximize"}
-                        aria-label={
-                          isMaximized("main") ? "Restore" : "Maximize"
-                        }
-                      >
-                        {isMaximized("main") ? (
-                          <Minimize2 className="h-4 w-4" />
-                        ) : (
-                          <Maximize2 className="h-4 w-4" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Notifications"
-                        className="rounded-lg p-2 text-gray-700 hover:bg-black/5"
-                      >
-                        <Bell className="h-5 w-5" />
-                      </button>
+                      <div onPointerDown={(e) => e.stopPropagation()}>
+                        <NotificationsPopover />
+                      </div>
                     </div>
                   </div>
 
@@ -1046,13 +1025,7 @@ export default function DashboardShell({
                 <section className="flex-1 min-w-0 md:h-full md:min-h-0 rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden">
                   <div className="h-full overflow-auto p-8">
                     <div className="flex justify-end mb-4">
-                      <button
-                        type="button"
-                        aria-label="Notifications"
-                        className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-                      >
-                        <Bell className="h-5 w-5" />
-                      </button>
+                      <NotificationsPopover />
                     </div>
 
                     {children}
@@ -1062,7 +1035,7 @@ export default function DashboardShell({
             )}
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Mobile Content Area - only visible on small screens */}
       <div className="md:hidden min-h-svh w-full overflow-x-hidden pt-15 pb-32 bg-[#F7F7F3]">
@@ -1070,7 +1043,7 @@ export default function DashboardShell({
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav role={role} />
+      < MobileBottomNav role={role} />
     </>
   );
 }

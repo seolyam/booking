@@ -55,9 +55,9 @@ export function superadminNav(): NavSection[] {
     {
       key: "review",
       label: "Budget Review",
-      href: "/dashboard/reviewer/review",
+      href: "/dashboard/reviewer",
       icon: Eye,
-      isActive: (p) => p.startsWith("/dashboard/reviewer/review"),
+      isActive: (p) => p.startsWith("/dashboard/reviewer") && !p.includes("/review"),
     },
   ];
 

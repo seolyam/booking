@@ -4,7 +4,8 @@ import Link from "next/link";
 import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { CheckCircle2, XCircle, ArrowLeft, Bell, Wallet, Calendar } from "lucide-react";
+import { ArrowLeft, Bell, Wallet, Calendar, CheckCircle2, XCircle } from "lucide-react";
+
 import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
@@ -285,6 +286,7 @@ export default async function RequestViewPage({
             </div>
           </div>
         </div>
+
 
         <div className="flex items-center gap-3">
           {/* Notification bell removed */}

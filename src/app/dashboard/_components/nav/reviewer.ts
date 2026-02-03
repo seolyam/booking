@@ -13,9 +13,9 @@ export function reviewerNav(): NavSection[] {
     {
       key: "review",
       label: "Budget Review",
-      href: "/dashboard/reviewer/review",
+      href: "/dashboard/reviewer",
       icon: ListChecks,
-      isActive: (p) => p.startsWith("/dashboard/reviewer/review"),
+      isActive: (p) => p.startsWith("/dashboard/reviewer") && !p.includes("/review"),
     },
     {
       key: "list",

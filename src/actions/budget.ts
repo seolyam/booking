@@ -12,12 +12,51 @@ import {
   archivedBudgetItems,
   archivedAuditLogs,
   budgetMilestones,
+  notifications,
 } from "@/db/schema";
-import { eq, sql, and, desc, inArray } from "drizzle-orm";
+import { eq, sql, and, desc, inArray, or } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+
+// --- Notification Helpers ---
+
+async function notifyRecipients(params: {
+  userIds: string[];
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  link: string;
+  resourceId: string;
+  resourceType: string;
+}) {
+  if (params.userIds.length === 0) return;
+
+  try {
+    const values = params.userIds.map((uid) => ({
+      user_id: uid,
+      title: params.title,
+      message: params.message,
+      type: params.type,
+      link: params.link,
+      resource_id: params.resourceId,
+      resource_type: params.resourceType,
+    }));
+
+    await db.insert(notifications).values(values);
+  } catch (error) {
+    console.error("Failed to send notifications:", error);
+  }
+}
+
+async function getUsersByRole(roles: ("reviewer" | "approver" | "superadmin")[]) {
+  const result = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(inArray(users.role, roles));
+  return result.map((r) => r.id);
+}
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -372,6 +411,54 @@ export async function submitBudget(
     new_status: "submitted",
   });
 
+  // Notify Reviewers about new submission
+  const reviewerIds = await getUsersByRole(["reviewer", "superadmin"]);
+  const displayId = existingBudget.project_code || existingBudget.budget_number;
+
+  // If this was a revision, notify the specific reviewer who requested it
+  if (existingBudget.status === "revision_requested") {
+    // Find who requested the revision
+    const lastRevisionParams = await db.query.auditLogs.findFirst({
+      where: and(
+        eq(auditLogs.budget_id, budgetId),
+        eq(auditLogs.action, "request_revision")
+      ),
+      orderBy: [desc(auditLogs.timestamp)],
+    });
+
+    if (lastRevisionParams) {
+      // Notify the specific reviewer
+      await notifyRecipients({
+        userIds: [lastRevisionParams.actor_id],
+        title: "Budget Revision Submitted",
+        message: `The budget "${displayId}" you requested revision on has been re-submitted.`,
+        type: "info",
+        link: `/dashboard/reviewer/${budgetId}`,
+        resourceId: budgetId,
+        resourceType: "budget",
+      });
+
+      // Remove this reviewer from the general broadcast to avoid duplicate notifications
+      const generalReviewersIndex = reviewerIds.indexOf(lastRevisionParams.actor_id);
+      if (generalReviewersIndex > -1) {
+        reviewerIds.splice(generalReviewersIndex, 1);
+      }
+    }
+  }
+
+  // Notify remaining reviewers (broadcasting new/updated request)
+  await notifyRecipients({
+    userIds: reviewerIds,
+    title: existingBudget.status === "revision_requested" ? "Budget Re-submitted" : "New Budget Request",
+    message: existingBudget.status === "revision_requested"
+      ? `Budget request "${displayId}" has been revised and re-submitted.`
+      : `A new budget request "${displayId}" has been submitted for review.`,
+    type: "info",
+    link: `/dashboard/reviewer/${budgetId}`,
+    resourceId: budgetId,
+    resourceType: "budget",
+  });
+
   invalidateDashboardCaches();
   revalidatePath("/dashboard/budget");
   return { message: "Budget submitted successfully" };
@@ -430,8 +517,59 @@ export async function reviewBudget(
     comment,
   });
 
+  // Notify Requester
+  try {
+    let title = "";
+    let message = "";
+    let type: "info" | "success" | "warning" | "error" = "info";
+
+    if (action === "verify") {
+      title = "Budget Verified";
+      message = `Your budget "${existingBudget.project_code || existingBudget.budget_number}" has been verified and is pending approval.`;
+      type = "info";
+    } else if (action === "request_revision") {
+      title = `Revision Requested by ${appUser.full_name || "Reviewer"}`;
+      message = `Please revise your budget "${existingBudget.project_code || existingBudget.budget_number}". Reviewer comment: ${comment}`;
+      type = "warning";
+    } else if (action === "reject") {
+      title = "Budget Rejected by Reviewer";
+      message = `Your budget "${existingBudget.project_code || existingBudget.budget_number}" was rejected. Reviewer comment: ${comment}`;
+      type = "error";
+    }
+
+    if (title) {
+      await db.insert(notifications).values({
+        user_id: existingBudget.user_id,
+        title,
+        message,
+        type,
+        link: `/dashboard/requests/${encodeURIComponent(existingBudget.project_code || String(existingBudget.budget_number))}`,
+        resource_id: budgetId,
+        resource_type: "budget",
+      });
+    }
+  } catch (e) {
+    console.error("Failed to send notification", e);
+  }
+
+  // If verified, notify Approvers
+  if (action === "verify") {
+    const approverIds = await getUsersByRole(["approver", "superadmin"]);
+    const displayId = existingBudget.project_code || existingBudget.budget_number;
+
+    await notifyRecipients({
+      userIds: approverIds,
+      title: "Budget Pending Approval",
+      message: `Budget request "${displayId}" has been verified and is ready for approval.`,
+      type: "info",
+      link: `/dashboard/approver/approvals/${budgetId}`,
+      resourceId: budgetId,
+      resourceType: "budget",
+    });
+  }
+
   invalidateDashboardCaches();
-  revalidatePath("/dashboard/reviewer/review");
+  revalidatePath("/dashboard/reviewer");
   revalidatePath("/dashboard/reviewer");
   revalidatePath("/dashboard/budget");
   revalidatePath("/dashboard/requests");
@@ -659,6 +797,72 @@ export async function finalizeBudget(
     new_status: newStatus,
     comment: comment?.trim() ? comment.trim() : undefined,
   });
+
+  // Notify Requester
+  try {
+    let title = "";
+    let message = "";
+    let type: "info" | "success" | "warning" | "error" = "info";
+
+    const displayId = existingBudget.project_code || existingBudget.budget_number;
+
+    if (decision === "approve") {
+      title = "Budget Approved";
+      message = `Your budget "${displayId}" has been approved!`;
+      type = "success";
+    } else if (decision === "reject") {
+      title = "Budget Rejected";
+      message = `Your budget "${displayId}" has been rejected.`;
+      type = "error";
+    } else if (decision === "revoke") {
+      title = "Decision Revoked";
+      message = `The decision on budget "${displayId}" has been revoked. It is now back to 'Verified' status.`;
+      type = "info";
+    }
+
+    if (title) {
+      await db.insert(notifications).values({
+        user_id: existingBudget.user_id,
+        title,
+        message,
+        type,
+        link: `/dashboard/requests/${encodeURIComponent(String(displayId))}`,
+        resource_id: budgetId,
+        resource_type: "budget",
+      });
+    }
+  } catch (e) {
+    console.error("Failed to send notification", e);
+  }
+
+  // Notify the Reviewer who verified this budget (or last requested revision)
+  if (decision === "approve" || decision === "reject") {
+    const lastReviewerLog = await db.query.auditLogs.findFirst({
+      where: and(
+        eq(auditLogs.budget_id, budgetId),
+        or(eq(auditLogs.action, "verify"), eq(auditLogs.action, "request_revision"), eq(auditLogs.action, "reject"))
+      ),
+      orderBy: [desc(auditLogs.timestamp)],
+    });
+
+    if (lastReviewerLog) {
+      // Don't notify if the reviewer is the same person as the approver (e.g. superadmin doing both)
+      if (lastReviewerLog.actor_id !== user.id) {
+        const displayId = existingBudget.project_code || existingBudget.budget_number;
+        const actionText = decision === "approve" ? "approved" : "rejected";
+
+        await notifyRecipients({
+          userIds: [lastReviewerLog.actor_id],
+          title: `Budget Decision: ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`,
+          message: `The budget request "${displayId}" you reviewed has been ${actionText} by the approver.`,
+          type: decision === "approve" ? "success" : "error",
+          link: `/dashboard/reviewer/${budgetId}`,
+          resourceId: budgetId,
+          resourceType: "budget",
+        });
+      }
+    }
+  }
 
   invalidateDashboardCaches();
   revalidatePath("/dashboard/approver/approvals");
