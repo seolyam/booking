@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { CheckCircle2, XCircle, Bell, ArrowLeft, Calendar, Wallet } from "lucide-react";
+
 import ApprovalDecisionButton from "@/app/dashboard/_components/ApprovalDecisionButton";
 import WorkflowProgress, {
   type WorkflowEvent,
@@ -324,9 +325,6 @@ export default async function BudgetDetailPage({
               redirectHref={null}
             />
           )}
-          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-gray-200 hover:text-gray-900 transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { budgets, budgetItems } from "@/db/schema";
 import { desc, eq, inArray, and, ne } from "drizzle-orm";
-import { Bell, Search, Eye } from "lucide-react";
+import { Bell, Search, Eye, Pencil } from "lucide-react";
 
 // Force dynamic rendering - requires auth and DB access
 export const dynamic = "force-dynamic";
@@ -116,10 +116,10 @@ export default async function RequestsPage({
           ? eq(budgets.status, "draft")
           : activeStatus === "pending"
             ? inArray(budgets.status, [
-                "submitted",
-                "verified",
-                "verified_by_reviewer",
-              ])
+              "submitted",
+              "verified",
+              "verified_by_reviewer",
+            ])
             : undefined;
 
   const myBudgets = await db.query.budgets.findMany({
@@ -135,12 +135,12 @@ export default async function RequestsPage({
     ids.length === 0
       ? []
       : await db
-          .select({
-            budget_id: budgetItems.budget_id,
-            description: budgetItems.description,
-          })
-          .from(budgetItems)
-          .where(inArray(budgetItems.budget_id, ids));
+        .select({
+          budget_id: budgetItems.budget_id,
+          description: budgetItems.description,
+        })
+        .from(budgetItems)
+        .where(inArray(budgetItems.budget_id, ids));
 
   const firstItem = new Map<string, string>();
   for (const it of items) {
@@ -152,25 +152,25 @@ export default async function RequestsPage({
   const filteredBudgets = !q
     ? myBudgets
     : myBudgets.filter((b) => {
-        const budDisplayId = `bud-${b.budget_number}`;
-        const budNum = String(b.budget_number);
-        const projectCode = b.project_code;
-        const projectName = firstItem.get(b.id) ?? "Budget Request";
-        const status = statusLabel(b.status);
-        const type = b.budget_type;
-        const amountDigits = normalizeDigits(b.total_amount);
+      const budDisplayId = `bud-${b.budget_number}`;
+      const budNum = String(b.budget_number);
+      const projectCode = b.project_code;
+      const projectName = firstItem.get(b.id) ?? "Budget Request";
+      const status = statusLabel(b.status);
+      const type = b.budget_type;
+      const amountDigits = normalizeDigits(b.total_amount);
 
-        return (
-          includesQuery(b.id, q) ||
-          includesQuery(projectCode, q) ||
-          includesQuery(budDisplayId, q) ||
-          includesQuery(budNum, q) ||
-          includesQuery(projectName, q) ||
-          includesQuery(type, q) ||
-          includesQuery(status, q) ||
-          includesQuery(amountDigits, normalizeDigits(q))
-        );
-      });
+      return (
+        includesQuery(b.id, q) ||
+        includesQuery(projectCode, q) ||
+        includesQuery(budDisplayId, q) ||
+        includesQuery(budNum, q) ||
+        includesQuery(projectName, q) ||
+        includesQuery(type, q) ||
+        includesQuery(status, q) ||
+        includesQuery(amountDigits, normalizeDigits(q))
+      );
+    });
 
   return (
     <div className="-m-8 p-6 md:p-8">
@@ -181,13 +181,6 @@ export default async function RequestsPage({
             Manage your budget requests
           </p>
         </div>
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="rounded-full p-2 text-gray-700 hover:bg-black/5"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
       </div>
 
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
@@ -236,10 +229,9 @@ export default async function RequestsPage({
                     })}
                     className={`
                       px-4 py-2 rounded-lg text-sm font-medium transition-all border
-                      ${
-                        isActive
-                          ? activeClass + " border ring-1"
-                          : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                      ${isActive
+                        ? activeClass + " border ring-1"
+                        : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                       }
                     `}
                   >
@@ -310,11 +302,10 @@ export default async function RequestsPage({
                   return (
                     <tr
                       key={b.id}
-                      className={`border-t border-black/5 hover:bg-gray-50/50 ${
-                        b.status === "rejected"
-                          ? "opacity-60 bg-gray-50/30"
-                          : ""
-                      }`}
+                      className={`border-t border-black/5 hover:bg-gray-50/50 ${b.status === "rejected"
+                        ? "opacity-60 bg-gray-50/30"
+                        : ""
+                        }`}
                     >
                       <td className="py-4 pl-6 pr-4">
                         <div className="font-medium text-gray-900">
@@ -346,9 +337,9 @@ export default async function RequestsPage({
                         {b.status === "revision_requested" ? (
                           <Link
                             href={editHref}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-orange-100 px-3.5 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-200 transition-colors shadow-sm"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-orange-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-orange-700 transition-colors shadow-sm"
                           >
-                            Edit
+                            Edit <Pencil className="h-3.5 w-3.5" />
                           </Link>
                         ) : (
                           <Link
