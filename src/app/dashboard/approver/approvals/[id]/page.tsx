@@ -15,7 +15,6 @@ import {
   Calendar,
   AlertCircle,
   ChevronLeft,
-  Bell,
   CheckCircle2,
 } from "lucide-react";
 import BudgetComparisonAnalysis from "@/app/dashboard/_components/BudgetComparisonAnalysis";
@@ -123,50 +122,52 @@ export default async function ApproverReviewDetailPage({
 
   const budget = budgetData[0];
 
-  // Get requester info
-  const requesterData = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      department: users.department,
-      full_name: users.full_name,
-      position: users.position,
-    })
-    .from(users)
-    .where(eq(users.id, budget.user_id))
-    .limit(1);
+  const [requesterData, items, reviewerLogs] = await Promise.all([
+    // Get requester info
+    db
+      .select({
+        id: users.id,
+        email: users.email,
+        department: users.department,
+        full_name: users.full_name,
+        position: users.position,
+      })
+      .from(users)
+      .where(eq(users.id, budget.user_id))
+      .limit(1),
+
+    // Get budget items
+    db
+      .select({
+        id: budgetItems.id,
+        description: budgetItems.description,
+        quantity: budgetItems.quantity,
+        unit_cost: budgetItems.unit_cost,
+        total_cost: budgetItems.total_cost,
+        quarter: budgetItems.quarter,
+      })
+      .from(budgetItems)
+      .where(eq(budgetItems.budget_id, budget.id)),
+
+    // Get reviewer assessment from audit logs
+    // Looking for the most recent 'verify' action
+    db
+      .select({
+        id: auditLogs.id,
+        action: auditLogs.action,
+        comment: auditLogs.comment,
+        actor_id: auditLogs.actor_id,
+        timestamp: auditLogs.timestamp,
+      })
+      .from(auditLogs)
+      .where(
+        and(eq(auditLogs.budget_id, budget.id), eq(auditLogs.action, "verify")),
+      )
+      .orderBy(desc(auditLogs.timestamp))
+      .limit(1),
+  ]);
 
   const requester = requesterData?.[0];
-
-  // Get budget items
-  const items = await db
-    .select({
-      id: budgetItems.id,
-      description: budgetItems.description,
-      quantity: budgetItems.quantity,
-      unit_cost: budgetItems.unit_cost,
-      total_cost: budgetItems.total_cost,
-      quarter: budgetItems.quarter,
-    })
-    .from(budgetItems)
-    .where(eq(budgetItems.budget_id, budget.id));
-
-  // Get reviewer assessment from audit logs
-  // Looking for the most recent 'verify' action
-  const reviewerLogs = await db
-    .select({
-      id: auditLogs.id,
-      action: auditLogs.action,
-      comment: auditLogs.comment,
-      actor_id: auditLogs.actor_id,
-      timestamp: auditLogs.timestamp,
-    })
-    .from(auditLogs)
-    .where(
-      and(eq(auditLogs.budget_id, budget.id), eq(auditLogs.action, "verify")),
-    )
-    .orderBy(desc(auditLogs.timestamp))
-    .limit(1);
 
   let reviewerAssessment = {
     name: "Unknown Reviewer",
@@ -247,7 +248,7 @@ export default async function ApproverReviewDetailPage({
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20">
       {/* Floating Action Button for Decision */}
-      <div className="fixed bottom-6 right-6 z-50 shadow-2xl rounded-xl">
+      <div className="fixed bottom-24 md:bottom-10 right-6 z-50 shadow-2xl rounded-xl">
         <ApprovalDecisionButton
           budgetId={budget.id}
           budgetStatus={budget.status}
@@ -284,10 +285,38 @@ export default async function ApproverReviewDetailPage({
           {/* Project Info Card */}
           <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
             {/* Status Pill */}
-            <div className="md:absolute md:top-10 md:right-10 flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full border border-orange-100 w-fit mb-6 md:mb-0">
-              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-              <span className="text-sm font-bold text-orange-600">Pending</span>
-            </div>
+            {(() => {
+              const s = budget.status;
+              let colorClass = "bg-gray-100 text-gray-500 border-gray-200";
+              let dotClass = "bg-gray-400";
+              let label = "Unknown";
+
+              if (s === "approved") {
+                colorClass = "bg-green-50 text-green-700 border-green-100";
+                dotClass = "bg-green-500";
+                label = "Approved";
+              } else if (s === "rejected") {
+                colorClass = "bg-red-50 text-red-700 border-red-100";
+                dotClass = "bg-red-500";
+                label = "Rejected";
+              } else if (s === "revision_requested") {
+                colorClass = "bg-orange-50 text-orange-700 border-orange-100";
+                dotClass = "bg-orange-500";
+                label = "Revision";
+              } else {
+                 // Pending / Submitted / Verified
+                 colorClass = "bg-blue-50 text-blue-700 border-blue-100";
+                 dotClass = "bg-blue-500";
+                 label = "Pending Approval";
+              }
+
+              return (
+                <div className={`md:absolute md:top-10 md:right-10 flex items-center gap-2 px-4 py-2 rounded-full border w-fit mb-6 md:mb-0 ${colorClass}`}>
+                  <div className={`w-2 h-2 rounded-full ${dotClass} ${s !== 'approved' && s !== 'rejected' ? 'animate-pulse' : ''}`} />
+                  <span className="text-sm font-bold">{label}</span>
+                </div>
+              );
+            })()}
 
             <div className="space-y-8">
               <div>

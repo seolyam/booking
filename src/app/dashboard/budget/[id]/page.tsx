@@ -4,9 +4,14 @@ import Link from "next/link";
 import { db } from "@/db";
 import { auditLogs, budgetItems, budgets, users } from "@/db/schema";
 import { asc, desc, eq, inArray } from "drizzle-orm";
-import { CheckCircle2, XCircle, Bell, ArrowLeft, Calendar, Wallet } from "lucide-react";
-
 import ApprovalDecisionButton from "@/app/dashboard/_components/ApprovalDecisionButton";
+import {
+  CheckCircle2,
+  XCircle,
+  Calendar,
+  Wallet,
+  ArrowLeft,
+} from "lucide-react";
 import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
