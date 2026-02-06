@@ -347,7 +347,7 @@ export default async function RequestDetailPage({
         <div className="flex items-center gap-4">
            <Link
             href="/dashboard/requests"
-            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm"
           >
             <ArrowLeft className="h-6 w-6" />
           </Link>
@@ -440,6 +440,39 @@ export default async function RequestDetailPage({
                  <p className="text-red-800 text-sm">{request.rejection_reason}</p>
                </div>
              )}
+
+             {/* Comments Section */}
+            <div className="pt-8 border-t border-gray-100">
+               <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
+                <MessageSquare className="h-5 w-5 text-gray-400" /> Comments
+              </h3>
+              <div className="space-y-6">
+                {request.comments.length === 0 ? (
+                  <div className="text-sm text-gray-500 italic">No comments yet.</div>
+                ) : (
+                  request.comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs">
+                        {(comment.user?.full_name || comment.user?.email || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {comment.user?.full_name || comment.user?.email}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {formatDateTime(comment.created_at)}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 rounded-tl-none">
+                          {comment.content}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
         </div>
 
         {/* Right Column: Widgets */}
@@ -485,28 +518,28 @@ export default async function RequestDetailPage({
               )}
            </div>
 
-           {/* Comments */}
-           <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
-               <h3 className="text-sm font-semibold text-gray-900 mb-4">Comments</h3>
-               <div className="space-y-4">
-                  {request.comments.length === 0 ? (
-                    <div className="text-sm text-gray-500 italic">No comments yet.</div>
-                  ) : (
-                    request.comments.slice(0, 3).map((comment) => (
-                      <div key={comment.id} className="border border-gray-100 rounded-xl p-4">
-                         <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-semibold text-gray-900">{comment.user?.full_name || comment.user?.email}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                               {comment.user?.role === 'admin' ? 'Admin' : 'User'}
-                            </span>
-                         </div>
-                         <p className="text-sm text-gray-600 italic">"{comment.content}"</p>
-                      </div>
-                    ))
-                  )}
-               </div>
-           </div>
-
+           {/* Comments - REMOVED (moved to left column) */}
+           {/* But in my last read, Comments block was in Right Column AND Left Column?
+               Ah, in my PREVIOUS edit I had "Comments Section (Moved to Left Column...)" AND "Comments" in Right Column.
+               Wait, let's check the file content again.
+               Line 489: <div className="bg-white rounded-xl ..."> <h3 ...>Comments</h3> ...
+               Line 510: Admin Actions
+               The file read shows comments in the right column (lines 489-508).
+               It DOES NOT show comments in the left column anymore?
+               Wait, looking at the READ output (lines 368-443):
+               Lines 446-471: "Comments Section (Moved to Left Column...)"
+               So comments are in BOTH places?
+               Wait, no. In the READ output, lines 368-443 is the Left Column.
+               Wait, I see "Comments Section (Moved to Left Column...)" in the READ output (lines 438-471).
+               AND I see "Comments" in the Right Column (lines 489-508).
+               This means I duplicated the comments section in my previous edit?
+               Oops.
+               The user wants "Remove the inner 'white card on green background' structure".
+               My new string should clean this up.
+               I will put comments ONLY in the Left Column (main details), as that seems to be the main place for interaction, or keeps right column for widgets.
+               Usually comments are a main content thing.
+               I will keep comments in the Left Column inside the main card, and remove them from the Right Column widgets to avoid duplication.
+           */}
            {/* Admin Actions (Conditional) */}
            {canApprove && (
               <div className="bg-blue-50 rounded-xl border border-blue-100 p-6">
