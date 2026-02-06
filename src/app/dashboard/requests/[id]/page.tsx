@@ -11,6 +11,12 @@ import {
   MessageSquare,
   Ban,
   Archive,
+  Bell,
+  Download,
+  MapPin,
+  Calendar,
+  Users,
+  Building2,
 } from "lucide-react";
 import { getRequestById } from "@/actions/request";
 import {
@@ -61,43 +67,43 @@ function statusMeta(status: string) {
     case "approved":
       return {
         label: "Approved",
-        cls: "bg-green-100 text-green-700 border-green-200",
+        cls: "bg-green-50 text-green-700 border-green-100",
         icon: <CheckCircle2 className="h-4 w-4" />,
       };
     case "rejected":
       return {
         label: "Rejected",
-        cls: "bg-red-100 text-red-700 border-red-200",
+        cls: "bg-red-50 text-red-700 border-red-100",
         icon: <XCircle className="h-4 w-4" />,
       };
     case "closed":
       return {
         label: "Closed",
-        cls: "bg-gray-100 text-gray-700 border-gray-200",
+        cls: "bg-gray-50 text-gray-700 border-gray-100",
         icon: <Archive className="h-4 w-4" />,
       };
     case "on_hold":
       return {
         label: "On Hold",
-        cls: "bg-orange-100 text-orange-700 border-orange-200",
+        cls: "bg-orange-50 text-orange-700 border-orange-100",
         icon: <AlertCircle className="h-4 w-4" />,
       };
     case "pending_review":
       return {
         label: "Pending Review",
-        cls: "bg-blue-100 text-blue-700 border-blue-200",
+        cls: "bg-blue-50 text-blue-700 border-blue-100",
         icon: <Clock className="h-4 w-4" />,
       };
     case "submitted":
       return {
         label: "Submitted",
-        cls: "bg-yellow-100 text-yellow-700 border-yellow-200",
+        cls: "bg-yellow-50 text-yellow-700 border-yellow-100",
         icon: <CheckCircle2 className="h-4 w-4" />,
       };
     default: // draft
       return {
         label: "Draft",
-        cls: "bg-gray-100 text-gray-600 border-gray-200",
+        cls: "bg-gray-50 text-gray-600 border-gray-100",
         icon: <FileText className="h-4 w-4" />,
       };
   }
@@ -105,7 +111,7 @@ function statusMeta(status: string) {
 
 function actionLabel(action: string) {
   const map: Record<string, string> = {
-    created: "Request Created",
+    created: "Created",
     submitted: "Submitted",
     status_changed: "Status Updated",
     comment_added: "Comment Added",
@@ -114,6 +120,7 @@ function actionLabel(action: string) {
     rejected: "Rejected",
     closed: "Closed",
     reopened: "Reopened",
+    reviewed: "Reviewed",
   };
   // Handle dynamic status change labels
   if (action.startsWith("status_changed_to_")) {
@@ -125,9 +132,9 @@ function actionLabel(action: string) {
 
 function computeSteps(status: string): WorkflowStep[] {
   const steps: Array<{ key: string; label: string }> = [
-    { key: "draft", label: "Draft" },
+    { key: "created", label: "Created" },
     { key: "submitted", label: "Submitted" },
-    { key: "pending_review", label: "Review" },
+    { key: "pending_review", label: "Reviewed" },
     { key: "approved", label: "Approved" },
   ];
 
@@ -161,12 +168,12 @@ function computeSteps(status: string): WorkflowStep[] {
 // ============================================================================
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function DataField({ label, value }: { label: string; value: any }) {
-  if (value === null || value === undefined || value === "") return null;
+function InfoCard({ label, value }: { label: string; value: any }) {
+  if (value === null || value === undefined || value === "") return <div className="flex flex-col"><span className="text-xs text-gray-400">{label}</span><span className="text-sm font-medium text-gray-900">—</span></div>;
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{label}</span>
-      <span className="text-sm font-medium text-gray-900 break-words">{String(value)}</span>
+    <div className="flex flex-col">
+      <span className="text-xs text-gray-500 mb-1">{label}</span>
+      <span className="text-sm font-semibold text-gray-900 break-words">{String(value)}</span>
     </div>
   );
 }
@@ -174,17 +181,26 @@ function DataField({ label, value }: { label: string; value: any }) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FlightDetails({ data }: { data: any }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <DataField label="Passenger Name" value={data.passenger_name} />
-      <DataField label="Number of Passengers" value={data.number_of_passengers} />
-      <DataField label="Departure From" value={data.departure_from} />
-      <DataField label="Destination" value={data.destination} />
-      <DataField label="Dates" value={`${data.departure_date} to ${data.return_date || "?"}`} />
-      <DataField label="Travel Class" value={data.travel_class} />
-      <DataField label="Allocated Budget" value={formatCurrency(data.allocated_budget)} />
-      <div className="md:col-span-2">
-        <DataField label="Purpose of Travel" value={data.purpose_of_travel} />
+    <div className="space-y-6">
+       <div className="flex items-start gap-3">
+        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
+        <div>
+           <div className="text-sm font-medium text-gray-900">{data.departure_from} → {data.destination}</div>
+           <div className="text-xs text-gray-500 mt-1">{data.airline || "Any Airline"} • {data.travel_class}</div>
+        </div>
       </div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
+        <InfoCard label="Departure" value={data.departure_date} />
+        <InfoCard label="Return" value={data.return_date || "One-way"} />
+        <InfoCard label="Passengers" value={data.number_of_passengers} />
+        <InfoCard label="Passenger Name" value={data.passenger_name} />
+      </div>
+
+       <div className="border-t border-gray-100 pt-6">
+          <span className="text-xs text-gray-500 block mb-2">Purpose of Travel</span>
+          <p className="text-sm text-gray-900">{data.purpose_of_travel}</p>
+       </div>
     </div>
   );
 }
@@ -192,20 +208,34 @@ function FlightDetails({ data }: { data: any }) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function HotelDetails({ data }: { data: any }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <DataField label="Hotel Name" value={data.hotel_name} />
-      <DataField label="Address" value={data.hotel_address} />
-      <DataField label="Check-in" value={data.check_in_date} />
-      <DataField label="Check-out" value={data.check_out_date} />
-      <DataField label="Rooms" value={data.number_of_rooms} />
-      <DataField label="Guests" value={data.number_of_guests} />
-      <DataField label="Allocated Budget" value={formatCurrency(data.allocated_budget)} />
-      <div className="md:col-span-2">
-        <DataField label="Guest Names" value={data.guest_names} />
+    <div className="space-y-6">
+      <div className="flex items-start gap-3">
+        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
+        <div>
+           <div className="text-sm font-medium text-gray-900">{data.hotel_name}</div>
+           <div className="text-xs text-gray-500 mt-1">{data.hotel_address}</div>
+        </div>
       </div>
-      <div className="md:col-span-2">
-        <DataField label="Purpose of Stay" value={data.purpose_of_stay} />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
+        <InfoCard label="Check-in" value={data.check_in_date} />
+        <InfoCard label="Check-out" value={data.check_out_date} />
+        <InfoCard label="Guests" value={data.number_of_guests} />
+        <InfoCard label="Rooms" value={data.number_of_rooms} />
       </div>
+
+      <div className="border-t border-gray-100 pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+             <div>
+                <span className="text-xs text-gray-500 block mb-2">Name of guest(s)</span>
+                <p className="text-sm text-gray-900 whitespace-pre-wrap">{data.guest_names}</p>
+             </div>
+             <div>
+                <span className="text-xs text-gray-500 block mb-2">Purpose of stay</span>
+                <p className="text-sm text-gray-900">{data.purpose_of_stay}</p>
+             </div>
+          </div>
+       </div>
     </div>
   );
 }
@@ -213,45 +243,36 @@ function HotelDetails({ data }: { data: any }) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function MealsDetails({ data }: { data: any }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <DataField label="Event/Occasion" value={data.event_name} />
-      <DataField label="Venue" value={data.venue} />
-      <DataField label="Date & Time" value={`${data.meal_date} ${data.meal_time || ""}`} />
-      <DataField label="Pax" value={data.number_of_pax} />
-      <DataField label="Meal Type" value={data.meal_type} />
-      <DataField label="Allocated Budget" value={formatCurrency(data.allocated_budget)} />
-      <div className="md:col-span-2">
-        <DataField label="Special Requests" value={data.special_requests} />
+    <div className="space-y-6">
+      <div className="flex items-start gap-3">
+        <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
+        <div>
+           <div className="text-sm font-medium text-gray-900">{data.event_name}</div>
+           <div className="text-xs text-gray-500 mt-1">{data.venue}</div>
+        </div>
       </div>
-    </div>
-  );
-}
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function RoomDetails({ data }: { data: any }) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <DataField label="Room/Space" value={data.room_name} />
-      <DataField label="Date" value={data.reservation_date} />
-      <DataField label="Time" value={`${data.start_time} - ${data.end_time}`} />
-      <DataField label="Attendees" value={data.number_of_attendees} />
-      <div className="md:col-span-2">
-        <DataField label="Purpose" value={data.purpose} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
+        <InfoCard label="Date" value={data.meal_date} />
+        <InfoCard label="Time" value={data.meal_time} />
+        <InfoCard label="Pax" value={data.number_of_pax} />
+        <InfoCard label="Type" value={data.meal_type} />
       </div>
-      <div className="md:col-span-2">
-        <DataField label="Equipment Needed" value={data.equipment_needed} />
-      </div>
+
+      <div className="border-t border-gray-100 pt-6">
+          <span className="text-xs text-gray-500 block mb-2">Special Requests</span>
+          <p className="text-sm text-gray-900">{data.special_requests || "None"}</p>
+       </div>
     </div>
   );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function DefaultDetails({ data }: { data: any }) {
-  // Generic renderer for other categories
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
       {Object.entries(data).map(([key, value]) => (
-        <DataField
+        <InfoCard
           key={key}
           label={key.replace(/_/g, " ")}
           value={value}
@@ -320,222 +341,179 @@ export default async function RequestDetailPage({
   const formData = request.form_data as any;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/dashboard/requests"
-          className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Request Tracking</h1>
-          <div className="text-sm text-gray-500">
-            Monitor the status and details of your request
+    <div className="max-w-[1600px] mx-auto p-6 md:p-10 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+           <Link
+            href="/dashboard/requests"
+            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Request Tracking</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Track the complete lifecycle and history of this booking request
+            </p>
           </div>
         </div>
+        <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
+           <Bell className="h-6 w-6" />
+        </button>
       </div>
 
-      {/* Main Content Card */}
-      <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-black/5">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Request Details (66%) */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Header: Title + ID + Status */}
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h2 className="text-2xl font-bold text-gray-900 break-words">
-                    {request.title}
-                  </h2>
-                  <span className="inline-flex items-center rounded-md bg-cyan-100 px-2 py-0.5 text-xs font-bold text-cyan-800 uppercase">
-                    {CATEGORY_MAP[request.category]?.code || "REQ"}
-                  </span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Request Details */}
+        <div className="lg:col-span-2 bg-white rounded-3xl p-8 shadow-sm ring-1 ring-gray-100">
+             {/* Title Row */}
+             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+                <div className="flex items-center gap-3">
+                   <h2 className="text-2xl font-bold text-gray-900">{request.title}</h2>
+                   <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase">
+                      {CATEGORY_MAP[request.category]?.code || "REQ"}
+                   </span>
                 </div>
-                <div className="text-sm font-mono text-gray-500">
-                  REQ-{String(request.ticket_number).padStart(4, "0")}
+                <div className={cn(
+                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border",
+                  status.cls
+                )}>
+                   {status.icon}
+                   {status.label}
                 </div>
-              </div>
+             </div>
 
-              <div
-                className={cn(
-                  "self-start inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wide border",
-                  status.cls,
-                )}
-              >
-                {status.icon}
-                {status.label}
-              </div>
-            </div>
+             {/* Subtitle */}
+             <div className="text-sm text-gray-500 mb-8">
+                REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
+             </div>
 
-            {/* Section Header: Info + Priority */}
-            <div className="flex items-center gap-3">
-              <h3 className="text-lg font-bold text-gray-900">
-                Request Information
-              </h3>
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium uppercase",
-                  request.priority === "urgent"
-                    ? "bg-red-100 text-red-800"
-                    : request.priority === "high"
-                    ? "bg-orange-100 text-orange-800"
-                    : request.priority === "medium"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-gray-100 text-gray-800",
-                )}
-              >
-                {request.priority} Priority
-              </span>
-            </div>
+             {/* Main Info Block */}
+             <div className="bg-gray-50 rounded-2xl p-6 mb-8">
+                <div className="flex items-center gap-3 mb-6">
+                   <h3 className="font-bold text-gray-900">Request Information</h3>
+                   {request.priority === "urgent" && (
+                      <span className="bg-orange-200 text-orange-800 text-xs font-bold px-2 py-0.5 rounded">Urgent</span>
+                   )}
+                </div>
 
-            {/* Data Grid */}
-            <div className="bg-gray-50 rounded-2xl p-6">
-              {/* Common Fields Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 border-b border-gray-200 pb-6">
-                <DataField label="Allocated Budget" value={formatCurrency(formData.allocated_budget || formData.budget || formData.total_budget)} />
-                <DataField label="Requester" value={request.requester.full_name || request.requester.email} />
-                <DataField label="Created Date" value={formatDateShort(request.created_at)} />
-              </div>
+                {/* Primary Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                   <InfoCard label="Requester" value={request.requester.full_name || request.requester.email} />
+                   <InfoCard label="Branch" value={request.branch?.name || "Main Branch"} />
+                   <InfoCard label="Budget" value={formatCurrency(formData.allocated_budget || formData.budget || formData.total_budget)} />
+                   <InfoCard label="Created" value={formatDateShort(request.created_at)} />
+                </div>
 
-              {/* Category Specific Fields */}
-              {request.category === "flight_booking" ? (
-                <FlightDetails data={formData} />
-              ) : request.category === "hotel_accommodation" ? (
-                <HotelDetails data={formData} />
-              ) : request.category === "meals" ? (
-                <MealsDetails data={formData} />
-              ) : request.category === "room_reservation" ? (
-                <RoomDetails data={formData} />
-              ) : (
-                <DefaultDetails data={formData} />
-              )}
-            </div>
+                {/* Category Details (Address, dates, etc.) */}
+                <div className="border-t border-gray-200 pt-6">
+                    {request.category === "flight_booking" ? (
+                        <FlightDetails data={formData} />
+                    ) : request.category === "hotel_accommodation" ? (
+                        <HotelDetails data={formData} />
+                    ) : request.category === "meals" ? (
+                        <MealsDetails data={formData} />
+                    ) : (
+                        <DefaultDetails data={formData} />
+                    )}
+                </div>
+                
+                 {/* Footer Button inside card? No, usually outside or bottom right. Design shows "Export Details" bottom right of this panel */}
+                 <div className="flex justify-end mt-8">
+                    <button className="flex items-center gap-2 bg-gray-700 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                       <Download className="h-4 w-4" /> Export Details
+                    </button>
+                 </div>
+             </div>
 
-            {request.remarks && (
-              <div className="mt-4">
-                <h4 className="text-sm font-bold text-gray-900 mb-2">Additional Remarks</h4>
-                <p className="text-gray-700 bg-gray-50 p-4 rounded-xl">{request.remarks}</p>
-              </div>
-            )}
-            {request.rejection_reason && (
-               <div className="mt-4 bg-red-50 border border-red-100 rounded-xl p-4">
-                <h4 className="text-sm font-bold text-red-900 mb-1 flex items-center gap-2">
-                   <Ban className="h-4 w-4"/> Rejection Reason
-                </h4>
-                <p className="text-red-800">{request.rejection_reason}</p>
-              </div>
-            )}
+             {request.remarks && (
+               <div className="mt-4">
+                 <h4 className="text-sm font-bold text-gray-900 mb-2">Additional Remarks</h4>
+                 <p className="text-gray-700 bg-gray-50 p-4 rounded-xl text-sm">{request.remarks}</p>
+               </div>
+             )}
+             {request.rejection_reason && (
+                <div className="mt-4 bg-red-50 border border-red-100 rounded-xl p-4">
+                 <h4 className="text-sm font-bold text-red-900 mb-1 flex items-center gap-2">
+                    <Ban className="h-4 w-4"/> Rejection Reason
+                 </h4>
+                 <p className="text-red-800 text-sm">{request.rejection_reason}</p>
+               </div>
+             )}
+        </div>
 
-            {/* Footer Action */}
-            <div>
-              <button className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
-                Export Details
-              </button>
-            </div>
+        {/* Right Column: Widgets */}
+        <div className="space-y-6">
+           {/* Timeline */}
+           <WorkflowProgress steps={steps} events={events} />
 
-             {/* Comments Section (Moved to Left Column bottom as per typical 'details' flow, or keep split?
-                 Instruction didn't specify comments placement, but 'Request Details' usually implies the main data.
-                 I'll put comments below details for better flow in 66% width) */}
-            <div className="pt-8 border-t border-gray-100">
-               <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
-                <MessageSquare className="h-5 w-5 text-gray-400" /> Comments
-              </h3>
-              <div className="space-y-6">
-                {request.comments.length === 0 ? (
-                  <div className="text-sm text-gray-500 italic">No comments yet.</div>
-                ) : (
-                  request.comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs">
-                        {(comment.user?.full_name || comment.user?.email || "?").charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-gray-900">
-                            {comment.user?.full_name || comment.user?.email}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {formatDateTime(comment.created_at)}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 rounded-tl-none">
-                          {comment.content}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Widgets (33%) */}
-          <div className="space-y-6">
-            {/* Widget 1: Activity Timeline */}
-            <div className="rounded-xl border border-gray-200 p-5 shadow-sm">
-              <WorkflowProgress steps={steps} events={events} />
-            </div>
-
-            {/* Widget 2: Attachments */}
-            <div className="rounded-xl border border-gray-200 p-5 shadow-sm">
+           {/* Attachments */}
+           <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                  Attachments
-                  <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                    {request.attachments.length}
-                  </span>
-                </h3>
-                <button className="text-xs font-semibold text-gray-500 hover:text-gray-900 bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                  Download All
-                </button>
+                 <h3 className="text-sm font-semibold text-gray-900">Attachments ({request.attachments.length})</h3>
+                 <button className="flex items-center gap-1.5 bg-gray-800 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-700 transition-colors">
+                    <Download className="h-3.5 w-3.5" /> Download all
+                 </button>
               </div>
 
               {request.attachments.length === 0 ? (
-                <div className="text-sm text-gray-500 italic">No attachments.</div>
+                 <div className="text-sm text-gray-500 italic py-4">No attachments found.</div>
               ) : (
-                <ul className="space-y-3">
-                  {request.attachments.map((file) => (
-                    <li
-                      key={file.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-100 p-3 bg-white hover:border-gray-300 transition-all shadow-sm"
-                    >
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500">
-                          <FileText className="h-4 w-4" />
+                 <ul className="space-y-3">
+                   {request.attachments.map((file) => (
+                     <li key={file.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors group">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                           <div className="flex-shrink-0 w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center">
+                              <FileText className="h-4 w-4" />
+                           </div>
+                           <div className="min-w-0">
+                              <p className="text-xs font-medium text-gray-900 truncate max-w-[150px]">{file.file_name}</p>
+                              <p className="text-[10px] text-gray-400">{(file.file_size / 1024).toFixed(1)} KB • Uploaded {formatDateShort(file.created_at)}</p>
+                           </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="truncate font-medium text-xs text-gray-900">
-                            {file.file_name}
-                          </div>
-                          <div className="text-[10px] text-gray-500">
-                            {(file.file_size / 1024).toFixed(0)} KB
-                          </div>
-                        </div>
-                      </div>
-                      <a
-                        href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/attachments/${file.file_path}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-400 hover:text-gray-900"
-                      >
-                        <ArrowLeft className="h-4 w-4 rotate-135" /> {/* Use rotate for external link look or just eye */}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+                        <a
+                          href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/attachments/${file.file_path}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-400 hover:text-gray-900 p-1"
+                        >
+                           <Download className="h-4 w-4" />
+                        </a>
+                     </li>
+                   ))}
+                 </ul>
               )}
-            </div>
+           </div>
 
-            {/* Admin Actions Widget (Moved to right col for better visibility) */}
-            {canApprove && (
-                <div className="rounded-xl border border-blue-100 bg-blue-50 p-5">
-                    <h3 className="font-bold text-blue-900 mb-3">Actions</h3>
-                    <ApprovalActions requestId={request.id} />
-                </div>
-            )}
-          </div>
+           {/* Comments */}
+           <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
+               <h3 className="text-sm font-semibold text-gray-900 mb-4">Comments</h3>
+               <div className="space-y-4">
+                  {request.comments.length === 0 ? (
+                    <div className="text-sm text-gray-500 italic">No comments yet.</div>
+                  ) : (
+                    request.comments.slice(0, 3).map((comment) => (
+                      <div key={comment.id} className="border border-gray-100 rounded-xl p-4">
+                         <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-semibold text-gray-900">{comment.user?.full_name || comment.user?.email}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                               {comment.user?.role === 'admin' ? 'Admin' : 'User'}
+                            </span>
+                         </div>
+                         <p className="text-sm text-gray-600 italic">"{comment.content}"</p>
+                      </div>
+                    ))
+                  )}
+               </div>
+           </div>
+
+           {/* Admin Actions (Conditional) */}
+           {canApprove && (
+              <div className="bg-blue-50 rounded-xl border border-blue-100 p-6">
+                  <h3 className="font-bold text-blue-900 mb-3">Admin Actions</h3>
+                  <ApprovalActions requestId={request.id} />
+              </div>
+           )}
         </div>
       </div>
     </div>

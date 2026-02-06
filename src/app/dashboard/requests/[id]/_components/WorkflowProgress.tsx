@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Check, Clock } from "lucide-react";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type WorkflowStep = {
   key: string;
   label: string;
   state: "done" | "current" | "todo";
-  statusType?: string; // Optional status for color differentiation
+  statusType?: string;
 };
 
 export type WorkflowEvent = {
@@ -17,79 +18,8 @@ export type WorkflowEvent = {
   description: string;
   actorName?: string | null;
   note?: string | null;
-  action?: string; // Action type for color determination
+  action?: string;
 };
-
-function classNames(...parts: Array<string | false | null | undefined>) {
-  return parts.filter(Boolean).join(" ");
-}
-
-function StepDot({
-  state,
-  statusType,
-}: {
-  state: WorkflowStep["state"];
-  statusType?: string;
-}) {
-  const isDone = state === "done";
-  const isCurrent = state === "current";
-
-  const isApproved = statusType === "approved";
-
-  // Determine colors based on state and statusType
-  let borderColor = "";
-  let bgColor = "";
-  let iconColor = "";
-
-  if (isDone || (isCurrent && isApproved)) {
-    // Completed steps or approved current step are green
-    borderColor = "border-green-500";
-    bgColor = "bg-white";
-    iconColor = "text-green-500";
-  } else if (isCurrent) {
-    if (statusType === "rejected") {
-      borderColor = "border-red-500";
-      bgColor = "bg-white";
-      iconColor = "text-red-600";
-    } else if (statusType === "on_hold") {
-      borderColor = "border-orange-500";
-      bgColor = "bg-white";
-      iconColor = "text-orange-600";
-    } else if (statusType === "closed") {
-      borderColor = "border-gray-500";
-      bgColor = "bg-white";
-      iconColor = "text-gray-600";
-    } else {
-      // Normal current step (waiting) -> Blue
-      borderColor = "border-blue-500"; // Blue-500
-      bgColor = "bg-white";
-      iconColor = "text-blue-500";
-    }
-  } else {
-    // Todo
-    borderColor = "border-gray-200";
-    bgColor = "bg-white";
-    iconColor = "text-gray-300";
-  }
-
-  return (
-    <div
-      className={classNames(
-        "flex h-10 w-10 items-center justify-center rounded-full border-[3px] bg-white relative z-10",
-        borderColor,
-        bgColor,
-      )}
-      aria-hidden="true"
-    >
-      {isDone || (isCurrent && isApproved) ? (
-        <Check className={`h-5 w-5 ${iconColor}`} strokeWidth={3} />
-      ) : null}
-      {isCurrent && !isDone && !isApproved ? (
-        <Clock className={`h-5 w-5 ${iconColor}`} strokeWidth={2.5} />
-      ) : null}
-    </div>
-  );
-}
 
 export default function WorkflowProgress({
   steps,
@@ -100,6 +30,7 @@ export default function WorkflowProgress({
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
 
+  // Close on Escape key
   React.useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -109,6 +40,7 @@ export default function WorkflowProgress({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen]);
 
+  // Lock body scroll
   React.useEffect(() => {
     if (typeof document === "undefined") return;
     if (!isOpen) return;
@@ -119,130 +51,125 @@ export default function WorkflowProgress({
     };
   }, [isOpen]);
 
+  // Calculate progress percentage for the continuous line
+  const activeIndex = steps.findIndex((s) => s.state === "current");
+  const progressIndex = activeIndex === -1 ? (steps.every(s => s.state === 'done') ? steps.length - 1 : 0) : activeIndex;
+  const progressPercentage = (progressIndex / (steps.length - 1)) * 100;
+
   return (
-    <div className="space-y-4">
+    <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-8">
-        <h3 className="text-lg font-bold text-gray-900">Workflow progress</h3>
+        <h3 className="text-sm font-semibold text-gray-900">Activity Timeline</h3>
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+          className="text-xs font-medium text-gray-900 underline decoration-gray-400 underline-offset-4 hover:decoration-gray-900 transition-all"
         >
           Expand
         </button>
       </div>
 
-      <div className="w-full">
-        <div className="flex w-full items-start justify-between">
-          {steps.map((s, idx) => (
-            <React.Fragment key={s.key}>
-              {idx > 0 && (
+      <div className="relative mx-2">
+        {/* Continuous Lines Container */}
+        {/* 
+            left-4/right-4 logic: 
+            Container has mx-2 (8px). 
+            Item is w-8 (32px). Center is 16px from item edge.
+            First item starts at 0 relative to this container. Center is 16px.
+            Last item ends at 100%. Center is 100% - 16px.
+            Line should start at 16px (left-4) and end at 16px (right-4).
+        */}
+        <div className="absolute left-4 right-4 top-[15px] h-[2px] -z-0">
+          {/* Background Gray Line */}
+          <div className="absolute inset-0 bg-gray-100" />
+          
+          {/* Active Green Line */}
+          <div 
+            className="absolute left-0 top-0 bottom-0 bg-green-600 transition-all duration-500 ease-in-out"
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
+        
+        {/* Steps Container */}
+        <div className="flex justify-between relative z-10 w-full">
+          {steps.map((s, idx) => {
+            const isCompleted = s.state === "done" || s.state === "current";
+            
+            return (
+              <div key={s.key} className="w-8 flex flex-col items-center relative group">
                 <div
-                  className={classNames(
-                    "flex-1 h-[3px] mt-[1.2rem] min-w-[1rem] sm:min-w-[2rem]",
-                    steps[idx - 1]?.state === "done"
-                      ? "bg-green-500"
-                      : "bg-gray-200",
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors duration-200 bg-white",
+                    isCompleted
+                      ? "bg-green-600 border-green-600"
+                      : "border-gray-200"
                   )}
-                />
-              )}
-              <div className="flex flex-col items-center flex-shrink-0">
-                <StepDot state={s.state} statusType={s.statusType} />
-                <div className="mt-2 text-xs font-bold text-gray-900 text-center max-w-[70px] sm:max-w-none leading-tight">
-                  {s.label}
+                >
+                  {isCompleted && <Check className="h-4 w-4 text-white" strokeWidth={3} />}
+                </div>
+                {/* Absolute positioned label to prevent flex layout distortion */}
+                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-max max-w-[100px] text-center">
+                  <span className="text-[10px] md:text-xs font-medium text-gray-500 block leading-tight">
+                    {s.label}
+                  </span>
                 </div>
               </div>
-            </React.Fragment>
-          ))}
+            );
+          })}
         </div>
+        
+        {/* Spacer for the absolute labels */}
+        <div className="h-8" aria-hidden="true" />
       </div>
 
-      {isOpen ? (
+      {/* Modal / Expanded View */}
+      {isOpen && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-hidden"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
-          aria-label="Complete Audit Tracking"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setIsOpen(false);
-          }}
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
-
-          <div className="relative w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl bg-white shadow-xl ring-1 ring-black/10 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 md:px-6 md:py-4 shrink-0">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+              <h3 className="text-base font-semibold text-gray-900">Activity History</h3>
               <button
-                type="button"
                 onClick={() => setIsOpen(false)}
-                className="rounded-full p-2 text-gray-700 hover:bg-black/5 transition-colors"
-                aria-label="Close"
+                className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
               >
-                <span aria-hidden="true">←</span>
+                <span className="sr-only">Close</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-              <div className="text-base font-semibold text-gray-900">
-                Complete Audit Tracking
-              </div>
             </div>
-
-            <div className="overflow-y-auto px-4 py-4 md:px-6 md:py-5 custom-scrollbar">
+            
+            <div className="overflow-y-auto p-6">
               {events.length === 0 ? (
-                <div className="text-sm text-gray-600">No activity yet.</div>
+                <div className="text-sm text-gray-500 text-center py-8">No activity recorded yet.</div>
               ) : (
-                <div className="relative">
-                  <div
-                    className="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-200"
-                    aria-hidden="true"
-                  />
-                  <div className="space-y-4">
-                    {events.map((e) => {
-                      // Determine dot color based on action
-                      const getDotColor = () => {
-                        if (e.action === "on_hold") return "bg-orange-500";
-                        if (e.action === "rejected") return "bg-red-500";
-                        if (e.action === "closed") return "bg-gray-500";
-                        return "bg-green-500";
-                      };
-
-                      return (
-                        <div key={e.id} className="relative pl-10">
-                          <div
-                            className={`absolute left-2.75 top-6 h-4 w-4 rounded-full ${getDotColor()} ring-4 ring-white`}
-                            aria-hidden="true"
-                          />
-
-                          <div className="rounded-xl bg-gray-50 px-4 py-3">
-                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
-                              <div>
-                                <div className="text-sm font-semibold text-gray-900 break-words">
-                                  {e.title}
-                                </div>
-                                <div className="mt-0.5 text-sm text-gray-700 break-words">
-                                  {e.description}
-                                </div>
-                                <div className="mt-1 text-xs text-gray-600">
-                                  {e.actorName ? `by ${e.actorName}` : ""}
-                                </div>
-                                {e.note ? (
-                                  <div className="mt-1 text-xs text-gray-700 break-words">
-                                    {e.note}
-                                  </div>
-                                ) : null}
-                              </div>
-                              <div className="shrink-0 text-xs sm:text-sm font-medium text-gray-500 sm:text-gray-900">
-                                {e.at}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="relative border-l border-gray-200 ml-3 space-y-8">
+                  {events.map((e) => (
+                    <div key={e.id} className="relative pl-8">
+                      <div className="absolute left-[-5px] top-1.5 h-2.5 w-2.5 rounded-full bg-gray-300 ring-4 ring-white" />
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-gray-400 font-medium">{e.at}</span>
+                        <p className="text-sm font-semibold text-gray-900">{e.title}</p>
+                        {e.description && (
+                          <p className="text-sm text-gray-600">{e.description}</p>
+                        )}
+                        {e.actorName && (
+                          <p className="text-xs text-gray-500 mt-1">by {e.actorName}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
