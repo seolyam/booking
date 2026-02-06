@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, branches } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 function asNonEmptyString(value: unknown): string | null {
@@ -65,6 +65,18 @@ export async function getOrCreateAppUserFromAuthUser(authUser: {
   const department = asNonEmptyString(authUser.user_metadata?.department);
   const branchId = asNonEmptyString(authUser.user_metadata?.branchId);
 
+  let validBranchId: string | null = null;
+  if (branchId) {
+    const branchExists = await db.query.branches.findFirst({
+      where: eq(branches.id, branchId),
+      columns: { id: true },
+    });
+    if (branchExists) {
+      validBranchId = branchId;
+    }
+  }
+
+
   await db
     .insert(users)
     .values({
@@ -75,7 +87,7 @@ export async function getOrCreateAppUserFromAuthUser(authUser: {
       full_name: fullName,
       position,
       department,
-      branch_id: branchId,
+      branch_id: validBranchId,
     })
     .onConflictDoNothing({ target: users.id });
 

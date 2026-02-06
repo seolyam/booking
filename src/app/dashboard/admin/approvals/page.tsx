@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { approveUser, rejectUser } from "@/actions/admin";
 import { Check, X } from "lucide-react";
+import IdDocumentImage from "./_components/IdDocumentImage";
 import Link from "next/link";
 
 // Force dynamic rendering - requires auth and DB access
@@ -76,47 +77,64 @@ export default async function AdminApprovalsPage() {
                   </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Email</p>
-                    <p className="font-medium text-gray-900">{u.email}</p>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column: User Details */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">Email</p>
+                        <p className="font-medium text-gray-900">{u.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Department</p>
+                        <p className="font-medium text-gray-900">
+                          {u.department || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Position</p>
+                        <p className="font-medium text-gray-900">
+                          {u.position || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Requested Role</p>
+                        <p className="font-medium text-gray-900 capitalize">
+                          {u.requested_role}
+                        </p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-gray-600">Registered</p>
+                        <p className="font-medium text-gray-900">
+                          {u.created_at.toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Right Column: ID Document */}
                   <div>
-                    <p className="text-gray-600">Department</p>
-                    <p className="font-medium text-gray-900">
-                      {u.department || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Position</p>
-                    <p className="font-medium text-gray-900">
-                      {u.position || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Requested Role</p>
-                    <p className="font-medium text-gray-900 capitalize">
-                      {u.requested_role}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Registered</p>
-                    <p className="font-medium text-gray-900">
-                      {u.created_at.toLocaleDateString()}
-                    </p>
+                    <p className="text-gray-600 mb-2">ID Document</p>
+                    {u.id_document_path ? (
+                      <IdDocumentImage filePath={u.id_document_path} />
+                    ) : (
+                      <div className="flex items-center justify-center h-48 w-full rounded-md border bg-gray-50">
+                        <p className="text-sm text-gray-500">No ID document uploaded</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {u.rejection_reason && (
-                  <div>
+                  <div className="pt-4">
                     <p className="text-gray-600 text-sm">Rejection reason</p>
                     <p className="text-red-700">{u.rejection_reason}</p>
                   </div>
                 )}
 
                 {u.approval_status === "pending" && (
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-3 pt-4 border-t mt-4">
                     <form
                       action={async () => {
                         "use server";
