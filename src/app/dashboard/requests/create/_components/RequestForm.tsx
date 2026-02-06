@@ -22,7 +22,7 @@ type Branch = { id: string; name: string; code: string };
 type FieldDef = {
   name: string;
   label: string;
-  type: "text" | "date" | "number" | "textarea" | "select";
+  type: "text" | "date" | "number" | "textarea" | "select" | "time";
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string }[];
@@ -58,7 +58,7 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
   meals: [
     { name: "event_name", label: "Event / Occasion", type: "text", required: true },
     { name: "meal_date", label: "Date", type: "date", required: true },
-    { name: "meal_time", label: "Time", type: "text", placeholder: "e.g. 12:00 PM" },
+    { name: "meal_time", label: "Time", type: "time" },
     { name: "number_of_pax", label: "Number of Pax", type: "number", required: true },
     { name: "venue", label: "Venue / Restaurant", type: "text" },
     { name: "meal_type", label: "Meal Type", type: "select", options: [
@@ -73,8 +73,8 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
   room_reservation: [
     { name: "room_name", label: "Room / Space", type: "text", required: true },
     { name: "reservation_date", label: "Date", type: "date", required: true },
-    { name: "start_time", label: "Start Time", type: "text", placeholder: "e.g. 09:00 AM", required: true },
-    { name: "end_time", label: "End Time", type: "text", placeholder: "e.g. 05:00 PM", required: true },
+    { name: "start_time", label: "Start Time", type: "time", required: true },
+    { name: "end_time", label: "End Time", type: "time", required: true },
     { name: "number_of_attendees", label: "Number of Attendees", type: "number", required: true },
     { name: "purpose", label: "Purpose", type: "textarea", required: true },
     { name: "equipment_needed", label: "Equipment Needed", type: "textarea", placeholder: "Projector, whiteboard, etc." },
@@ -116,6 +116,42 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
   ],
 };
 
+// Helper to convert 12h format (e.g. "02:30 PM") to 24h format (e.g. "14:30") for <input type="time">
+function to24Hour(timeStr: string) {
+  if (!timeStr) return "";
+  // If it doesn't have AM/PM, assume it's already 24h or invalid, return as is
+  if (!/AM|PM/i.test(timeStr)) return timeStr;
+
+  const [time, modifier] = timeStr.split(" ");
+  const [hours, minutes] = time.split(":");
+  let h = parseInt(hours, 10);
+
+  if (modifier.toUpperCase() === "PM" && h < 12) {
+    h += 12;
+  }
+  if (modifier.toUpperCase() === "AM" && h === 12) {
+    h = 0;
+  }
+
+  return `${h.toString().padStart(2, "0")}:${minutes}`;
+}
+
+// Helper to convert 24h format (e.g. "14:30") to 12h format (e.g. "02:30 PM") for DB/Display
+function to12Hour(timeStr: string) {
+  if (!timeStr) return "";
+  // If it has AM/PM, it's already 12h
+  if (/AM|PM/i.test(timeStr)) return timeStr;
+
+  const [hours, minutes] = timeStr.split(":");
+  let h = parseInt(hours, 10);
+  const modifier = h >= 12 ? "PM" : "AM";
+
+  h = h % 12;
+  h = h ? h : 12; // 0 should be 12
+
+  return `${h.toString().padStart(2, "0")}:${minutes} ${modifier}`;
+}
+
 export function RequestForm({
   category,
   initialValues,
@@ -127,15 +163,25 @@ export function RequestForm({
   onSubmit: (values: Record<string, unknown>) => void;
   onBack: () => void;
 }) {
-  const [values, setValues] = useState<Record<string, unknown>>(initialValues);
+  const fields = CATEGORY_FIELDS[category.key] ?? [];
+
+  // Initialize values, converting any 12h time strings back to 24h for the inputs
+  const [values, setValues] = useState<Record<string, unknown>>(() => {
+    const processed = { ...initialValues };
+    fields.forEach((field) => {
+      if (field.type === "time" && typeof processed[field.name] === "string") {
+        processed[field.name] = to24Hour(processed[field.name] as string);
+      }
+    });
+    return processed;
+  });
+
   const [branches, setBranches] = useState<Branch[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     getBranches().then(setBranches).catch(console.error);
   }, []);
-
-  const fields = CATEGORY_FIELDS[category.key] ?? [];
 
   const handleChange = (name: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -169,7 +215,14 @@ export function RequestForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit(values);
+      // Transform 24h time values to 12h format before submitting
+      const processed = { ...values };
+      fields.forEach((field) => {
+        if (field.type === "time" && typeof processed[field.name] === "string") {
+          processed[field.name] = to12Hour(processed[field.name] as string);
+        }
+      });
+      onSubmit(processed);
     }
   };
 
@@ -316,25 +369,59 @@ export function RequestForm({
                       id={field.name}
                       type={field.type}
                       value={(values[field.name] as string) ?? ""}
-                        onChange={(e) => {
-                          let val = e.target.value;
-                          if (field.type === "number") {
-                            const isCurrency = field.name.includes("budget") || field.name.includes("cost");
-                            if (isCurrency) {
-                              val = val.replace(/[^0-9.]/g, "");
-                              // Ensure only one decimal point
-                              const parts = val.split(".");
-                              if (parts.length > 2) {
-                                val = parts[0] + "." + parts.slice(1).join("");
-                              }
-                            } else {
-                              val = val.replace(/[^0-9]/g, "");
-                            }
+                      onKeyDown={(e) => {
+                        if (field.type === "number") {
+                          // Block invalid chars: e, E, +, -
+                          if (["e", "E", "+", "-"].includes(e.key)) {
+                            e.preventDefault();
                           }
-                          handleChange(field.name, val);
-                        }}
-                      placeholder={field.placeholder ?? `Enter ${field.label.toLowerCase()}`}
-                      className=""
+                          // Block decimal point for integer fields
+                          // Integer fields: NOT budget, cost, price, amount
+                          const isCurrency =
+                            field.name.includes("budget") ||
+                            field.name.includes("cost") ||
+                            field.name.includes("price") ||
+                            field.name.includes("amount");
+                            
+                          if (!isCurrency && e.key === ".") {
+                            e.preventDefault();
+                          }
+                        }
+                      }}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (field.type === "number") {
+                          if (val === "") {
+                             handleChange(field.name, val);
+                             return;
+                          }
+                          
+                          const isCurrency =
+                            field.name.includes("budget") ||
+                            field.name.includes("cost") ||
+                            field.name.includes("price") ||
+                            field.name.includes("amount");
+                            
+                          if (isCurrency) {
+                            val = val.replace(/[^0-9.]/g, "");
+                            const parts = val.split(".");
+                            if (parts.length > 2) {
+                              val = parts[0] + "." + parts.slice(1).join("");
+                            }
+                          } else {
+                            val = val.replace(/[^0-9]/g, "");
+                          }
+                        }
+                        handleChange(field.name, val);
+                      }}
+                      placeholder={
+                        field.placeholder ?? `Enter ${field.label.toLowerCase()}`
+                      }
+                      className={
+                        field.type === "time"
+                          ? "[&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                          : ""
+                      }
                     />
                   )}
 

@@ -132,26 +132,27 @@ export default function WorkflowProgress({
         </button>
       </div>
 
-      <div className="relative px-4 overflow-x-auto pb-2 scrollbar-hide">
-        <div className="min-w-[600px] grid grid-cols-5 gap-0">
+      <div className="w-full">
+        <div className="flex w-full items-start justify-between">
           {steps.map((s, idx) => (
-            <div key={s.key} className="relative flex flex-col items-center">
-              {idx !== 0 ? (
+            <React.Fragment key={s.key}>
+              {idx > 0 && (
                 <div
                   className={classNames(
-                    "absolute top-5 right-[50%] h-[3px] w-full -translate-y-1/2 block",
+                    "flex-1 h-[3px] mt-[1.2rem] min-w-[1rem] sm:min-w-[2rem]",
                     steps[idx - 1]?.state === "done"
                       ? "bg-green-500"
                       : "bg-gray-200",
                   )}
-                  aria-hidden="true"
                 />
-              ) : null}
-              <StepDot state={s.state} statusType={s.statusType} />
-              <div className="mt-3 text-xs font-bold text-gray-900 text-center">
-                {s.label}
+              )}
+              <div className="flex flex-col items-center flex-shrink-0">
+                <StepDot state={s.state} statusType={s.statusType} />
+                <div className="mt-2 text-xs font-bold text-gray-900 text-center max-w-[70px] sm:max-w-none leading-tight">
+                  {s.label}
+                </div>
               </div>
-            </div>
+            </React.Fragment>
           ))}
         </div>
       </div>

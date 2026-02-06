@@ -15,7 +15,7 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { eq, desc, and, count, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 
 // ============================================================================
 // Helpers
@@ -143,8 +143,10 @@ export async function getRequests(filters?: {
       created_at: requests.created_at,
       updated_at: requests.updated_at,
       requester_id: requests.requester_id,
+      branch_name: branches.name,
     })
     .from(requests)
+    .leftJoin(branches, eq(requests.branch_id, branches.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(requests.created_at));
 
@@ -195,6 +197,37 @@ export async function getBranches() {
 // Mutations
 // ============================================================================
 
+const numeric = z.coerce.number();
+const positiveInt = numeric.int().positive();
+const optionalNumber = z.preprocess(
+  (val) => (val === "" ? undefined : val),
+  z.coerce.number().min(0).optional()
+);
+
+const CATEGORY_SCHEMAS: Record<string, z.ZodSchema> = {
+  flight_booking: z.object({
+    number_of_passengers: positiveInt,
+    allocated_budget: optionalNumber,
+  }).passthrough(),
+  hotel_accommodation: z.object({
+    number_of_rooms: positiveInt,
+    number_of_guests: positiveInt,
+    allocated_budget: optionalNumber,
+  }).passthrough(),
+  meals: z.object({
+    number_of_pax: positiveInt,
+    allocated_budget: optionalNumber,
+  }).passthrough(),
+  room_reservation: z.object({
+    number_of_attendees: positiveInt,
+  }).passthrough(),
+  equipments_assets: z.object({
+    quantity: positiveInt,
+    unit_cost: optionalNumber,
+    total_budget: optionalNumber,
+  }).passthrough(),
+};
+
 const createRequestSchema = z.object({
   title: z.string().min(1, "Project title is required"),
   category: z.string().min(1, "Category is required"),
@@ -213,35 +246,56 @@ export async function createRequest(formData: {
   status?: "draft" | "submitted";
 }) {
   const appUser = await requireAppUser();
-  const parsed = createRequestSchema.parse(formData);
 
-  const [inserted] = await db
-    .insert(requests)
-    .values({
-      title: parsed.title,
-      category: parsed.category as Request["category"],
-      priority: parsed.priority as Request["priority"],
-      branch_id: parsed.branch_id,
-      requester_id: appUser.id,
-      form_data: parsed.form_data,
-      status: parsed.status ?? "draft",
-    })
-    .returning({ id: requests.id, ticket_number: requests.ticket_number });
+  try {
+    const parsed = createRequestSchema.parse(formData);
 
-  if (!inserted) throw new Error("Failed to create request");
+    // Additional validation/coercion for form_data based on category
+    const categorySchema = CATEGORY_SCHEMAS[parsed.category];
+    let processedFormData = parsed.form_data;
+    
+    if (categorySchema) {
+      // This will coerce strings to numbers where defined, and pass through other fields
+      processedFormData = categorySchema.parse(parsed.form_data) as Record<string, unknown>;
+    }
 
-  // Log activity
-  await db.insert(activityLogs).values({
-    request_id: inserted.id,
-    actor_id: appUser.id,
-    action: parsed.status === "submitted" ? "submitted" : "created",
-    new_status: parsed.status ?? "draft",
-  });
+    const [inserted] = await db
+      .insert(requests)
+      .values({
+        title: parsed.title,
+        category: parsed.category as Request["category"],
+        priority: parsed.priority as Request["priority"],
+        branch_id: parsed.branch_id,
+        requester_id: appUser.id,
+        form_data: processedFormData,
+        status: parsed.status ?? "draft",
+      })
+      .returning({ id: requests.id, ticket_number: requests.ticket_number });
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/requests");
+    if (!inserted) throw new Error("Failed to create request");
 
-  return { id: inserted.id, ticket_number: inserted.ticket_number };
+    // Log activity
+    await db.insert(activityLogs).values({
+      request_id: inserted.id,
+      actor_id: appUser.id,
+      action: parsed.status === "submitted" ? "submitted" : "created",
+      new_status: parsed.status ?? "draft",
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/requests");
+
+    return { id: inserted.id, ticket_number: inserted.ticket_number };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const fieldErrors = error.issues.map((err) => {
+        const path = err.path.join(".");
+        return `${path}: ${err.message}`;
+      });
+      throw new Error(`Validation failed: ${fieldErrors.join(", ")}`);
+    }
+    throw error;
+  }
 }
 
 export async function updateRequestStatus(
