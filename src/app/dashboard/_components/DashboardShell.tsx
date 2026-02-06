@@ -63,7 +63,10 @@ export default function DashboardShell({
         {/* Panel A: Sidebar */}
         <aside className="w-72 shrink-0 flex flex-col rounded-3xl bg-white shadow-xl overflow-hidden">
           {/* Header */}
-          <div className="p-6 shrink-0 border-b border-gray-100">
+          <div className="relative p-6 shrink-0 border-b border-gray-100">
+            <div className="absolute top-4 right-4 z-10">
+              <NotificationsPopover />
+            </div>
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-full bg-[#358334] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
                 {profile.initials}
@@ -115,11 +118,6 @@ export default function DashboardShell({
 
         {/* Panel B: Main Workspace */}
         <main className="flex-1 min-w-0 flex flex-col rounded-3xl bg-gray-50 shadow-xl overflow-hidden relative">
-           {/* Notification Popover - Sticky Top Right inside Panel B */}
-           <div className="absolute top-6 right-8 z-50">
-              <NotificationsPopover />
-           </div>
-
           <div className="h-full overflow-y-auto p-8 custom-scrollbar">
             {children}
           </div>
