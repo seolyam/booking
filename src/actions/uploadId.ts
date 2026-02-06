@@ -45,11 +45,11 @@ export async function uploadIdDocument(
     console.log(`[uploadIdDocument] File size: ${binaryData.length} bytes`);
 
     const filePath = `${userId}/id-document.webp`;
-    console.log(`[uploadIdDocument] Uploading to: id-documents/${filePath}`);
+    console.log(`[uploadIdDocument] Uploading to: id-picture/${filePath}`);
 
     // Upload to storage
     const { data, error: uploadError } = await supabase.storage
-      .from("id-documents")
+      .from("id-picture")
       .upload(filePath, binaryData, {
         upsert: true,
         contentType: "image/webp",
@@ -67,7 +67,7 @@ export async function uploadIdDocument(
 
     // Verify the file exists in storage
     const { data: files, error: listError } = await supabase.storage
-      .from("id-documents")
+      .from("id-picture")
       .list(userId);
 
     if (listError) {
