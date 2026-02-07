@@ -35,15 +35,11 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        for (const { name, value } of cookiesToSet) {
+        for (const { name, value, options } of cookiesToSet) {
           response.cookies.set({
             name,
             value,
-            path: "/",
-            sameSite: "lax",
-            secure: process.env.NODE_ENV === "production",
-            httpOnly: true,
-            maxAge: 60 * 60 * 24 * 7,
+            ...options,
           });
         }
       },
