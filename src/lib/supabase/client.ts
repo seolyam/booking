@@ -14,23 +14,13 @@ export function createSupabaseBrowserClient() {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          const cookieOptions = {
-            path: options?.path ?? "/",
-            maxAge: options?.maxAge ?? 60 * 60 * 24 * 7,
-            sameSite: (options?.sameSite ?? "lax") as "lax" | "strict" | "none",
-            secure: options?.secure ?? process.env.NODE_ENV === "production",
-          };
-
-          let cookieString = `${name}=${value}`;
-          if (cookieOptions.path)
-            cookieString += `; path=${cookieOptions.path}`;
-          if (cookieOptions.maxAge)
-            cookieString += `; max-age=${cookieOptions.maxAge}`;
-          if (cookieOptions.sameSite)
-            cookieString += `; samesite=${cookieOptions.sameSite}`;
-          if (cookieOptions.secure) cookieString += "; secure";
-
-          document.cookie = cookieString;
+          document.cookie = [
+            `${name}=${value}`,
+            `path=${options?.path ?? "/"}`,
+            `max-age=${options?.maxAge ?? 60 * 60 * 24 * 7}`,
+            `samesite=${options?.sameSite ?? "lax"}`,
+            `${(options?.secure ?? process.env.NODE_ENV === "production") ? "secure" : ""}`,
+          ].filter(Boolean).join("; ");
         });
       },
     },

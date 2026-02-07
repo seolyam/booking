@@ -14,15 +14,11 @@ export async function createSupabaseServerClient() {
       },
       setAll(cookiesToSet) {
         try {
-          for (const { name, value } of cookiesToSet) {
+          for (const { name, value, options } of cookiesToSet) {
             cookieStore.set({
               name,
               value,
-              path: "/",
-              sameSite: "lax",
-              secure: process.env.NODE_ENV === "production",
-              httpOnly: true,
-              maxAge: 60 * 60 * 24 * 7,
+              ...options,
             });
           }
         } catch {
