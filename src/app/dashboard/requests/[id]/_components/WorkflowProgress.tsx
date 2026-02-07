@@ -21,6 +21,15 @@ export type WorkflowEvent = {
   action?: string;
 };
 
+function statusToActionColor(action?: string): string {
+  if (!action) return "bg-gray-300";
+  const lowerAction = action.toLowerCase();
+  if (["approved", "verified", "submitted", "created", "added"].some(s => lowerAction.includes(s))) return "bg-green-500";
+  if (["returned", "rejected", "cancelled"].some(s => lowerAction.includes(s))) return "bg-red-500";
+  if (["reviewing", "on_hold", "pending"].some(s => lowerAction.includes(s))) return "bg-blue-500";
+  return "bg-gray-300";
+}
+
 export default function WorkflowProgress({
   steps,
   events,
@@ -148,18 +157,26 @@ export default function WorkflowProgress({
               {events.length === 0 ? (
                 <div className="text-sm text-gray-500 text-center py-8">No activity recorded yet.</div>
               ) : (
-                <div className="relative border-l border-gray-200 ml-3 space-y-8">
+                <div className="relative ml-3">
+                  {/* Vertical line */}
+                  <div className="absolute left-2.5 top-2 bottom-2 w-1 bg-gray-200" />
+                  
                   {events.map((e) => (
-                    <div key={e.id} className="relative pl-8">
-                      <div className="absolute left-[-5px] top-1.5 h-2.5 w-2.5 rounded-full bg-gray-300 ring-4 ring-white" />
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs text-gray-400 font-medium">{e.at}</span>
-                        <p className="text-sm font-semibold text-gray-900">{e.title}</p>
+                    <div key={e.id} className="relative flex items-start gap-5 pb-8">
+                      {/* Dot */}
+                      <div className={cn("relative z-10 h-5 w-5 rounded-full ring-4 ring-white", statusToActionColor(e.action))} />
+                      
+                      {/* Content */}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-bold text-gray-900">{e.title}</p>
+                          <span className="text-xs text-gray-400 font-medium">{e.at}</span>
+                        </div>
                         {e.description && (
-                          <p className="text-sm text-gray-600">{e.description}</p>
+                          <p className="text-sm text-gray-600 mt-1">{e.description}</p>
                         )}
                         {e.actorName && (
-                          <p className="text-xs text-gray-500 mt-1">by {e.actorName}</p>
+                          <p className="text-xs text-gray-500 mt-2">by {e.actorName}</p>
                         )}
                       </div>
                     </div>

@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import {
   requests,
+  users,
   attachments,
   comments,
   activityLogs,
@@ -144,9 +145,12 @@ export async function getRequests(filters?: {
       updated_at: requests.updated_at,
       requester_id: requests.requester_id,
       branch_name: branches.name,
+      requester_name: users.full_name,
+      requester_email: users.email,
     })
     .from(requests)
     .leftJoin(branches, eq(requests.branch_id, branches.id))
+    .leftJoin(users, eq(requests.requester_id, users.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(requests.created_at));
 

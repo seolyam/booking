@@ -16,6 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { updateRequestStatus } from "@/actions/request";
+import SuccessModal from "@/components/SuccessModal";
 
 interface ApprovalActionsProps {
   requestId: string;
@@ -26,6 +27,8 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [openDialog, setOpenDialog] = useState<string | null>(null);
   const [comment, setComment] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState({ title: "", message: "" });
 
   const handleAction = async (actionType: string) => {
     if (actionType === "reject" && !comment.trim()) {
@@ -54,7 +57,11 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
         if (result?.success) {
           setOpenDialog(null);
           setComment("");
-          router.refresh();
+          setSuccessMessage({
+            title: `Request ${actionType.charAt(0).toUpperCase() + actionType.slice(1)}!`,
+            message: `The request has been successfully ${actionType}.`,
+          });
+          setShowSuccessModal(true);
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           alert((result as any)?.message || "Action failed");
@@ -70,13 +77,25 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
     setOpenDialog(type);
   };
 
+  const handleModalClose = () => {
+    setShowSuccessModal(false);
+    router.refresh();
+  };
+
   return (
-    <div className="flex flex-wrap gap-3">
+    <>
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleModalClose}
+        title={successMessage.title}
+        message={successMessage.message}
+      />
+      <div className="flex flex-wrap gap-3">
       {/* Approve Button */}
-      <Dialog open={openDialog === "approve"} onOpenChange={(open) => !open && setOpenDialog(null)}>
+      <Dialog open={openDialog === 'approve'} onOpenChange={(open) => !open && setOpenDialog(null)}>
         <DialogTrigger asChild>
           <Button
-            onClick={() => openActionDialog("approve")}
+            onClick={() => openActionDialog('approve')}
             className="bg-green-600 hover:bg-green-700 text-white gap-2"
           >
             <CheckCircle2 className="h-4 w-4" />
@@ -102,7 +121,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(null)}>Cancel</Button>
             <Button
-              onClick={() => handleAction("approve")}
+              onClick={() => handleAction('approve')}
               className="bg-green-600 hover:bg-green-700"
               disabled={isPending}
             >
@@ -114,11 +133,11 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
       </Dialog>
 
       {/* Reject Button */}
-      <Dialog open={openDialog === "reject"} onOpenChange={(open) => !open && setOpenDialog(null)}>
+      <Dialog open={openDialog === 'reject'} onOpenChange={(open) => !open && setOpenDialog(null)}>
         <DialogTrigger asChild>
           <Button
             variant="destructive"
-            onClick={() => openActionDialog("reject")}
+            onClick={() => openActionDialog('reject')}
             className="gap-2"
           >
             <XCircle className="h-4 w-4" />
@@ -146,7 +165,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
             <Button variant="outline" onClick={() => setOpenDialog(null)}>Cancel</Button>
             <Button
               variant="destructive"
-              onClick={() => handleAction("reject")}
+              onClick={() => handleAction('reject')}
               disabled={isPending || !comment.trim()}
             >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -157,11 +176,11 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
       </Dialog>
 
       {/* Hold Button */}
-      <Dialog open={openDialog === "hold"} onOpenChange={(open) => !open && setOpenDialog(null)}>
+      <Dialog open={openDialog === 'hold'} onOpenChange={(open) => !open && setOpenDialog(null)}>
         <DialogTrigger asChild>
           <Button
             variant="outline"
-            onClick={() => openActionDialog("hold")}
+            onClick={() => openActionDialog('hold')}
             className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800 gap-2"
           >
             <AlertCircle className="h-4 w-4" />
@@ -187,7 +206,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(null)}>Cancel</Button>
             <Button
-              onClick={() => handleAction("hold")}
+              onClick={() => handleAction('hold')}
               className="bg-orange-600 hover:bg-orange-700 text-white"
               disabled={isPending}
             >
@@ -199,11 +218,11 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
       </Dialog>
 
        {/* Close Button - Maybe for superadmin only or special cases, adding for completeness */}
-       <Dialog open={openDialog === "close"} onOpenChange={(open) => !open && setOpenDialog(null)}>
+       <Dialog open={openDialog === 'close'} onOpenChange={(open) => !open && setOpenDialog(null)}>
         <DialogTrigger asChild>
           <Button
             variant="ghost"
-            onClick={() => openActionDialog("close")}
+            onClick={() => openActionDialog('close')}
             className="text-gray-500 hover:text-gray-900 gap-2"
           >
             <Archive className="h-4 w-4" />
@@ -229,7 +248,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(null)}>Cancel</Button>
             <Button
-              onClick={() => handleAction("close")}
+              onClick={() => handleAction('close')}
               className="bg-gray-800 hover:bg-gray-900 text-white"
               disabled={isPending}
             >
@@ -240,5 +259,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
+

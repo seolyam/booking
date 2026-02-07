@@ -42,10 +42,10 @@ export default function DashboardShell({
         key={item.key}
         href={item.href}
         className={
-          "flex items-center rounded-lg px-4 py-2 text-base " +
+          "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-all " +
           (isActive
             ? "bg-[#D7F7D6] text-[#2F5E3D]"
-            : "text-gray-700 hover:bg-black/5")
+            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")
         }
       >
         {item.label}
@@ -58,74 +58,70 @@ export default function DashboardShell({
       {/* Mobile Navigation - only visible on small screens */}
       <MobileNavbar profile={profile} role={role} />
 
-      {/* Desktop Layout - static, simplified */}
-      <div className="hidden md:block h-dvh overflow-hidden bg-linear-to-b from-[#C7C800] to-[#2F5E3D] p-6">
-        <div className="mx-auto h-full w-full max-w-[1600px] flex gap-4">
-          {/* Sidebar */}
-          <aside className="w-[240px] shrink-0 flex flex-col rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 overflow-hidden">
-            {/* Header */}
-            <div className="p-5 shrink-0 border-b border-black/5">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-[#358334] flex items-center justify-center text-white font-semibold shadow-sm shrink-0">
-                  {profile.initials}
+      {/* Desktop Layout - Split Panel Architecture */}
+      <div className="hidden md:flex h-screen w-full overflow-hidden bg-gradient-to-br from-[#C7C800] to-[#2F5E3D] p-6 gap-6">
+        {/* Panel A: Sidebar */}
+        <aside className="w-72 shrink-0 flex flex-col rounded-3xl bg-white shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="relative p-6 shrink-0 border-b border-gray-100">
+            <div className="absolute top-4 right-4 z-10">
+              <NotificationsPopover />
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-[#358334] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+                {profile.initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-gray-900 truncate leading-tight">
+                  {profile.fullName}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-gray-900 truncate leading-tight">
-                    {profile.fullName}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate mt-0.5">
-                    {profile.positionLine
-                      ? `${roleLabel(role)} • ${profile.positionLine}`
-                      : roleLabel(role)}
-                  </div>
+                <div className="text-xs text-gray-500 truncate mt-1 font-medium">
+                  {profile.positionLine
+                    ? `${roleLabel(role)} • ${profile.positionLine}`
+                    : roleLabel(role)}
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Navigation */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <nav className="px-3 py-4 space-y-4">
-                {sections.map((section, idx) => (
-                  <div key={idx}>
-                    {section.title && (
-                      <div className="px-4 pb-2 text-xs font-semibold tracking-wide text-gray-400 uppercase">
-                        {section.title}
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      {section.items.map(navItem)}
+          {/* Navigation */}
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 py-6">
+            <nav className="space-y-6">
+              {sections.map((section, idx) => (
+                <div key={idx}>
+                  {section.title && (
+                    <div className="px-4 pb-3 text-xs font-bold tracking-wider text-gray-400 uppercase">
+                      {section.title}
                     </div>
+                  )}
+                  <div className="space-y-1">
+                    {section.items.map(navItem)}
                   </div>
-                ))}
-              </nav>
-            </div>
+                </div>
+              ))}
+            </nav>
+          </div>
 
-            {/* Footer */}
-            <div className="border-t border-black/5 shrink-0">
-              <div className="p-3">
-                <form action={signOut}>
-                  <button
-                    type="submit"
-                    className="inline-flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm text-[#E34B33] hover:bg-[#E34B33]/10 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </button>
-                </form>
-              </div>
-            </div>
-          </aside>
+          {/* Footer */}
+          <div className="p-4 border-t border-gray-100 shrink-0">
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </form>
+          </div>
+        </aside>
 
-          {/* Main Content */}
-          <main className="flex-1 min-w-0 flex flex-col rounded-2xl bg-[#F7F7F3] shadow-sm ring-1 ring-black/5 overflow-hidden">
-            <div className="h-full overflow-y-auto p-8 relative">
-              <div className="absolute top-6 right-8 z-10">
-                <NotificationsPopover />
-              </div>
-              {children}
-            </div>
-          </main>
-        </div>
+        {/* Panel B: Main Workspace */}
+        <main className="flex-1 min-w-0 flex flex-col rounded-3xl bg-gray-50 shadow-xl overflow-hidden relative">
+          <div className="h-full overflow-y-auto p-8 custom-scrollbar">
+            {children}
+          </div>
+        </main>
       </div>
 
       {/* Mobile Content Area */}
