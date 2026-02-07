@@ -28,6 +28,7 @@ import WorkflowProgress, {
 } from "./_components/WorkflowProgress";
 import { cn } from "@/lib/utils";
 import ApprovalActions from "./_components/ApprovalActions";
+import AttachmentHandler from "./_components/AttachmentHandler";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
 import { adminBranches } from "@/db/schema";
@@ -481,65 +482,8 @@ export default async function RequestDetailPage({
            <WorkflowProgress steps={steps} events={events} />
 
            {/* Attachments */}
-           <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                 <h3 className="text-sm font-semibold text-gray-900">Attachments ({request.attachments.length})</h3>
-                 <button className="flex items-center gap-1.5 bg-gray-800 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-700 transition-colors">
-                    <Download className="h-3.5 w-3.5" /> Download all
-                 </button>
-              </div>
+           <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
 
-              {request.attachments.length === 0 ? (
-                 <div className="text-sm text-gray-500 italic py-4">No attachments found.</div>
-              ) : (
-                 <ul className="space-y-3">
-                   {request.attachments.map((file) => (
-                     <li key={file.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors group">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                           <div className="flex-shrink-0 w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center">
-                              <FileText className="h-4 w-4" />
-                           </div>
-                           <div className="min-w-0">
-                              <p className="text-xs font-medium text-gray-900 truncate max-w-[150px]">{file.file_name}</p>
-                              <p className="text-[10px] text-gray-400">{(file.file_size / 1024).toFixed(1)} KB • Uploaded {formatDateShort(file.created_at)}</p>
-                           </div>
-                        </div>
-                        <a
-                          href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/attachments/${file.file_path}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-gray-900 p-1"
-                        >
-                           <Download className="h-4 w-4" />
-                        </a>
-                     </li>
-                   ))}
-                 </ul>
-              )}
-           </div>
-
-           {/* Comments - REMOVED (moved to left column) */}
-           {/* But in my last read, Comments block was in Right Column AND Left Column?
-               Ah, in my PREVIOUS edit I had "Comments Section (Moved to Left Column...)" AND "Comments" in Right Column.
-               Wait, let's check the file content again.
-               Line 489: <div className="bg-white rounded-xl ..."> <h3 ...>Comments</h3> ...
-               Line 510: Admin Actions
-               The file read shows comments in the right column (lines 489-508).
-               It DOES NOT show comments in the left column anymore?
-               Wait, looking at the READ output (lines 368-443):
-               Lines 446-471: "Comments Section (Moved to Left Column...)"
-               So comments are in BOTH places?
-               Wait, no. In the READ output, lines 368-443 is the Left Column.
-               Wait, I see "Comments Section (Moved to Left Column...)" in the READ output (lines 438-471).
-               AND I see "Comments" in the Right Column (lines 489-508).
-               This means I duplicated the comments section in my previous edit?
-               Oops.
-               The user wants "Remove the inner 'white card on green background' structure".
-               My new string should clean this up.
-               I will put comments ONLY in the Left Column (main details), as that seems to be the main place for interaction, or keeps right column for widgets.
-               Usually comments are a main content thing.
-               I will keep comments in the Left Column inside the main card, and remove them from the Right Column widgets to avoid duplication.
-           */}
            {/* Admin Actions (Conditional) */}
            {canApprove && (
               <div className="bg-blue-50 rounded-xl border border-blue-100 p-6">
