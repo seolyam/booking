@@ -1,5 +1,7 @@
 import { getRequests } from "@/actions/request";
 import { CATEGORY_MAP, STATUS_CONFIG } from "@/db/schema";
+import { getAuthUser } from "@/lib/supabase/server";
+import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { RequestsListClient, type RequestsListRow, type StatusFilter } from "./_components/RequestsListClient";
 
 export default async function RequestsPage({
@@ -8,6 +10,18 @@ export default async function RequestsPage({
   searchParams: Promise<{ status?: string; category?: string; search?: string }>;
 }) {
   const params = await searchParams;
+
+  const authUser = await getAuthUser();
+  const appUser = authUser
+    ? await getOrCreateAppUserFromAuthUser({
+        id: authUser.id,
+        email: authUser.email ?? null,
+        user_metadata: authUser.user_metadata ?? null,
+      })
+    : null;
+
+  const showRequester = appUser?.role !== "requester";
+
   const requests = await getRequests({
     status: params.status,
     category: params.category,
@@ -26,6 +40,7 @@ export default async function RequestsPage({
       status: req.status,
       statusLabel: statusCfg?.label ?? req.status,
       branchName: req.branch_name ?? "—",
+      requesterName: req.requester_name ?? req.requester_email ?? "Unknown",
       created_at_iso: req.created_at.toISOString(),
     };
   });
@@ -35,6 +50,7 @@ export default async function RequestsPage({
       rows={rows}
       initialQuery={params.search}
       initialStatus={params.status as StatusFilter}
+      showRequester={showRequester}
     />
   );
 }

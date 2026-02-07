@@ -28,6 +28,7 @@ import WorkflowProgress, {
 } from "./_components/WorkflowProgress";
 import { cn } from "@/lib/utils";
 import ApprovalActions from "./_components/ApprovalActions";
+import AttachmentHandler from "./_components/AttachmentHandler";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
 import { adminBranches } from "@/db/schema";
@@ -347,7 +348,7 @@ export default async function RequestDetailPage({
         <div className="flex items-center gap-4">
            <Link
             href="/dashboard/requests"
-            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm"
           >
             <ArrowLeft className="h-6 w-6" />
           </Link>
@@ -440,6 +441,39 @@ export default async function RequestDetailPage({
                  <p className="text-red-800 text-sm">{request.rejection_reason}</p>
                </div>
              )}
+
+             {/* Comments Section */}
+            <div className="pt-8 border-t border-gray-100">
+               <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
+                <MessageSquare className="h-5 w-5 text-gray-400" /> Comments
+              </h3>
+              <div className="space-y-6">
+                {request.comments.length === 0 ? (
+                  <div className="text-sm text-gray-500 italic">No comments yet.</div>
+                ) : (
+                  request.comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs">
+                        {(comment.user?.full_name || comment.user?.email || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {comment.user?.full_name || comment.user?.email}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {formatDateTime(comment.created_at)}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 rounded-tl-none">
+                          {comment.content}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
         </div>
 
         {/* Right Column: Widgets */}
@@ -448,64 +482,7 @@ export default async function RequestDetailPage({
            <WorkflowProgress steps={steps} events={events} />
 
            {/* Attachments */}
-           <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                 <h3 className="text-sm font-semibold text-gray-900">Attachments ({request.attachments.length})</h3>
-                 <button className="flex items-center gap-1.5 bg-gray-800 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-700 transition-colors">
-                    <Download className="h-3.5 w-3.5" /> Download all
-                 </button>
-              </div>
-
-              {request.attachments.length === 0 ? (
-                 <div className="text-sm text-gray-500 italic py-4">No attachments found.</div>
-              ) : (
-                 <ul className="space-y-3">
-                   {request.attachments.map((file) => (
-                     <li key={file.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors group">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                           <div className="flex-shrink-0 w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center">
-                              <FileText className="h-4 w-4" />
-                           </div>
-                           <div className="min-w-0">
-                              <p className="text-xs font-medium text-gray-900 truncate max-w-[150px]">{file.file_name}</p>
-                              <p className="text-[10px] text-gray-400">{(file.file_size / 1024).toFixed(1)} KB • Uploaded {formatDateShort(file.created_at)}</p>
-                           </div>
-                        </div>
-                        <a
-                          href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/attachments/${file.file_path}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-gray-900 p-1"
-                        >
-                           <Download className="h-4 w-4" />
-                        </a>
-                     </li>
-                   ))}
-                 </ul>
-              )}
-           </div>
-
-           {/* Comments */}
-           <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
-               <h3 className="text-sm font-semibold text-gray-900 mb-4">Comments</h3>
-               <div className="space-y-4">
-                  {request.comments.length === 0 ? (
-                    <div className="text-sm text-gray-500 italic">No comments yet.</div>
-                  ) : (
-                    request.comments.slice(0, 3).map((comment) => (
-                      <div key={comment.id} className="border border-gray-100 rounded-xl p-4">
-                         <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-semibold text-gray-900">{comment.user?.full_name || comment.user?.email}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                               {comment.user?.role === 'admin' ? 'Admin' : 'User'}
-                            </span>
-                         </div>
-                         <p className="text-sm text-gray-600 italic">"{comment.content}"</p>
-                      </div>
-                    ))
-                  )}
-               </div>
-           </div>
+           <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
 
            {/* Admin Actions (Conditional) */}
            {canApprove && (

@@ -10,6 +10,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { CategorySelect } from "./_components/CategorySelect";
 import { RequestForm } from "./_components/RequestForm";
 import { DocumentUpload } from "./_components/DocumentUpload";
+import SuccessModal from "@/components/SuccessModal";
 
 const STEPS = [
   { label: "Select category", number: 1 },
@@ -27,6 +28,8 @@ export default function CreateRequestPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [newRequestId, setNewRequestId] = useState<string | null>(null);
 
   const handleCategorySelect = useCallback((category: CategoryMeta) => {
     setSelectedCategory(category);
@@ -96,7 +99,8 @@ export default function CreateRequestPage() {
         await saveAttachments(result.id, uploadedFiles);
       }
 
-      router.push(`/dashboard/requests/${result.id}`);
+      setNewRequestId(result.id);
+      setShowSuccessModal(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create request");
       setIsSubmitting(false);
@@ -107,8 +111,25 @@ export default function CreateRequestPage() {
     router.push("/dashboard/requests");
   };
 
+  const handleModalClose = () => {
+    setShowSuccessModal(false);
+    if (newRequestId) {
+      router.push(`/dashboard/requests/${newRequestId}`);
+    } else {
+      router.push("/dashboard/requests");
+    }
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-8">
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleModalClose}
+        title="Request Submitted!"
+        message="Your request has been successfully submitted for review."
+        buttonText="View Request"
+      />
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Create Request</h1>
