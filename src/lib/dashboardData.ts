@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { requests, users } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { requests, users, adminBranches } from "@/db/schema";
+import { desc, eq, inArray } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
 // Helper to format date short
@@ -80,4 +80,59 @@ export const getSuperadminDashboardData = unstable_cache(
   },
   ["superadmin-dashboard"],
   { revalidate: 30, tags: ["dashboard", "requests", "users"] },
+);
+
+export const getAdminDashboardData = unstable_cache(
+  async (userId: string) => {
+    // Get branches assigned to this admin
+    const assignments = await db.query.adminBranches.findMany({
+      where: eq(adminBranches.admin_id, userId),
+      columns: { branch_id: true }
+    });
+    const branchIds = assignments.map(b => b.branch_id);
+
+    if (branchIds.length === 0) {
+      return {
+        allRequests: [],
+        stats: {
+          totalRequests: 0,
+          pendingReview: 0,
+          approved: 0,
+          rejected: 0,
+          onHold: 0,
+          closed: 0
+        }
+      };
+    }
+
+    const allRequests = await db.query.requests.findMany({
+      where: inArray(requests.branch_id, branchIds),
+      with: {
+        branch: true,
+        requester: true,
+      },
+      orderBy: [desc(requests.created_at)],
+      limit: 100,
+    });
+
+    const nonDraft = allRequests.filter((r) => r.status !== "draft");
+
+    const stats = {
+      totalRequests: nonDraft.length,
+      pendingReview: nonDraft.filter(
+        (r) => r.status === "submitted" || r.status === "pending_review",
+      ).length,
+      approved: nonDraft.filter((r) => r.status === "approved").length,
+      rejected: nonDraft.filter((r) => r.status === "rejected").length,
+      onHold: nonDraft.filter((r) => r.status === "on_hold").length,
+      closed: nonDraft.filter((r) => r.status === "closed").length,
+    };
+
+    return {
+      allRequests,
+      stats,
+    };
+  },
+  ["admin-dashboard"],
+  { revalidate: 30, tags: ["dashboard", "requests"] },
 );

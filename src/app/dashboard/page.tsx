@@ -5,10 +5,12 @@ import {
   formatTicketNumber,
   getRequesterDashboardData,
   getSuperadminDashboardData,
+  getAdminDashboardData,
 } from "@/lib/dashboardData";
 import { CATEGORY_MAP, STATUS_CONFIG } from "@/db/schema";
 import SuperadminDashboard from "./_components/SuperadminDashboard";
 import RequesterDashboard from "./_components/RequesterDashboard";
+import AdminDashboard from "./_components/AdminDashboard";
 
 // Force dynamic rendering since dashboard data is user-specific
 export const dynamic = "force-dynamic";
@@ -59,6 +61,30 @@ export default async function DashboardPage() {
         stats={data.stats}
         rows={rows}
         pendingUserCount={data.pendingUserCount}
+      />
+    );
+  }
+
+  // Admin dashboard
+  if (appUser.role === "admin") {
+    const data = await getAdminDashboardData(appUser.id);
+    const rows = data.allRequests.slice(0, 10).map((r) => ({
+      requestId: r.id,
+      ticketNumber: formatTicketNumber(r.ticket_number),
+      category: CATEGORY_MAP[r.category]?.label ?? r.category,
+      requesterName: r.requester?.full_name ?? r.requester?.email ?? "Unknown",
+      branchName: r.branch?.name ?? "—",
+      priority: r.priority,
+      statusLabel: STATUS_CONFIG[r.status]?.label ?? r.status,
+      statusVariant: getStatusVariant(r.status),
+      dateLabel: formatDateShort(r.created_at),
+      actionHref: `/dashboard/requests/${r.id}`,
+    }));
+
+    return (
+      <AdminDashboard
+        stats={data.stats}
+        rows={rows}
       />
     );
   }
