@@ -102,11 +102,7 @@ export default function AdminDashboard({
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
                     <h3 className="text-lg font-bold text-gray-900">Recent Requests</h3>
-                    <Link href="/dashboard/requests/create">
-                        <Button className="bg-[#358334] hover:bg-[#2d6f2c]">
-                            New Request
-                        </Button>
-                    </Link>
+
                 </div>
 
                 <RequestTable rows={rows} emptyMessage="No requests found for your branches." />

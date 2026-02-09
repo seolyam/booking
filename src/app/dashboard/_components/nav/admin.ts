@@ -16,11 +16,7 @@ export function adminNav(): NavSection[] {
     {
       title: "Requests",
       items: [
-        {
-          key: "create",
-          label: "Create Request",
-          href: "/dashboard/requests/create",
-        },
+
         {
           key: "requests",
           label: "Your Requests",
