@@ -50,6 +50,7 @@ export const requestStatusEnum = pgEnum("request_status", [
   "draft",
   "submitted",
   "pending_review",
+  "reviewed",
   "on_hold",
   "approved",
   "rejected",
@@ -454,7 +455,7 @@ export const REQUIRED_PDFS: Record<string, string[]> = {
   business_permits: ["Application form", "Supporting documents"],
   radio_licenses: ["License application", "Technical specifications"],
   work_permit: ["Employment contract", "Authorization letter"],
-  equipments_assets: ["Quotation", "Manager approval"],
+  equipments_assets: ["Quotation", "Manager approval", "Delivery note", "Invoice", "Receipt"],
 };
 
 // Status display labels and variants
@@ -465,6 +466,7 @@ export const STATUS_CONFIG: Record<
   draft: { label: "Draft", variant: "default" },
   submitted: { label: "Submitted", variant: "info" },
   pending_review: { label: "Pending Review", variant: "warning" },
+  reviewed: { label: "Reviewed", variant: "info" },
   on_hold: { label: "On Hold", variant: "warning" },
   approved: { label: "Approved", variant: "success" },
   rejected: { label: "Rejected", variant: "error" },

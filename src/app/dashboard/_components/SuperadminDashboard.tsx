@@ -31,6 +31,8 @@ export default function SuperadminDashboard({
 
   return (
     <div className="space-y-6 md:space-y-10">
+      <OverviewSection stats={stats} pendingUserCount={pendingUserCount} />
+
       {/* Tabbed Interface */}
       <div className="rounded-2xl md:rounded-4xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -56,7 +58,6 @@ export default function SuperadminDashboard({
               className="p-4 md:p-8 space-y-6 md:space-y-8"
             >
               <AllRequestsTabContent
-                stats={stats}
                 rows={rows}
               />
             </TabsContent>

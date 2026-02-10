@@ -69,7 +69,7 @@ export function DocumentUpload({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">
+          <CardTitle className="text-lg text-gray-900">
             Required Documents — {category.label}
           </CardTitle>
         </CardHeader>
@@ -110,7 +110,7 @@ export function DocumentUpload({
             )}
           >
             <Upload className="h-10 w-10 text-gray-400 mb-3" />
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-gray-900">
               Drag & drop PDF or Image files here
             </p>
             <p className="text-xs text-gray-500 mt-1">
@@ -132,7 +132,7 @@ export function DocumentUpload({
           {/* Uploaded files list */}
           {files.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-gray-900">
                 Uploaded files ({files.length})
               </p>
               {files.map((file, i) => (
