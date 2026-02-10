@@ -173,7 +173,7 @@ export default function WorkflowProgress({
                           <span className="text-xs text-gray-400 font-medium">{e.at}</span>
                         </div>
                         {e.description && (
-                          <p className="text-sm text-gray-600 mt-1">{e.description}</p>
+                          <p className="text-sm text-gray-900 mt-1">{e.description}</p>
                         )}
                         {e.actorName && (
                           <p className="text-xs text-gray-500 mt-2">by {e.actorName}</p>

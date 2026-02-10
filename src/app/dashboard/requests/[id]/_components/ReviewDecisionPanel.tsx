@@ -69,7 +69,7 @@ export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelPr
         if (isSelected) {
             if (id === "approve") activeClass = "border-green-500 bg-green-50 text-green-700 ring-1 ring-green-500";
             else if (id === "reject") activeClass = "border-red-500 bg-red-50 text-red-700 ring-1 ring-red-500";
-            else if (id === "close") activeClass = "border-gray-500 bg-gray-50 text-gray-700 ring-1 ring-gray-500";
+            else if (id === "close") activeClass = "border-gray-500 bg-gray-50 text-gray-900 ring-1 ring-gray-500";
             else activeClass = "border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500";
         }
 

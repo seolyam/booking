@@ -190,7 +190,7 @@ export default function LoginPage() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold text-gray-900">Login</h1>
-                <p className="text-gray-500">Enter your details</p>
+                <p className="text-gray-900">Enter your details</p>
               </div>
 
               <form onSubmit={handleSignIn} className="space-y-4">
@@ -223,7 +223,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 focus:outline-none"
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -252,7 +252,7 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="text-center text-sm text-gray-500">
+              <div className="text-center text-sm text-gray-900">
                 Don&apos;t have an account?{" "}
                 <button
                   onClick={() => setIsLogin(false)}
@@ -269,7 +269,7 @@ export default function LoginPage() {
                 <h1 className="text-3xl font-bold text-gray-900">
                   Create your account
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-900">
                   Already have an account?{" "}
                   <button
                     onClick={() => setIsLogin(true)}
@@ -458,7 +458,7 @@ export default function LoginPage() {
                       Choose file
                     </label>
 
-                    <div className="min-w-0 flex-1 text-sm text-gray-600 truncate">
+                    <div className="min-w-0 flex-1 text-sm text-gray-900 truncate">
                       {idFile ? idFile.name : "No file selected"}
                     </div>
 
@@ -475,7 +475,7 @@ export default function LoginPage() {
                 </div>
 
                 {uploadProgress && (
-                  <p className="text-sm text-gray-600">{uploadProgress}</p>
+                  <p className="text-sm text-gray-900">{uploadProgress}</p>
                 )}
 
                 <Button

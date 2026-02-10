@@ -26,7 +26,7 @@ const statusColors = {
   warning: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
   error: "bg-red-50 text-red-700 ring-1 ring-red-200",
   info: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-  default: "bg-gray-100 text-gray-700 ring-1 ring-gray-200",
+  default: "bg-gray-100 text-gray-900 ring-1 ring-gray-200",
 };
 
 const typeColors = {
@@ -55,7 +55,7 @@ export function MobileDataCard({
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium text-gray-400 truncate">
+            <span className="text-xs font-medium text-gray-900 truncate">
               {data.displayId}
             </span>
             {data.type && (
@@ -73,7 +73,7 @@ export function MobileDataCard({
             {data.title}
           </h3>
           {data.subtitle && (
-            <p className="text-xs text-gray-500 mt-0.5 truncate">
+            <p className="text-xs text-gray-900 mt-0.5 truncate">
               {data.subtitle}
             </p>
           )}
@@ -97,7 +97,7 @@ export function MobileDataCard({
             <span className="font-bold text-gray-900">{data.amount}</span>
           )}
           {data.date && (
-            <span className="text-gray-400 font-medium">{data.date}</span>
+            <span className="text-gray-900 font-medium">{data.date}</span>
           )}
         </div>
       </div>

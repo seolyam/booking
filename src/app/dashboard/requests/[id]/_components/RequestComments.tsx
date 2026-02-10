@@ -30,7 +30,7 @@ export default function RequestComments({ comments }: RequestCommentsProps) {
                                         {formatDateTime(comment.created_at)}
                                     </span>
                                 </div>
-                                <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 rounded-tl-none italic leading-relaxed">
+                                <div className="text-sm text-gray-900 bg-gray-50 rounded-lg p-3 rounded-tl-none italic leading-relaxed">
                                     "{comment.content}"
                                 </div>
                             </div>

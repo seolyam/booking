@@ -68,11 +68,11 @@ const statusBadgeColors: Record<string, string> = {
   warning: "bg-yellow-100 text-yellow-700",
   error: "bg-red-100 text-red-700",
   info: "bg-blue-100 text-blue-700",
-  default: "bg-gray-100 text-gray-700",
+  default: "bg-gray-100 text-gray-900",
 };
 
 const priorityColors: Record<string, string> = {
-  low: "bg-gray-100 text-gray-600",
+  low: "bg-gray-100 text-gray-900",
   medium: "bg-blue-100 text-blue-600",
   high: "bg-orange-100 text-orange-600",
   urgent: "bg-red-100 text-red-600",
@@ -233,7 +233,7 @@ export function RequestDetailView({
             <span
               className={cn(
                 "text-xs font-medium px-2.5 py-1 rounded-full capitalize",
-                priorityColors[request.priority] ?? "bg-gray-100 text-gray-600"
+                priorityColors[request.priority] ?? "bg-gray-100 text-gray-900"
               )}
             >
               {request.priority}
@@ -427,7 +427,7 @@ export function RequestDetailView({
                       })}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">
                     {c.content}
                   </p>
                 </div>
@@ -481,7 +481,7 @@ export function RequestDetailView({
                           <span className="font-medium">
                             {log.actor?.full_name ?? log.actor?.email ?? "System"}
                           </span>{" "}
-                          <span className="text-gray-600">
+                          <span className="text-gray-900">
                             {log.action.replace(/_/g, " ")}
                           </span>
                           {log.new_status && (

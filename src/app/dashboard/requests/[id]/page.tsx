@@ -83,7 +83,7 @@ function statusMeta(status: string) {
     case "closed":
       return {
         label: "Closed",
-        cls: "bg-gray-50 text-gray-700 border-gray-100",
+        cls: "bg-gray-50 text-gray-900 border-gray-100",
         icon: <Archive className="h-4 w-4" />,
       };
     case "on_hold":
@@ -113,7 +113,7 @@ function statusMeta(status: string) {
     default: // draft
       return {
         label: "Draft",
-        cls: "bg-gray-50 text-gray-600 border-gray-100",
+        cls: "bg-gray-50 text-gray-900 border-gray-100",
         icon: <FileText className="h-4 w-4" />,
       };
   }
@@ -502,7 +502,7 @@ export default async function RequestDetailPage({
           {request.remarks && (
             <div className="mt-4">
               <h4 className="text-sm font-bold text-gray-900 mb-2">Additional Remarks</h4>
-              <p className="text-gray-700 bg-gray-50 p-4 rounded-xl text-sm">{request.remarks}</p>
+              <p className="text-gray-900 bg-gray-50 p-4 rounded-xl text-sm">{request.remarks}</p>
             </div>
           )}
           {request.rejection_reason && (
