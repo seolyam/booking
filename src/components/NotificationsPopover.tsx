@@ -119,7 +119,7 @@ export default function NotificationsPopover() {
                                 "pb-3 text-sm font-medium border-b-2 transition-all",
                                 filter === "all"
                                     ? "border-gray-900 text-gray-900"
-                                    : "border-transparent text-gray-500 hover:text-gray-700"
+                                    : "border-transparent text-gray-500 hover:text-gray-900"
                             )}
                         >
                             All
@@ -130,14 +130,14 @@ export default function NotificationsPopover() {
                                 "pb-3 text-sm font-medium border-b-2 transition-all flex items-center gap-2",
                                 filter === "unread"
                                     ? "border-blue-600 text-blue-600"
-                                    : "border-transparent text-gray-500 hover:text-gray-700"
+                                    : "border-transparent text-gray-500 hover:text-gray-900"
                             )}
                         >
                             Unread
                             {unreadCount > 0 && (
                                 <span className={cn(
                                     "px-1.5 py-0.5 rounded-full text-[10px] leading-none",
-                                    filter === "unread" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
+                                    filter === "unread" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-900"
                                 )}>
                                     {unreadCount}
                                 </span>
@@ -228,7 +228,7 @@ export default function NotificationsPopover() {
                                                 )}
                                             </div>
                                         </div>
-                                        <p className="mt-1 text-sm text-gray-600 leading-relaxed line-clamp-2">
+                                        <p className="mt-1 text-sm text-gray-900 leading-relaxed line-clamp-2">
                                             {n.message}
                                         </p>
 
@@ -241,7 +241,7 @@ export default function NotificationsPopover() {
                                                         setIsOpen(false);
                                                         if (!n.is_read) handleMarkRead(n.id, { stopPropagation: () => { }, preventDefault: () => { } } as React.MouseEvent);
                                                     }}
-                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-900 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 px-3 py-1.5 rounded-lg transition-all shadow-sm"
                                                 >
                                                     View Details
                                                 </Link>

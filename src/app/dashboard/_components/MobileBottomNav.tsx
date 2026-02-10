@@ -110,7 +110,7 @@ function NavButton({
         "relative flex flex-col items-center justify-center flex-1 py-2 px-1 min-h-14 rounded-lg transition-colors",
         isActive
           ? "text-[#358334]"
-          : "text-gray-500 hover:text-gray-700 active:bg-gray-100",
+          : "text-gray-500 hover:text-gray-900 active:bg-gray-100",
       )}
     >
       <item.icon

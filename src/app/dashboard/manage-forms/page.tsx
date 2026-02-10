@@ -19,7 +19,7 @@ export default async function ManageFormsPage() {
     return (
         <div className="p-8">
             <h1 className="text-2xl font-bold mb-4">Manage Forms</h1>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-900 mb-8">
                 Configure and edit form templates for different request types.
             </p>
 

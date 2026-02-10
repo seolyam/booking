@@ -186,7 +186,7 @@ export function UsersTabContent({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-900">
             Review and approve pending user applications
           </p>
           {pendingUserCount > 0 && (

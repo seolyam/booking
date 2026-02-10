@@ -198,7 +198,7 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
             {request.remarks && (
                 <div className="mt-8 border-t border-gray-100 pt-8">
                     <h4 className="text-sm font-bold text-gray-900 mb-2">Additional Remarks</h4>
-                    <p className="text-gray-600 bg-gray-50 p-4 rounded-xl text-sm leading-relaxed">{request.remarks}</p>
+                    <p className="text-gray-900 bg-gray-50 p-4 rounded-xl text-sm leading-relaxed">{request.remarks}</p>
                 </div>
             )}
             {request.rejection_reason && (
@@ -233,7 +233,7 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
                                                 {formatDateTime(comment.created_at)}
                                             </span>
                                         </div>
-                                        <div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 rounded-tl-none">
+                                        <div className="text-sm text-gray-900 bg-gray-50 rounded-lg p-3 rounded-tl-none">
                                             {comment.content}
                                         </div>
                                     </div>

@@ -45,7 +45,7 @@ export default function DashboardShell({
           "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-all " +
           (isActive
             ? "bg-[#D7F7D6] text-[#2F5E3D]"
-            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")
+            : "text-gray-900 hover:bg-gray-50 hover:text-gray-900")
         }
       >
         {item.label}

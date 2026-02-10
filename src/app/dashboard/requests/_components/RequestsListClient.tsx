@@ -48,12 +48,12 @@ function priorityPill(priority: string) {
         ? "bg-orange-100 text-orange-700"
         : priority === "medium"
           ? "bg-blue-100 text-blue-700"
-          : "bg-gray-100 text-gray-600";
+          : "bg-gray-100 text-gray-900";
   return `inline-flex items-center justify-center rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide min-w-[60px] ${cls}`;
 }
 
 function statusPill(status: string) {
-  let cls = "bg-gray-100 text-gray-600";
+  let cls = "bg-gray-100 text-gray-900";
   if (status === "approved") {
     cls = "bg-green-50 text-green-600";
   } else if (status === "submitted" || status === "pending_review") {
@@ -63,7 +63,7 @@ function statusPill(status: string) {
   } else if (status === "rejected") {
     cls = "bg-red-50 text-red-600";
   } else if (status === "closed") {
-    cls = "bg-gray-200 text-gray-700";
+    cls = "bg-gray-200 text-gray-900";
   }
   return `inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${cls}`;
 }
@@ -188,8 +188,8 @@ export function RequestsListClient(props: {
                     : v === "rejected"
                       ? isActive ? "bg-red-500 text-white" : "bg-white text-red-600 border border-red-200"
                       : v === "draft"
-                        ? isActive ? "bg-gray-500 text-white" : "bg-white text-gray-600 border border-gray-200"
-                        : isActive ? "bg-gray-800 text-white" : "bg-white text-gray-600 border border-gray-200";
+                        ? isActive ? "bg-gray-500 text-white" : "bg-white text-gray-900 border border-gray-200"
+                        : isActive ? "bg-gray-800 text-white" : "bg-white text-gray-900 border border-gray-200";
 
             const label =
               v === "all" ? "All"
@@ -269,7 +269,7 @@ export function RequestsListClient(props: {
                         ? "bg-orange-50 text-orange-700 border-orange-200 ring-orange-200"
                         : tab.color === "red"
                           ? "bg-red-50 text-red-700 border-red-200 ring-red-200"
-                          : "bg-gray-200 text-gray-700 border-gray-200 ring-gray-200";
+                          : "bg-gray-200 text-gray-900 border-gray-200 ring-gray-200";
 
                 return (
                   <button
@@ -367,7 +367,7 @@ export function RequestsListClient(props: {
                       </td>
                       {props.showRequester && (
                          <td className="py-5 px-4">
-                           <div className="text-sm font-medium text-gray-700">
+                           <div className="text-sm font-medium text-gray-900">
                              {r.requesterName}
                            </div>
                          </td>

@@ -93,7 +93,7 @@ export default function RequestApprovalsList({
                                     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold capitalize ${r.priority === 'urgent' ? 'bg-red-50 text-red-700' :
                                             r.priority === 'high' ? 'bg-orange-50 text-orange-700' :
                                                 r.priority === 'medium' ? 'bg-blue-50 text-blue-700' :
-                                                    'bg-gray-100 text-gray-700'
+                                                    'bg-gray-100 text-gray-900'
                                         }`}>
                                         {r.priority}
                                     </span>

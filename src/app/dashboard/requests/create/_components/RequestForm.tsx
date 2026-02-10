@@ -71,6 +71,14 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
         { label: "Snacks / Refreshments", value: "snacks" },
       ]
     },
+    {
+      name: "serving_style", label: "Serving Style", type: "select", options: [
+        { label: "Plated", value: "plated" },
+        { label: "Buffet", value: "buffet" },
+        { label: "Packed / Bento", value: "packed" },
+        { label: "Snacks", value: "snacks" },
+      ]
+    },
     { name: "allocated_budget", label: "Allocated Budget", type: "number" },
     { name: "special_requests", label: "Special Requests / Dietary", type: "textarea" },
   ],
@@ -171,12 +179,37 @@ export function RequestForm({
 
   // Initialize values, converting any 12h time strings back to 24h for the inputs
   const [values, setValues] = useState<Record<string, unknown>>(() => {
-    const processed = { ...initialValues };
+    // Only use initialValues if they match the current category, otherwise start fresh
+    // But since the parent manages formValues and might hold values from a previous category selection
+    // we should be careful.
+    // However, the user request is "make sure the fields do not automatically fills up from the previous submission".
+    // This usually means clearing the form after submission or when starting new.
+    // In `create/page.tsx`, `formValues` is state. If the user submits, `formValues` might persist if not cleared.
+    // But `handleSubmit` in `create/page.tsx` redirects or shows modal.
+    // If the user comes back to `create/page.tsx`, the state in `page.tsx` is fresh (component remounts).
+    // Unless the user hits "Back" in the browser? No, usually fresh state.
+    // Maybe they mean if they change category mid-creation?
+    // If I switch category in step 1, `formValues` in parent might still hold old keys.
+    // So here, we should perhaps filter `initialValues` to only include keys relevant to the current category + common fields.
+    
+    const processed: Record<string, unknown> = {};
+    
+    // Copy common fields
+    if (initialValues.title) processed.title = initialValues.title;
+    if (initialValues.priority) processed.priority = initialValues.priority;
+    if (initialValues.branch_id) processed.branch_id = initialValues.branch_id;
+    
+    // Copy category fields if they exist in initialValues
     fields.forEach((field) => {
-      if (field.type === "time" && typeof processed[field.name] === "string") {
-        processed[field.name] = to24Hour(processed[field.name] as string);
-      }
+       if (initialValues[field.name] !== undefined) {
+         if (field.type === "time" && typeof initialValues[field.name] === "string") {
+            processed[field.name] = to24Hour(initialValues[field.name] as string);
+         } else {
+            processed[field.name] = initialValues[field.name];
+         }
+       }
     });
+
     return processed;
   });
 
@@ -231,7 +264,7 @@ export function RequestForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-gray-900">
@@ -421,23 +454,23 @@ export function RequestForm({
                       placeholder={
                         field.placeholder ?? `Enter ${field.label.toLowerCase()}`
                       }
-                      className={
-                        field.type === "time"
-                          ? "[&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                          : ""
-                      }
-                    />
-                  )}
+                        className={
+                          field.type === "time"
+                            ? "[&::-webkit-calendar-picker-indicator]:cursor-pointer text-gray-900"
+                            : "text-gray-900"
+                        }
+                      />
+                    )}
 
-                  {errors[field.name] && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors[field.name]}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    {errors[field.name] && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors[field.name]}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
         </CardContent>
       </Card>
 

@@ -30,7 +30,7 @@ interface RequestTableProps {
 }
 
 const typePill = (code: string) => {
-  let cls = "bg-gray-100 text-gray-600";
+  let cls = "bg-gray-100 text-gray-900";
   if (["FLT", "HTL"].includes(code)) cls = "bg-blue-100 text-blue-600";
   if (["ACC"].includes(code)) cls = "bg-pink-100 text-pink-600";
   if (["MLS"].includes(code)) cls = "bg-indigo-100 text-indigo-600";
@@ -53,7 +53,7 @@ const statusPill = (label: string, variant: RequestTableRow["statusVariant"]) =>
           ? "bg-orange-50 text-orange-600 ring-1 ring-orange-100"
           : variant === "error"
             ? "bg-red-50 text-red-600 ring-1 ring-red-100"
-            : "bg-gray-100 text-gray-500 ring-1 ring-gray-200";
+            : "bg-gray-100 text-gray-900 ring-1 ring-gray-200";
 
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
@@ -132,13 +132,13 @@ export default function RequestTable({
                     <td className="py-5 pr-4">
                       {typePill(r.categoryCode || "REQ")}
                     </td>
-                    <td className="py-5 pr-4 text-xs font-semibold text-gray-500 uppercase">
+                    <td className="py-5 pr-4 text-xs font-semibold text-gray-900 uppercase">
                       {r.branchName}
                     </td>
                     <td className="py-5 pr-4">
                       {statusPill(r.statusLabel, r.statusVariant)}
                     </td>
-                    <td className="py-5 pr-4 text-gray-500 font-medium text-xs">
+                    <td className="py-5 pr-4 text-gray-900 font-medium text-xs">
                       {r.dateLabel}
                     </td>
                     <td className="py-5 pr-4 text-right">
