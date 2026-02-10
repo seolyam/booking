@@ -146,14 +146,14 @@ export default function CreateRequestPage() {
               <div
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors",
-                  step > s.number
-                    ? "border-[#2F5E3D] bg-[#2F5E3D] text-white"
-                    : step === s.number
-                    ? "border-[#2F5E3D] bg-white text-[#2F5E3D]"
-                    : "border-gray-300 bg-white text-gray-400"
+                  step === s.number
+                    ? "border-[#2F5E3D] bg-[#2F5E3D] text-white" // Current: Green solid, white text
+                    : step > s.number
+                    ? "border-[#2F5E3D] bg-white text-[#2F5E3D]" // Past: Green border, green text
+                    : "border-gray-300 bg-white text-gray-300"   // Future: Gray border, gray text
                 )}
               >
-                {step > s.number ? (
+                {step === s.number ? (
                   <Check className="h-5 w-5" />
                 ) : (
                   s.number
