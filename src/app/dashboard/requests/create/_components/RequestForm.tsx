@@ -33,9 +33,9 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { name: "passenger_name", label: "Passenger Name", type: "text", required: true },
     { name: "departure_from", label: "Departure From", type: "text", required: true },
     { name: "destination", label: "Destination", type: "text", required: true },
+    { name: "number_of_passengers", label: "Number of Passengers", type: "number", required: true },
     { name: "departure_date", label: "Departure Date", type: "date", required: true },
     { name: "return_date", label: "Return Date", type: "date" },
-    { name: "number_of_passengers", label: "Number of Passengers", type: "number", required: true },
     { name: "travel_class", label: "Travel Class", type: "select", options: [
       { label: "Economy", value: "economy" },
       { label: "Business", value: "business" },
