@@ -355,59 +355,57 @@ export default async function RequestDetailPage({
 
   if (isReviewMode) {
     return (
-      <div className="bg-gray-50/50 min-h-screen p-6 md:p-10">
-        <div className="max-w-[1600px] mx-auto space-y-8">
-          {/* Review Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/dashboard/requests"
-                className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm"
-              >
-                <ArrowLeft className="h-6 w-6" />
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Request Review</h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Review and verify request details before approving
-                </p>
-              </div>
-            </div>
-            <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
-              <Bell className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* Title Section */}
-          <div className="mb-8 px-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl font-bold text-gray-900">{request.title}</h2>
-              <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase">
-                {CATEGORY_MAP[request.category]?.code || "REQ"}
-              </span>
-            </div>
-            <div className="text-sm text-gray-500">
-              REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
+      <div className="space-y-8">
+        {/* Review Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard/requests"
+              className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm"
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Request Review</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Review and verify request details before approving
+              </p>
             </div>
           </div>
+          <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
+            <Bell className="h-6 w-6" />
+          </button>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left Column: Request Info */}
-            <div className="lg:col-span-8">
-              <RequestInfoCard request={request} hideComments={true} />
+        {/* Title Section */}
+        <div className="mb-8 px-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h2 className="text-2xl font-bold text-gray-900">{request.title}</h2>
+            <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase">
+              {CATEGORY_MAP[request.category]?.code || "REQ"}
+            </span>
+          </div>
+          <div className="text-sm text-gray-500">
+            REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Request Info */}
+          <div className="lg:col-span-8">
+            <RequestInfoCard request={request} hideComments={true} />
+          </div>
+
+          {/* Right Column: Attachments & Decision */}
+          <div className="lg:col-span-4 space-y-6">
+            <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
+
+            <div className="mt-8">
+              <ReviewDecisionPanel requestId={request.id} />
             </div>
 
-            {/* Right Column: Attachments & Decision */}
-            <div className="lg:col-span-4 space-y-6">
-              <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
-
-              <div className="mt-8">
-                <ReviewDecisionPanel requestId={request.id} />
-              </div>
-
-              <div className="mt-8">
-                <RequestComments comments={request.comments} />
-              </div>
+            <div className="mt-8">
+              <RequestComments comments={request.comments} />
             </div>
           </div>
         </div>
@@ -416,7 +414,7 @@ export default async function RequestDetailPage({
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto p-6 md:p-10 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">

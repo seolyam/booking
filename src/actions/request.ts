@@ -118,9 +118,8 @@ export async function getRequests(filters?: {
 
   const conditions = [];
 
-  if (appUser.role === "requester") {
-    conditions.push(eq(requests.requester_id, appUser.id));
-  }
+  // Always filter to show only the user's own requests
+  conditions.push(eq(requests.requester_id, appUser.id));
 
   if (filters?.status && filters.status !== "all") {
     conditions.push(
@@ -257,7 +256,7 @@ export async function createRequest(formData: {
     // Additional validation/coercion for form_data based on category
     const categorySchema = CATEGORY_SCHEMAS[parsed.category];
     let processedFormData = parsed.form_data;
-    
+
     if (categorySchema) {
       // This will coerce strings to numbers where defined, and pass through other fields
       processedFormData = categorySchema.parse(parsed.form_data) as Record<string, unknown>;

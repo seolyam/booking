@@ -455,7 +455,7 @@ export const REQUIRED_PDFS: Record<string, string[]> = {
   business_permits: ["Application form", "Supporting documents"],
   radio_licenses: ["License application", "Technical specifications"],
   work_permit: ["Employment contract", "Authorization letter"],
-  equipments_assets: ["Quotation", "Manager approval"],
+  equipments_assets: ["Quotation", "Manager approval", "Delivery note", "Invoice", "Receipt"],
 };
 
 // Status display labels and variants
