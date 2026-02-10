@@ -72,6 +72,8 @@ export default async function DashboardPage() {
       requestId: r.id,
       ticketNumber: formatTicketNumber(r.ticket_number),
       category: CATEGORY_MAP[r.category]?.label ?? r.category,
+      categoryCode: CATEGORY_MAP[r.category]?.code ?? "REQ", // Add category code
+      title: r.title, // Add title
       requesterName: r.requester?.full_name ?? r.requester?.email ?? "Unknown",
       branchName: r.branch?.name ?? "—",
       priority: r.priority,
@@ -83,6 +85,7 @@ export default async function DashboardPage() {
 
     return (
       <AdminDashboard
+        userName={appUser.fullName || appUser.email || "Admin"}
         stats={data.stats}
         rows={rows}
       />

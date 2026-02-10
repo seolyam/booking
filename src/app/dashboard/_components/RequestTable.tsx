@@ -12,6 +12,8 @@ export type RequestTableRow = {
   requestId: string;
   ticketNumber: string;
   category: string;
+  categoryCode?: string;
+  title?: string;
   requesterName?: string;
   branchName: string;
   priority: string;
@@ -27,20 +29,16 @@ interface RequestTableProps {
   showRequester?: boolean;
 }
 
-const priorityPill = (priority: string) => {
-  const cls =
-    priority === "urgent"
-      ? "bg-red-100 text-red-600"
-      : priority === "high"
-        ? "bg-orange-100 text-orange-600"
-        : priority === "medium"
-          ? "bg-blue-100 text-blue-600"
-          : "bg-gray-100 text-gray-500";
+const typePill = (code: string) => {
+  let cls = "bg-gray-100 text-gray-600";
+  if (["FLT", "HTL"].includes(code)) cls = "bg-blue-100 text-blue-600";
+  if (["ACC"].includes(code)) cls = "bg-pink-100 text-pink-600";
+  if (["MLS"].includes(code)) cls = "bg-indigo-100 text-indigo-600";
+  if (["SUP"].includes(code)) cls = "bg-cyan-100 text-cyan-600";
+
   return (
-    <span
-      className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${cls}`}
-    >
-      {priority}
+    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${cls}`}>
+      {code}
     </span>
   );
 };
@@ -67,13 +65,12 @@ const statusPill = (label: string, variant: RequestTableRow["statusVariant"]) =>
 export default function RequestTable({
   rows,
   emptyMessage = "No requests found.",
-  showRequester = true,
 }: RequestTableProps) {
   const mobileCards: MobileCardData[] = rows.map((r) => ({
     id: r.requestId,
     displayId: r.ticketNumber,
-    title: r.category,
-    subtitle: r.requesterName ?? r.branchName,
+    title: r.title || r.category,
+    subtitle: r.branchName,
     status: {
       label: r.statusLabel,
       variant: r.statusVariant,
@@ -90,25 +87,23 @@ export default function RequestTable({
       </div>
       <div className="hidden md:block">
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <table className="w-full text-sm min-w-[700px]">
+          <table className="w-full text-sm min-w-[800px]">
             <thead>
-              <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                <th className="pb-4 pr-4 font-bold">TICKET</th>
-                <th className="pb-4 pr-4 font-bold">CATEGORY</th>
-                {showRequester && (
-                  <th className="pb-4 pr-4 font-bold">REQUESTER</th>
-                )}
-                <th className="pb-4 pr-4 font-bold">PRIORITY</th>
-                <th className="pb-4 pr-4 font-bold text-center">STATUS</th>
-                <th className="pb-4 pr-4 font-bold text-center">DATE</th>
-                <th className="pb-4 pr-0 font-bold text-center">ACTION</th>
+              <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                <th className="pb-4 pr-4 pl-4 font-bold">REQUEST ID</th>
+                <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
+                <th className="pb-4 pr-4 font-bold">TYPE</th>
+                <th className="pb-4 pr-4 font-bold">BRANCH</th>
+                <th className="pb-4 pr-4 font-bold">STATUS</th>
+                <th className="pb-4 pr-4 font-bold">DATE</th>
+                <th className="pb-4 pr-4 font-bold text-right">ACTION</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={showRequester ? 7 : 6}
+                    colSpan={7}
                     className="py-20 text-center text-gray-400 font-medium"
                   >
                     {emptyMessage}
@@ -118,42 +113,50 @@ export default function RequestTable({
                 rows.map((r) => (
                   <tr
                     key={r.requestId}
-                    className={`group hover:bg-gray-50/50 transition-colors ${
-                      r.statusVariant === "error"
-                        ? "opacity-60 bg-gray-50/30"
-                        : ""
-                    }`}
+                    className={`group hover:bg-gray-50 transition-colors ${r.statusVariant === "error"
+                      ? "opacity-60 bg-gray-50/30"
+                      : ""
+                      }`}
                   >
-                    <td className="py-5 pr-4 font-bold text-gray-400 text-xs">
+                    <td className="py-5 pl-4 pr-4 font-medium text-gray-900 text-xs">
                       {r.ticketNumber}
                     </td>
                     <td className="py-5 pr-4">
-                      <div className="font-bold text-gray-900 leading-tight">
-                        {r.category}
+                      <div className="font-bold text-gray-900 text-sm leading-tight">
+                        {r.title || r.category}
                       </div>
-                      <div className="text-xs font-semibold text-gray-400 mt-0.5">
-                        {r.branchName}
+                      <div className="text-[11px] font-medium text-gray-400 mt-1 capitalize">
+                        {r.priority} Priority
                       </div>
                     </td>
-                    {showRequester && (
-                      <td className="py-5 pr-4 text-sm text-gray-700 font-medium">
-                        {r.requesterName ?? "—"}
-                      </td>
-                    )}
-                    <td className="py-5 pr-4">{priorityPill(r.priority)}</td>
-                    <td className="py-5 pr-4 text-center">
+                    <td className="py-5 pr-4">
+                      {typePill(r.categoryCode || "REQ")}
+                    </td>
+                    <td className="py-5 pr-4 text-xs font-semibold text-gray-500 uppercase">
+                      {r.branchName}
+                    </td>
+                    <td className="py-5 pr-4">
                       {statusPill(r.statusLabel, r.statusVariant)}
                     </td>
-                    <td className="py-5 pr-4 text-gray-400 font-bold text-xs text-center">
+                    <td className="py-5 pr-4 text-gray-500 font-medium text-xs">
                       {r.dateLabel}
                     </td>
-                    <td className="py-5 pr-0 text-center">
-                      <Link
-                        href={r.actionHref}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold bg-gray-200/80 text-gray-600 hover:bg-gray-300/80 transition-colors"
-                      >
-                        View <Eye className="h-3.5 w-3.5" />
-                      </Link>
+                    <td className="py-5 pr-4 text-right">
+                      {r.statusLabel === "Submitted" ? (
+                        <Link
+                          href={r.actionHref}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors shadow-sm"
+                        >
+                          Review <Eye className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        <Link
+                          href={r.actionHref}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold bg-[#4b5563] text-white hover:bg-gray-700 transition-colors shadow-sm"
+                        >
+                          View <Eye className="h-3 w-3" />
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))

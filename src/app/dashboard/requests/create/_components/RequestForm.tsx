@@ -41,6 +41,14 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
       { label: "Business", value: "business" },
       { label: "First Class", value: "first_class" },
     ]},
+    { name: "number_of_passengers", label: "Number of Passengers", type: "number", required: true },
+    {
+      name: "travel_class", label: "Travel Class", type: "select", options: [
+        { label: "Economy", value: "economy" },
+        { label: "Business", value: "business" },
+        { label: "First Class", value: "first_class" },
+      ]
+    },
     { name: "allocated_budget", label: "Allocated Budget", type: "number", placeholder: "e.g. 50000" },
     { name: "purpose_of_travel", label: "Purpose of Travel", type: "textarea", required: true },
   ],
@@ -61,12 +69,14 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { name: "meal_time", label: "Time", type: "time" },
     { name: "number_of_pax", label: "Number of Pax", type: "number", required: true },
     { name: "venue", label: "Venue / Restaurant", type: "text" },
-    { name: "meal_type", label: "Meal Type", type: "select", options: [
-      { label: "Breakfast", value: "breakfast" },
-      { label: "Lunch", value: "lunch" },
-      { label: "Dinner", value: "dinner" },
-      { label: "Snacks / Refreshments", value: "snacks" },
-    ]},
+    {
+      name: "meal_type", label: "Meal Type", type: "select", options: [
+        { label: "Breakfast", value: "breakfast" },
+        { label: "Lunch", value: "lunch" },
+        { label: "Dinner", value: "dinner" },
+        { label: "Snacks / Refreshments", value: "snacks" },
+      ]
+    },
     { name: "allocated_budget", label: "Allocated Budget", type: "number" },
     { name: "special_requests", label: "Special Requests / Dietary", type: "textarea" },
   ],
@@ -230,7 +240,7 @@ export function RequestForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">
+          <CardTitle className="text-lg text-gray-900">
             {category.label} — Request Details
           </CardTitle>
         </CardHeader>
@@ -238,7 +248,7 @@ export function RequestForm({
           {/* Common fields */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Label htmlFor="title">
+              <Label htmlFor="title" className="text-gray-900">
                 Project Title <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -254,7 +264,7 @@ export function RequestForm({
             </div>
 
             <div>
-              <Label htmlFor="priority">Priority Level</Label>
+              <Label htmlFor="priority" className="text-gray-900">Priority Level</Label>
               <Select
                 value={(values.priority as string) ?? "medium"}
                 onValueChange={(v) => handleChange("priority", v)}
@@ -272,7 +282,7 @@ export function RequestForm({
             </div>
 
             <div>
-              <Label htmlFor="branch_id">
+              <Label htmlFor="branch_id" className="text-gray-900">
                 Branch <span className="text-red-500">*</span>
               </Label>
               <Select
@@ -298,7 +308,7 @@ export function RequestForm({
 
           {/* Divider */}
           <div className="border-t border-gray-100 pt-5">
-            <p className="text-sm font-medium text-gray-700 mb-4">
+            <p className="text-sm font-bold text-gray-900 mb-4">
               Category-specific information
             </p>
           </div>
@@ -315,7 +325,7 @@ export function RequestForm({
                   className={isFullWidth ? "sm:col-span-2" : ""}
                 >
                   <div className="flex justify-between items-end mb-1.5">
-                    <Label htmlFor={field.name}>
+                    <Label htmlFor={field.name} className="text-gray-900">
                       {field.label}
                       {field.required && (
                         <span className="text-red-500"> *</span>
@@ -382,7 +392,7 @@ export function RequestForm({
                             field.name.includes("cost") ||
                             field.name.includes("price") ||
                             field.name.includes("amount");
-                            
+
                           if (!isCurrency && e.key === ".") {
                             e.preventDefault();
                           }
@@ -392,16 +402,16 @@ export function RequestForm({
                         let val = e.target.value;
                         if (field.type === "number") {
                           if (val === "") {
-                             handleChange(field.name, val);
-                             return;
+                            handleChange(field.name, val);
+                            return;
                           }
-                          
+
                           const isCurrency =
                             field.name.includes("budget") ||
                             field.name.includes("cost") ||
                             field.name.includes("price") ||
                             field.name.includes("amount");
-                            
+
                           if (isCurrency) {
                             val = val.replace(/[^0-9.]/g, "");
                             const parts = val.split(".");

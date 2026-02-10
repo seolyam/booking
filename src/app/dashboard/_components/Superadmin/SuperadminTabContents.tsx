@@ -32,25 +32,29 @@ function StatCard({
   value,
   label,
   href,
+  colorClass,
 }: {
   icon: React.ReactNode;
   value: number;
   label: string;
   href: string;
+  colorClass: string;
 }) {
   return (
     <Link
       href={href}
-      className="rounded-xl md:rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-6 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow group"
+      className="flex flex-col justify-between rounded-[2rem] bg-white shadow-sm p-6 hover:shadow-md transition-shadow group h-full border border-gray-100/50"
     >
-      <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl flex items-center justify-center bg-blue-50 transition-transform group-hover:scale-110">
+      <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${colorClass} mb-4 transition-transform group-hover:scale-105`}>
         {icon}
       </div>
-      <div className="mt-3 md:mt-6 text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
-        {value}
-      </div>
-      <div className="mt-0.5 md:mt-1 text-[10px] md:text-sm font-medium text-gray-500">
-        {label}
+      <div>
+        <div className="text-5xl font-bold text-gray-900 tracking-tight mb-2">
+          {value}
+        </div>
+        <div className="text-sm font-semibold text-gray-500">
+          {label}
+        </div>
       </div>
     </Link>
   );
@@ -72,36 +76,48 @@ export function OverviewSection({
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-6 md:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          icon={<FileText className="h-6 w-6 text-blue-500" />}
+          icon={<FileText className="h-6 w-6" />}
           value={stats.totalRequests}
           label="Total Requests"
           href="/dashboard/requests"
+          colorClass="bg-blue-50 text-blue-600"
         />
         <StatCard
-          icon={<Clock className="h-6 w-6 text-orange-500" />}
+          icon={<Clock className="h-6 w-6" />}
           value={stats.pendingReview}
           label="Pending Review"
           href="/dashboard/requests?status=pending"
+          colorClass="bg-[#FFF4DE] text-[#FFB020]"
         />
         <StatCard
-          icon={<CheckCircle className="h-6 w-6 text-green-500" />}
+          icon={<CheckCircle className="h-6 w-6" />}
           value={stats.approved}
           label="Approved"
           href="/dashboard/requests?status=approved"
+          colorClass="bg-green-50 text-green-600"
         />
         <StatCard
-          icon={<Users className="h-6 w-6 text-purple-500" />}
+          icon={<Users className="h-6 w-6" />}
           value={pendingUserCount}
           label="Pending Users"
           href="/dashboard/admin/approvals"
+          colorClass="bg-purple-50 text-purple-600"
         />
         <StatCard
-          icon={<XCircle className="h-6 w-6 text-gray-500" />}
+          icon={<XCircle className="h-6 w-6" />}
           value={stats.rejected}
           label="Rejected"
           href="/dashboard/requests?status=rejected"
+          colorClass="bg-red-50 text-red-600"
+        />
+        <StatCard
+          icon={<PauseCircle className="h-6 w-6" />}
+          value={stats.onHold}
+          label="On Hold"
+          href="/dashboard/requests?status=on_hold"
+          colorClass="bg-orange-50 text-orange-600"
         />
       </div>
 
@@ -135,10 +151,8 @@ export function OverviewSection({
 }
 
 export function AllRequestsTabContent({
-  stats,
   rows,
 }: {
-  stats: SuperadminStats;
   rows: RequestTableRow[];
 }) {
   return (
@@ -150,40 +164,6 @@ export function AllRequestsTabContent({
             New Request
           </Button>
         </Link>
-      </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
-          <p className="text-xs text-gray-500 font-semibold uppercase">
-            Total Requests
-          </p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">
-            {stats.totalRequests}
-          </p>
-        </div>
-        <div className="rounded-lg bg-orange-50 p-4 border border-orange-100">
-          <p className="text-xs text-orange-600 font-semibold uppercase">
-            Pending Review
-          </p>
-          <p className="text-2xl font-bold text-orange-900 mt-2">
-            {stats.pendingReview}
-          </p>
-        </div>
-        <div className="rounded-lg bg-green-50 p-4 border border-green-100">
-          <p className="text-xs text-green-600 font-semibold uppercase">
-            Approved
-          </p>
-          <p className="text-2xl font-bold text-green-900 mt-2">
-            {stats.approved}
-          </p>
-        </div>
-        <div className="rounded-lg bg-red-50 p-4 border border-red-100">
-          <p className="text-xs text-red-600 font-semibold uppercase">
-            Rejected
-          </p>
-          <p className="text-2xl font-bold text-red-900 mt-2">
-            {stats.rejected}
-          </p>
-        </div>
       </div>
       <RequestTable rows={rows} emptyMessage="No requests found." />
     </div>
