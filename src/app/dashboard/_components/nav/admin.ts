@@ -41,6 +41,11 @@ export function adminNav(): NavSection[] {
           label: "Approvals",
           href: "/dashboard/admin/approvals",
         },
+        {
+          key: "manage_forms",
+          label: "Manage Forms",
+          href: "/dashboard/manage-forms",
+        },
       ],
     },
   ];

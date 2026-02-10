@@ -92,6 +92,12 @@ function statusMeta(status: string) {
         cls: "bg-orange-50 text-orange-700 border-orange-100",
         icon: <AlertCircle className="h-4 w-4" />,
       };
+    case "reviewed":
+      return {
+        label: "Reviewed",
+        cls: "bg-purple-50 text-purple-700 border-purple-100",
+        icon: <CheckCircle2 className="h-4 w-4" />,
+      };
     case "pending_review":
       return {
         label: "Pending Review",
@@ -138,14 +144,14 @@ function computeSteps(status: string): WorkflowStep[] {
   const steps: Array<{ key: string; label: string }> = [
     { key: "created", label: "Created" },
     { key: "submitted", label: "Submitted" },
-    { key: "pending_review", label: "Reviewed" },
+    { key: "reviewed", label: "Reviewed" },
     { key: "approved", label: "Approved" },
   ];
 
   let activeIndex = 0;
   if (status === "draft") activeIndex = 0;
-  else if (status === "submitted") activeIndex = 1;
-  else if (status === "pending_review" || status === "on_hold") activeIndex = 2;
+  else if (status === "submitted" || status === "pending_review") activeIndex = 1;
+  else if (status === "reviewed" || status === "on_hold") activeIndex = 2;
   else if (status === "approved" || status === "rejected" || status === "closed") activeIndex = 3;
 
   // Handle terminal states label overrides
@@ -510,10 +516,6 @@ export default async function RequestDetailPage({
             </div>
           )}
 
-          {/* Comments Section */}
-          <div className="pt-8 mt-4">
-            <RequestComments comments={request.comments} />
-          </div>
         </div>
 
         {/* Right Column: Widgets */}
@@ -531,6 +533,11 @@ export default async function RequestDetailPage({
               <ApprovalActions requestId={request.id} />
             </div>
           )}
+
+          {/* Comments Section */}
+          <div className="mt-6">
+            <RequestComments comments={request.comments} />
+          </div>
         </div>
       </div>
     </div>

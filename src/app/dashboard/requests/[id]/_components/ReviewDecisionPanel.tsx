@@ -28,7 +28,7 @@ export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelPr
                 let status = "";
                 switch (selectedDecision) {
                     case "approve":
-                        status = "approved";
+                        status = "reviewed"; // Admin review complete, moves to approval
                         break;
                     case "revision":
                         status = "on_hold"; // Assuming on_hold represents revision needed
@@ -121,27 +121,31 @@ export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelPr
                 />
             </div>
 
-            <div className="space-y-3">
-                <label className="text-sm font-bold text-gray-900 flex items-center gap-1">
-                    Comment <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Additional note"
-                    className="w-full rounded-lg border-gray-200 text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0"
-                />
-            </div>
+            {selectedDecision && (
+                <>
+                    <div className="space-y-3 mt-6">
+                        <label className="text-sm font-bold text-gray-900 flex items-center gap-1">
+                            Comment <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            placeholder="Additional note"
+                            className="w-full rounded-lg border-gray-200 text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0"
+                        />
+                    </div>
 
-            <div className="mt-6 flex justify-end">
-                <button
-                    onClick={handleSubmit}
-                    disabled={!selectedDecision || isPending}
-                    className="bg-[#358334] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#2d6f2c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
-                >
-                    {isPending ? "Submitting..." : "Submit review"}
-                </button>
-            </div>
+                    <div className="mt-6 flex justify-end">
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isPending}
+                            className="bg-[#358334] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#2d6f2c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
+                        >
+                            {isPending ? "Submitting..." : "Submit review"}
+                        </button>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
