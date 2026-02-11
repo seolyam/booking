@@ -8,14 +8,10 @@ import {
   Clock,
   AlertCircle,
   FileText,
-  MessageSquare,
   Ban,
   Archive,
   Bell,
-  Download,
   MapPin,
-  Calendar,
-  Users,
   Building2,
 } from "lucide-react";
 import { getRequestById } from "@/actions/request";
@@ -36,6 +32,7 @@ import { eq } from "drizzle-orm";
 import RequestComments from "./_components/RequestComments";
 import RequestInfoCard from "./_components/RequestInfoCard";
 import ReviewDecisionPanel from "./_components/ReviewDecisionPanel";
+import ExportButton from "./_components/ExportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -49,13 +46,6 @@ function formatDateShort(input: Date | string) {
   const dd = String(d.getDate()).padStart(2, "0");
   const yyyy = String(d.getFullYear());
   return `${mm}-${dd}-${yyyy}`;
-}
-
-function formatDateTime(input: Date | string) {
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(input));
 }
 
 function formatCurrency(amount: number | string | null | undefined) {
@@ -462,7 +452,7 @@ export default async function RequestDetailPage({
           </div>
 
           {/* Main Info Block */}
-          <div className="bg-gray-50 rounded-2xl p-6 mb-8">
+          <div id="request-printable-area" className="bg-gray-50 rounded-2xl p-6 mb-8">
             <div className="flex items-center gap-3 mb-6">
               <h3 className="font-bold text-gray-900">Request Information</h3>
               {request.priority === "urgent" && (
@@ -493,9 +483,10 @@ export default async function RequestDetailPage({
 
             {/* Footer Button inside card? No, usually outside or bottom right. Design shows "Export Details" bottom right of this panel */}
             <div className="flex justify-end mt-8">
-              <button className="flex items-center gap-2 bg-gray-700 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
-                <Download className="h-4 w-4" /> Export Details
-              </button>
+              <ExportButton 
+                targetId="request-printable-area" 
+                fileName={`REQ-${String(request.ticket_number).padStart(4, "0")}-Details`}
+              />
             </div>
           </div>
 
