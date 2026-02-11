@@ -91,6 +91,8 @@ function WorkflowStepper({
     submitted: 1,
     pending_review: 2,
     on_hold: 2,
+    needs_revision: 2,
+    resubmitted: 1,
     approved: 3,
     rejected: 2,
     closed: 4,
@@ -531,7 +533,7 @@ export function RequestDetailView({
                 Start Review
               </Button>
             )}
-            {["submitted", "pending_review", "on_hold"].includes(
+            {["submitted", "pending_review", "on_hold", "needs_revision", "resubmitted"].includes(
               request.status
             ) && (
               <>
