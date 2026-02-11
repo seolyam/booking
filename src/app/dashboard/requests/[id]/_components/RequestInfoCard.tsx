@@ -1,12 +1,13 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Download, MapPin, Building2, Ban, MessageSquare } from "lucide-react";
+import { MapPin, Building2, Ban, MessageSquare } from "lucide-react";
 import {
     CATEGORY_MAP,
 } from "@/db/schema";
 import type { Request, Comment } from "@/db/schema";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
+import ExportButton from "./ExportButton";
 
 // Form Data Helpers
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -153,12 +154,11 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
     const formData = request.form_data as any;
 
     return (
-        <div className="bg-white rounded-3xl p-8 shadow-sm ring-1 ring-gray-100 h-full">
+        <div id="request-printable-area" className="bg-white rounded-3xl p-8 shadow-sm ring-1 ring-gray-100 h-full">
             {/* Main Info Block */}
             <div className="mb-8">
                 {/* Header Line */}
                 <div className="flex items-center gap-3 mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">Request Information</h3>
                     <span className={cn(
                         "text-xs font-bold px-3 py-1 rounded-full capitalize",
                         request.priority === "urgent" ? "bg-red-50 text-red-700" :
@@ -195,9 +195,10 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
 
                 {/* Footer Button */}
                 <div className="flex justify-end mt-12 bg-transparent">
-                    <button className="flex items-center gap-2 bg-[#52525b] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
-                        <Download className="h-4 w-4" /> Export Details
-                    </button>
+                    <ExportButton 
+                        targetId="request-printable-area" 
+                        fileName={`REQ-${String(request.ticket_number).padStart(4, "0")}-Details`}
+                    />
                 </div>
             </div>
 

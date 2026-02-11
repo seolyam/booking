@@ -429,60 +429,6 @@ export default async function RequestDetailPage({
         <div className="text-sm text-gray-500 mb-8">
           REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
         </div>
-
-        {/* Main Info Block */}
-        <div id="request-printable-area" className="bg-gray-50 rounded-2xl p-6 mb-8">
-            <div className="flex items-center gap-3 mb-6">
-              <h3 className="font-bold text-gray-900">Request Information</h3>
-              {request.priority === "urgent" && (
-                <span className="bg-orange-200 text-orange-800 text-xs font-bold px-2 py-0.5 rounded">Urgent</span>
-              )}
-            </div>
-
-            {/* Primary Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-              <InfoCard label="Requester" value={request.requester.full_name || request.requester.email} />
-              <InfoCard label="Branch" value={request.branch?.name || "Main Branch"} />
-              <InfoCard label="Budget" value={formatCurrency(formData.allocated_budget || formData.budget || formData.total_budget)} />
-              <InfoCard label="Created" value={formatDateShort(request.created_at)} />
-            </div>
-
-            {/* Category Details (Address, dates, etc.) */}
-            <div className="border-t border-gray-200 pt-6">
-              {request.category === "flight_booking" ? (
-                <FlightDetails data={formData} />
-              ) : request.category === "hotel_accommodation" ? (
-                <HotelDetails data={formData} />
-              ) : request.category === "meals" ? (
-                <MealsDetails data={formData} />
-              ) : (
-                <DefaultDetails data={formData} />
-              )}
-            </div>
-
-          {/* Footer Button inside card? No, usually outside or bottom right. Design shows "Export Details" bottom right of this panel */}
-          <div className="flex justify-end mt-8">
-            <ExportButton 
-              targetId="request-printable-area" 
-              fileName={`REQ-${String(request.ticket_number).padStart(4, "0")}-Details`}
-            />
-          </div>
-        </div>
-
-        {request.remarks && (
-          <div className="mt-4">
-            <h4 className="text-sm font-bold text-gray-900 mb-2">Additional Remarks</h4>
-            <p className="text-gray-900 bg-gray-50 p-4 rounded-xl text-sm">{request.remarks}</p>
-          </div>
-        )}
-        {request.rejection_reason && (
-          <div className="mt-4 bg-red-50 border border-red-100 rounded-xl p-4">
-            <h4 className="text-sm font-bold text-red-900 mb-1 flex items-center gap-2">
-              <Ban className="h-4 w-4" /> Rejection Reason
-            </h4>
-            <p className="text-red-800 text-sm">{request.rejection_reason}</p>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

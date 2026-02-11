@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Download, FileImage, FileText, Loader2, ChevronDown } from "lucide-react";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { cn } from "@/lib/utils";
 
@@ -26,41 +26,52 @@ export default function ExportButton({ targetId, fileName = "request-details" }:
         return;
       }
 
-      // Add temporary padding/styling for better capture if needed
-      const canvas = await html2canvas(element, {
-        scale: 2, // Better resolution
-        logging: false,
-        useCORS: true,
-        backgroundColor: "#ffffff", // Ensure white background
+      // Filter out elements that should be ignored (like this button)
+      const filter = (node: HTMLElement) => {
+        // Only process elements
+        if (node.nodeType === 1 && node.hasAttribute("data-export-ignore")) {
+          return false;
+        }
+        return true;
+      };
+
+      const dataUrl = await toPng(element, {
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+        pixelRatio: 2, // Better resolution
+        filter: filter as any, // Type cast might be needed depending on html-to-image types
+        skipFonts: true, // Fix for "font is undefined" error
       });
 
       if (type === "png") {
         const link = document.createElement("a");
         link.download = `${fileName}.png`;
-        link.href = canvas.toDataURL("image/png");
+        link.href = dataUrl;
         link.click();
       } else if (type === "pdf") {
-        const imgData = canvas.toDataURL("image/png");
+        // Get image dimensions to maintain aspect ratio
+        const img = new Image();
+        img.src = dataUrl;
         
-        // Calculate dimensions to fit A4 if needed, or just use custom size
-        // Using A4 portrait logic for better printability
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
+
+        // Calculate dimensions to fit A4
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
+        // const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
+        const imgWidth = img.width;
+        const imgHeight = img.height;
         
         const imgY = 10; // Top margin
-        
-        // If image is very long, we might need multiple pages, but for now simple fit
-        // For a dashboard card, usually it fits on one page if scaled
         
         // Simple scale to width implementation
         const finalWidth = pdfWidth - 20; // 10mm margin each side
         const finalHeight = (imgHeight * finalWidth) / imgWidth;
 
-        pdf.addImage(imgData, "PNG", 10, imgY, finalWidth, finalHeight);
+        pdf.addImage(dataUrl, "PNG", 10, imgY, finalWidth, finalHeight);
         pdf.save(`${fileName}.pdf`);
       }
     } catch (error) {
@@ -71,7 +82,7 @@ export default function ExportButton({ targetId, fileName = "request-details" }:
   };
 
   return (
-    <div className="relative" data-html2canvas-ignore="true">
+    <div className="relative" data-export-ignore="true">
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isExporting}
