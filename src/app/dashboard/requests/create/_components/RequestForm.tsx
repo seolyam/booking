@@ -229,7 +229,7 @@ export function RequestForm({
     });
   };
 
-  const validate = (): boolean => {
+  const validate = (asDraft: boolean): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!values.title || !(values.title as string).trim()) {
@@ -239,9 +239,15 @@ export function RequestForm({
       newErrors.branch_id = "Branch is required";
     }
 
-    for (const field of fields) {
-      if (field.required && !values[field.name]) {
-        newErrors[field.name] = `${field.label} is required`;
+    if (!asDraft) {
+      if (files.length === 0) {
+        newErrors.files = "At least one document must be uploaded";
+      }
+
+      for (const field of fields) {
+        if (field.required && !values[field.name]) {
+          newErrors[field.name] = `${field.label} is required`;
+        }
       }
     }
 
@@ -253,7 +259,7 @@ export function RequestForm({
     e.preventDefault();
     // For drafts, we might skip validation or loosen it, but typically we want at least basic fields.
     // Let's validate for now to ensure data integrity.
-    if (validate()) {
+    if (validate(asDraft)) {
       // Transform 24h time values to 12h format before submitting
       const processed = { ...values };
       fields.forEach((field) => {
@@ -501,7 +507,7 @@ export function RequestForm({
               requiredPdfs={requiredPdfs}
               files={files}
               onFilesChange={onFilesChange}
-              error={null}
+              error={errors.files ?? null}
             />
           </div>
 
