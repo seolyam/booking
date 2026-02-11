@@ -350,7 +350,7 @@ export default async function RequestDetailPage({
         const msg = request.status === "resubmitted"
           ? "Resubmitted request viewed by admin - status updated to Pending"
           : "Request viewed by admin - status updated to Pending";
-        await updateRequestStatus(request.id, "pending_review", msg);
+        await updateRequestStatus(request.id, "pending_review", msg, true);
         redirect(`/dashboard/requests/${request.id}`); // Reload to reflect change
       }
 

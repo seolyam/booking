@@ -304,7 +304,8 @@ export async function createRequest(formData: {
 export async function updateRequestStatus(
   requestId: string,
   newStatus: string,
-  comment?: string
+  comment?: string,
+  skipRevalidation = false
 ) {
   const appUser = await requireAppUser();
 
@@ -401,9 +402,11 @@ export async function updateRequestStatus(
     });
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/requests");
-  revalidatePath(`/dashboard/requests/${requestId}`);
+  if (!skipRevalidation) {
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/requests");
+    revalidatePath(`/dashboard/requests/${requestId}`);
+  }
 
   return { success: true };
 }
