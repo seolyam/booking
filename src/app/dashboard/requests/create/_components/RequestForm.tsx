@@ -233,7 +233,7 @@ export function RequestForm({
     const newErrors: Record<string, string> = {};
 
     if (!values.title || !(values.title as string).trim()) {
-      newErrors.title = "Project title is required";
+      newErrors.title = "Ticket name is required";
     }
     if (!values.branch_id) {
       newErrors.branch_id = "Branch is required";
@@ -287,13 +287,13 @@ export function RequestForm({
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <Label htmlFor="title" className="text-gray-900 font-medium">
-                Project Title <span className="text-red-500">*</span>
+                Ticket Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="title"
                 value={(values.title as string) ?? ""}
                 onChange={(e) => handleChange("title", e.target.value)}
-                placeholder="Enter project name"
+                placeholder="Enter ticket name"
                 className="mt-1.5 h-11"
               />
               {errors.title && (

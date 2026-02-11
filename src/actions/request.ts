@@ -14,7 +14,7 @@ import {
 } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
-import { eq, desc, and, count, inArray } from "drizzle-orm";
+import { eq, desc, and, count, inArray, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z, ZodError } from "zod";
 
@@ -110,9 +110,10 @@ export async function getRecentRequests(limit = 5) {
 }
 
 export async function getRequests(filters?: {
-  status?: string;
-  category?: string;
+  status?: string | string[];
+  category?: string | string[];
   search?: string;
+  dateRange?: { from?: Date; to?: Date };
 }) {
   const appUser = await requireAppUser();
 
@@ -122,14 +123,29 @@ export async function getRequests(filters?: {
   conditions.push(eq(requests.requester_id, appUser.id));
 
   if (filters?.status && filters.status !== "all") {
-    conditions.push(
-      eq(requests.status, filters.status as Request["status"])
-    );
+    const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
+    // Filter out "all" if present in array
+    const cleanStatuses = statuses.filter(s => s !== "all");
+    if (cleanStatuses.length > 0) {
+      conditions.push(inArray(requests.status, cleanStatuses as Request["status"][]));
+    }
   }
+
   if (filters?.category && filters.category !== "all") {
-    conditions.push(
-      eq(requests.category, filters.category as Request["category"])
-    );
+    const categories = Array.isArray(filters.category) ? filters.category : [filters.category];
+    const cleanCategories = categories.filter(c => c !== "all");
+    if (cleanCategories.length > 0) {
+      conditions.push(inArray(requests.category, cleanCategories as Request["category"][]));
+    }
+  }
+
+  if (filters?.dateRange) {
+    if (filters.dateRange.from) {
+      conditions.push(gte(requests.created_at, filters.dateRange.from));
+    }
+    if (filters.dateRange.to) {
+      conditions.push(lte(requests.created_at, filters.dateRange.to));
+    }
   }
 
   const rows = await db
@@ -380,8 +396,8 @@ export async function updateRequestStatus(
     const categoryMeta = CATEGORY_MAP[existing.category];
     const statusLabel =
       newStatus === "needs_revision" ? "sent back for revision" :
-      newStatus === "approved" ? "resolved" :
-      newStatus;
+        newStatus === "approved" ? "resolved" :
+          newStatus;
     await db.insert(notifications).values({
       user_id: existing.requester_id,
       title: `Request ${statusLabel}`,

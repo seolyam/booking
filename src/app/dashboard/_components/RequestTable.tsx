@@ -91,7 +91,7 @@ export default function RequestTable({
             <thead>
               <tr className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                 <th className="pb-4 pr-4 pl-4 font-bold">REQUEST ID</th>
-                <th className="pb-4 pr-4 font-bold">PROJECT NAME</th>
+                <th className="pb-4 pr-4 font-bold">TICKET NAME</th>
                 <th className="pb-4 pr-4 font-bold">TYPE</th>
                 <th className="pb-4 pr-4 font-bold">BRANCH</th>
                 <th className="pb-4 pr-4 font-bold">STATUS</th>
