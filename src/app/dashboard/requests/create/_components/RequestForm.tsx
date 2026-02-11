@@ -177,6 +177,7 @@ export function RequestForm({
   onCancel,
   onBack,
   isSubmitting,
+  mode = "create",
 }: {
   category: CategoryMeta;
   initialValues: Record<string, unknown>;
@@ -187,6 +188,7 @@ export function RequestForm({
   onCancel: () => void;
   onBack: () => void;
   isSubmitting: boolean;
+  mode?: "create" | "edit";
 }) {
   const fields = CATEGORY_FIELDS[category.key] ?? [];
 
@@ -505,7 +507,12 @@ export function RequestForm({
             />
           </div>
 
-          <p className="text-xs text-gray-500 italic mt-4">Please review all information before submitting. You cannot edit after submission.</p>
+          {mode === "create" && (
+            <p className="text-xs text-gray-500 italic mt-4">Please review all information before submitting. You cannot edit after submission.</p>
+          )}
+          {mode === "edit" && (
+            <p className="text-xs text-gray-500 italic mt-4">Review the admin feedback and update the fields as needed, then resubmit.</p>
+          )}
 
         </CardContent>
       </Card>
@@ -521,22 +528,24 @@ export function RequestForm({
           Cancel
         </Button>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={(e) => handleFormSubmit(e, true)}
-            disabled={isSubmitting}
-            className="border-gray-300 text-gray-700 gap-2 w-full sm:w-auto"
-          >
-            <Save className="h-4 w-4" /> Save as draft
-          </Button>
+          {mode === "create" && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => handleFormSubmit(e, true)}
+              disabled={isSubmitting}
+              className="border-gray-300 text-gray-700 gap-2 w-full sm:w-auto"
+            >
+              <Save className="h-4 w-4" /> Save as draft
+            </Button>
+          )}
           <Button
             type="button"
             onClick={(e) => handleFormSubmit(e, false)}
             disabled={isSubmitting}
             className="bg-[#358334] hover:bg-[#2d6f2c] text-white gap-2 w-full sm:w-auto"
           >
-            <Send className="h-4 w-4" /> Submit request
+            <Send className="h-4 w-4" /> {mode === "edit" ? "Update & Resubmit" : "Submit request"}
           </Button>
         </div>
       </div>

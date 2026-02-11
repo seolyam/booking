@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Pencil } from "lucide-react";
 import { updateRequestStatus } from "@/actions/request";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface ResubmitPanelProps {
   requestId: string;
@@ -46,29 +47,38 @@ export default function ResubmitPanel({ requestId, revisionReason }: ResubmitPan
       )}
 
       <p className="text-sm text-gray-500 mb-4">
-        The admin has requested changes to this request. Review the feedback above, then resubmit when ready.
+        The admin has requested changes to this request. You can edit the details and resubmit, or resubmit as-is.
       </p>
 
-      <div className="space-y-3">
-        <label className="text-sm font-bold text-gray-900">
-          Resubmission note <span className="text-gray-400">(optional)</span>
-        </label>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Describe what changes you've made..."
-          className="w-full rounded-lg border-gray-200 text-sm p-3 min-h-[80px] resize-none focus:border-gray-400 focus:ring-0"
-        />
-      </div>
+      {/* Edit & Resubmit Button */}
+      <Link
+        href={`/dashboard/requests/${requestId}/edit`}
+        className="flex items-center justify-center gap-2 w-full bg-[#358334] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#2d6f2c] transition-colors mb-3 min-h-[44px]"
+      >
+        <Pencil className="h-4 w-4" /> Edit & Resubmit
+      </Link>
 
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={handleResubmit}
-          disabled={isPending}
-          className="bg-amber-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
-        >
-          {isPending ? "Resubmitting..." : "Resubmit Request"}
-        </button>
+      {/* Quick Resubmit (without editing) */}
+      <div className="border-t border-gray-100 pt-3 mt-3">
+        <p className="text-xs text-gray-400 mb-2">Or resubmit without changes:</p>
+        <div className="space-y-3">
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Optional note about resubmission..."
+            className="w-full rounded-lg border-gray-200 text-sm p-3 min-h-[60px] resize-none focus:border-gray-400 focus:ring-0"
+          />
+        </div>
+
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={handleResubmit}
+            disabled={isPending}
+            className="bg-amber-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm w-full md:w-auto min-h-[44px]"
+          >
+            {isPending ? "Resubmitting..." : "Resubmit as-is"}
+          </button>
+        </div>
       </div>
     </div>
   );

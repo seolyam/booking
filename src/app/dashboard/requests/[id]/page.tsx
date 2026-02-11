@@ -12,6 +12,7 @@ import {
   Archive,
   MapPin,
   Building2,
+  Pencil,
 } from "lucide-react";
 import { getRequestById, updateRequestStatus } from "@/actions/request";
 import {
@@ -412,6 +413,16 @@ export default async function RequestDetailPage({
           </div>
         </div>
          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+           {/* Edit Request Button for Requesters (Only when needs_revision) */}
+           {canResubmit && (
+             <Link
+               href={`/dashboard/requests/${id}/edit`}
+               className="bg-[#358334] hover:bg-[#2d6f2c] text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center gap-2"
+             >
+               <Pencil className="h-4 w-4" />
+               Edit Request
+             </Link>
+           )}
            {/* Manage Request Button for Admins (Only visible in Tracking View) */}
            {!isReviewMode && isAdmin && hasBranchAccess && (
              <Link

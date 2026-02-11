@@ -460,6 +460,97 @@ export async function addComment(requestId: string, content: string) {
   return { success: true };
 }
 
+// ============================================================================
+// Update (Edit & Resubmit)
+// ============================================================================
+
+const updateRequestSchema = z.object({
+  title: z.string().min(1, "Project title is required"),
+  priority: z.enum(["low", "medium", "high", "urgent"]),
+  branch_id: z.string().uuid("Branch is required"),
+  form_data: z.record(z.string(), z.unknown()),
+});
+
+export async function updateRequest(
+  requestId: string,
+  formData: {
+    title: string;
+    priority: string;
+    branch_id: string;
+    form_data: Record<string, unknown>;
+  }
+) {
+  const appUser = await requireAppUser();
+
+  const existing = await db.query.requests.findFirst({
+    where: eq(requests.id, requestId),
+  });
+  if (!existing) throw new Error("Request not found");
+
+  // Only the owner can edit
+  if (existing.requester_id !== appUser.id) {
+    throw new Error("Not your request");
+  }
+
+  // Can only edit when status is needs_revision
+  if (existing.status !== "needs_revision") {
+    throw new Error("Request can only be edited when revision is requested");
+  }
+
+  try {
+    const parsed = updateRequestSchema.parse(formData);
+
+    // Additional validation/coercion for form_data based on category
+    const categorySchema = CATEGORY_SCHEMAS[existing.category];
+    let processedFormData = parsed.form_data;
+
+    if (categorySchema) {
+      processedFormData = categorySchema.parse(parsed.form_data) as Record<string, unknown>;
+    }
+
+    const previousStatus = existing.status;
+
+    await db
+      .update(requests)
+      .set({
+        title: parsed.title,
+        priority: parsed.priority as Request["priority"],
+        branch_id: parsed.branch_id,
+        form_data: processedFormData,
+        status: "resubmitted",
+        updated_at: new Date(),
+      })
+      .where(eq(requests.id, requestId));
+
+    // Log activity
+    await db.insert(activityLogs).values({
+      request_id: requestId,
+      actor_id: appUser.id,
+      action: "status_changed_to_resubmitted",
+      previous_status: previousStatus,
+      new_status: "resubmitted",
+      comment: "Request edited and resubmitted for review",
+    });
+
+    // Notify admins via notification (the requester is resubmitting, so no self-notification needed)
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/requests");
+    revalidatePath(`/dashboard/requests/${requestId}`);
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const fieldErrors = error.issues.map((err) => {
+        const path = err.path.join(".");
+        return `${path}: ${err.message}`;
+      });
+      throw new Error(`Validation failed: ${fieldErrors.join(", ")}`);
+    }
+    throw error;
+  }
+}
+
 export async function saveAttachments(
   requestId: string,
   files: {
