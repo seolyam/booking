@@ -8,10 +8,11 @@ import { cn } from "@/lib/utils";
 
 interface ReviewDecisionPanelProps {
     requestId: string;
+    currentStatus: string;
 }
 
-export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelProps) {
-    const [selectedDecision, setSelectedDecision] = useState<"approve" | "revision" | "reject" | "close" | null>(null);
+export default function ReviewDecisionPanel({ requestId, currentStatus }: ReviewDecisionPanelProps) {
+    const [selectedDecision, setSelectedDecision] = useState<"approve" | "revision" | "reject" | "close" | "hold" | null>(null);
     const [comment, setComment] = useState("");
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
@@ -28,10 +29,14 @@ export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelPr
                 let status = "";
                 switch (selectedDecision) {
                     case "approve":
-                        status = "reviewed"; // Admin review complete, moves to approval
+                        // resolved -> approved status (displayed as "Resolved")
+                        status = "approved";
                         break;
                     case "revision":
-                        status = "on_hold"; // Assuming on_hold represents revision needed
+                        status = "on_hold"; // Both revision and hold map to on_hold for now
+                        break;
+                    case "hold":
+                        status = "on_hold";
                         break;
                     case "reject":
                         status = "rejected";
@@ -58,7 +63,7 @@ export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelPr
         label,
         sublabel,
     }: {
-        id: "approve" | "revision" | "reject" | "close";
+        id: "approve" | "revision" | "reject" | "close" | "hold";
         icon: any;
         label: string;
         sublabel: string;
@@ -92,32 +97,32 @@ export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelPr
 
     return (
         <div className="bg-white rounded-3xl p-6 shadow-sm ring-1 ring-gray-100">
-            <h3 className="font-bold text-gray-900 mb-6">Review Decision</h3>
+            <h3 className="font-bold text-gray-900 mb-6">Make Decision</h3>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <DecisionButton
                     id="approve"
                     icon={CheckCircle2}
-                    label="Verify & approve"
-                    sublabel="Send to approver"
+                    label="Resolved"
+                    sublabel="Finalize request"
                 />
                 <DecisionButton
                     id="revision"
                     icon={AlertCircle}
-                    label="Request revision"
-                    sublabel="Send to requester"
+                    label="Request Revision"
+                    sublabel="Send back to user"
+                />
+                <DecisionButton
+                    id="hold"
+                    icon={Archive}
+                    label="On Hold"
+                    sublabel="Pause processing"
                 />
                 <DecisionButton
                     id="reject"
                     icon={XCircle}
-                    label="Reject Request"
-                    sublabel="Decline & close project"
-                />
-                <DecisionButton
-                    id="close"
-                    icon={Archive}
-                    label="Close Request"
-                    sublabel="Project completed"
+                    label="Rejected"
+                    sublabel="Decline request"
                 />
             </div>
 
@@ -130,7 +135,7 @@ export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelPr
                         <textarea
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
-                            placeholder="Additional note"
+                            placeholder={selectedDecision === "approve" ? "Reason for resolution..." : "Additional note"}
                             className="w-full rounded-lg border-gray-200 text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0"
                         />
                     </div>
@@ -141,7 +146,7 @@ export default function ReviewDecisionPanel({ requestId }: ReviewDecisionPanelPr
                             disabled={isPending}
                             className="bg-[#358334] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#2d6f2c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
                         >
-                            {isPending ? "Submitting..." : "Submit review"}
+                            {isPending ? "Submitting..." : "Submit Decision"}
                         </button>
                     </div>
                 </>

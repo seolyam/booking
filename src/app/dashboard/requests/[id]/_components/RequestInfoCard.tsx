@@ -159,9 +159,15 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
                 {/* Header Line */}
                 <div className="flex items-center gap-3 mb-6">
                     <h3 className="text-xl font-bold text-gray-900">Request Information</h3>
-                    {request.priority === "urgent" && (
-                        <span className="bg-[#edd6b0] text-[#a67c2e] text-sm font-medium px-3 py-1 rounded-full">Urgent</span>
-                    )}
+                    <span className={cn(
+                        "text-xs font-bold px-3 py-1 rounded-full capitalize",
+                        request.priority === "urgent" ? "bg-red-50 text-red-700" :
+                            request.priority === "high" ? "bg-orange-50 text-orange-700" :
+                                request.priority === "medium" ? "bg-blue-50 text-blue-700" :
+                                    "bg-gray-100 text-gray-700"
+                    )}>
+                        {request.priority}
+                    </span>
                 </div>
 
                 {/* Primary Metric Strip */}

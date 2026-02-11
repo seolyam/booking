@@ -53,7 +53,7 @@ export function CategorySelect({
               className={cn(
                 "flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all hover:shadow-md",
                 isSelected
-                  ? "border-[#2F5E3D] bg-[#2F5E3D]/5 shadow-md"
+                  ? "border-[#358334] bg-[#358334]/5 shadow-md"
                   : "border-gray-200 bg-white hover:border-gray-300"
               )}
             >
@@ -61,7 +61,7 @@ export function CategorySelect({
                 className={cn(
                   "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg",
                   isSelected
-                    ? "bg-[#2F5E3D] text-white"
+                    ? "bg-[#358334] text-white"
                     : "bg-gray-100 text-gray-500"
                 )}
               >
@@ -72,7 +72,7 @@ export function CategorySelect({
                   <p
                     className={cn(
                       "text-sm font-semibold",
-                      isSelected ? "text-[#2F5E3D]" : "text-gray-900"
+                      isSelected ? "text-[#358334]" : "text-gray-900"
                     )}
                   >
                     {cat.label}
@@ -81,7 +81,7 @@ export function CategorySelect({
                     className={cn(
                       "text-xs font-mono px-1.5 py-0.5 rounded",
                       isSelected
-                        ? "bg-[#2F5E3D]/10 text-[#2F5E3D]"
+                        ? "bg-[#358334]/10 text-[#358334]"
                         : "bg-gray-100 text-gray-500"
                     )}
                   >

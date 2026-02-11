@@ -6,12 +6,18 @@ import { ReactNode } from "react";
 interface ApprovalsTabsProps {
     userApprovals: ReactNode;
     requestApprovals: ReactNode;
+    showUserApprovals?: boolean;
 }
 
 export default function ApprovalsTabs({
     userApprovals,
     requestApprovals,
+    showUserApprovals = true,
 }: ApprovalsTabsProps) {
+    if (!showUserApprovals) {
+        return <>{requestApprovals}</>;
+    }
+
     return (
         <Tabs defaultValue="requests" className="w-full">
             <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-8 bg-gray-100 p-1 rounded-xl">

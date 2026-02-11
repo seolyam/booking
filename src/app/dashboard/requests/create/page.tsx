@@ -45,23 +45,20 @@ export default function CreateRequestPage() {
     if (step > 1) setStep(step - 1);
   };
 
-  const handleFormSubmit = (values: Record<string, unknown>) => {
-    setFormValues(values);
-    setStep(3);
-  };
-
-  const handleSubmit = async (asDraft: boolean) => {
+  // No longer separate intermediate step handler.
+  const handleSubmit = async (values: Record<string, unknown>, asDraft: boolean) => {
     if (!selectedCategory) return;
     setIsSubmitting(true);
     setError(null);
+    setFormValues(values); // Save for potential back navigation
 
     try {
       const result = await createRequest({
-        title: (formValues.title as string) || `${selectedCategory.label} Request`,
+        title: (values.title as string) || `${selectedCategory.label} Request`,
         category: selectedCategory.key,
-        priority: (formValues.priority as string) || "medium",
-        branch_id: formValues.branch_id as string,
-        form_data: formValues,
+        priority: (values.priority as string) || "medium",
+        branch_id: values.branch_id as string,
+        form_data: values,
         status: asDraft ? "draft" : "submitted",
       });
 
@@ -147,10 +144,10 @@ export default function CreateRequestPage() {
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors",
                   step === s.number
-                    ? "border-[#2F5E3D] bg-[#2F5E3D] text-white" // Current: Green solid, white text
+                    ? "border-[#358334] bg-[#358334] text-white" // Current: Green solid, white text
                     : step > s.number
-                    ? "border-[#2F5E3D] bg-white text-[#2F5E3D]" // Past: Green border, green text
-                    : "border-gray-300 bg-white text-gray-300"   // Future: Gray border, gray text
+                      ? "border-[#358334] bg-white text-[#358334]" // Past: Green border, green text
+                      : "border-gray-300 bg-white text-gray-300"   // Future: Gray border, gray text
                 )}
               >
                 {step === s.number ? (
@@ -162,7 +159,7 @@ export default function CreateRequestPage() {
               <span
                 className={cn(
                   "mt-2 text-xs font-medium",
-                  step >= s.number ? "text-[#2F5E3D]" : "text-gray-400"
+                  step >= s.number ? "text-[#358334]" : "text-gray-400"
                 )}
               >
                 {s.label}
@@ -172,7 +169,7 @@ export default function CreateRequestPage() {
               <div
                 className={cn(
                   "mx-4 h-0.5 w-16 sm:w-24 transition-colors",
-                  step > s.number ? "bg-[#2F5E3D]" : "bg-gray-300"
+                  step > s.number ? "bg-[#358334]" : "bg-gray-300"
                 )}
               />
             )}
@@ -195,23 +192,13 @@ export default function CreateRequestPage() {
         <RequestForm
           category={selectedCategory}
           initialValues={formValues}
-          onSubmit={handleFormSubmit}
-          onBack={handleBack}
-        />
-      )}
-
-      {step === 3 && selectedCategory && (
-        <DocumentUpload
-          category={selectedCategory}
-          requiredPdfs={REQUIRED_PDFS[selectedCategory.key] ?? []}
           files={files}
           onFilesChange={setFiles}
-          onSubmit={() => handleSubmit(false)}
-          onSaveDraft={() => handleSubmit(true)}
+          requiredPdfs={REQUIRED_PDFS[selectedCategory.key] ?? []}
+          onSubmit={handleSubmit}
           onCancel={handleCancel}
           onBack={handleBack}
           isSubmitting={isSubmitting}
-          error={error}
         />
       )}
     </div>
