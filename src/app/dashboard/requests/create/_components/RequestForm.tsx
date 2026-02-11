@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getBranches } from "@/actions/request";
 import type { CategoryMeta } from "@/db/schema";
 import { DocumentUpload } from "./DocumentUpload";
-import { ArrowLeft, Save, Send } from "lucide-react";
+import { ArrowLeft, Save, Send, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Branch = { id: string; name: string; code: string };
@@ -177,6 +177,8 @@ export function RequestForm({
   onCancel,
   onBack,
   isSubmitting,
+  existingAttachmentsCount,
+  submitLabel,
 }: {
   category: CategoryMeta;
   initialValues: Record<string, unknown>;
@@ -187,6 +189,8 @@ export function RequestForm({
   onCancel: () => void;
   onBack: () => void;
   isSubmitting: boolean;
+  existingAttachmentsCount?: number;
+  submitLabel?: string;
 }) {
   const fields = CATEGORY_FIELDS[category.key] ?? [];
 
@@ -240,7 +244,7 @@ export function RequestForm({
     }
 
     if (!asDraft) {
-      if (files.length === 0) {
+      if (files.length + (existingAttachmentsCount || 0) === 0) {
         newErrors.files = "At least one document must be uploaded";
       }
 
@@ -500,6 +504,19 @@ export function RequestForm({
             })}
           </div>
 
+          {/* Existing Attachments Notification */}
+          {existingAttachmentsCount && existingAttachmentsCount > 0 ? (
+            <div className="rounded-lg bg-blue-50 p-4 border border-blue-100">
+              <p className="text-sm text-blue-800 font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                {existingAttachmentsCount} document{existingAttachmentsCount > 1 ? 's' : ''} already attached.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                You can upload additional documents below. To manage existing documents, please visit the request detail page.
+              </p>
+            </div>
+          ) : null}
+
           {/* Document Upload Section */}
           <div className="pt-6 border-t border-gray-100">
             <DocumentUpload
@@ -542,7 +559,7 @@ export function RequestForm({
             disabled={isSubmitting}
             className="bg-[#358334] hover:bg-[#2d6f2c] text-white gap-2 w-full sm:w-auto"
           >
-            <Send className="h-4 w-4" /> Submit request
+            <Send className="h-4 w-4" /> {submitLabel || "Submit request"}
           </Button>
         </div>
       </div>

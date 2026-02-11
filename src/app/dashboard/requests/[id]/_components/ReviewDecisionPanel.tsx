@@ -148,10 +148,10 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
                                 selectedDecision === "approve"
                                     ? "Reason for resolution..."
                                     : selectedDecision === "revision"
-                                    ? "Describe what needs to be revised..."
-                                    : "Additional note"
+                                        ? "Describe what needs to be revised..."
+                                        : "Additional note"
                             }
-                            className="w-full rounded-lg border-gray-200 text-base md:text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0"
+                            className="w-full rounded-lg border-gray-200 text-base md:text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0 text-gray-900"
                         />
                     </div>
 

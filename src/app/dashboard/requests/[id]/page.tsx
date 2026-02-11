@@ -12,6 +12,7 @@ import {
   Archive,
   MapPin,
   Building2,
+  Pencil,
 } from "lucide-react";
 import { getRequestById, updateRequestStatus } from "@/actions/request";
 import {
@@ -33,6 +34,7 @@ import RequestInfoCard from "./_components/RequestInfoCard";
 import ReviewDecisionPanel from "./_components/ReviewDecisionPanel";
 import ResubmitPanel from "./_components/ResubmitPanel";
 import ExportButton from "./_components/ExportButton";
+import ReopenButton from "./_components/ReopenButton";
 
 export const dynamic = "force-dynamic";
 
@@ -375,8 +377,9 @@ export default async function RequestDetailPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formData = request.form_data as any;
 
-  // Determine if this is a Review View (Admin/Superadmin && (Actionable Status OR Explicit Review Mode))
-  const isReviewMode = canApprove || (isAdmin && hasBranchAccess && mode === "review");
+  // Determine if this is a Review View (Admin/Superadmin && Explicit Review Mode)
+  // We strictly check for mode === "review" now, so default view is always Tracking
+  const isReviewMode = isAdmin && hasBranchAccess && mode === "review";
 
   // Determine if the current user is the requester viewing their own request
   const isRequester = appUser.id === request.requester_id;
@@ -411,17 +414,31 @@ export default async function RequestDetailPage({
             </p>
           </div>
         </div>
-         <div className="flex items-center gap-2 md:gap-3 shrink-0">
-           {/* Manage Request Button for Admins (Only visible in Tracking View) */}
-           {!isReviewMode && isAdmin && hasBranchAccess && (
-             <Link
-               href={`/dashboard/requests/${id}?mode=review`}
-               className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
-             >
-               Manage Request
-             </Link>
-           )}
-         </div>
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Manage Form Button for Admins */}
+          {!isReviewMode && isAdmin && hasBranchAccess && (
+            <Link
+              href={`/dashboard/requests/${id}/edit`}
+              className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center gap-2"
+            >
+              <Pencil className="h-4 w-4" /> Manage Form
+            </Link>
+          )}
+
+          {/* Manage Request or Reopen Button for Admins */}
+          {!isReviewMode && isAdmin && hasBranchAccess && (
+            request.status === "approved" ? (
+              <ReopenButton requestId={id} />
+            ) : (
+              <Link
+                href={`/dashboard/requests/${id}?mode=review`}
+                className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
+              >
+                Manage Request
+              </Link>
+            )
+          )}
+        </div>
       </div>
 
       {/* Title & Status Section (Common for both) */}
@@ -496,6 +513,6 @@ export default async function RequestDetailPage({
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
