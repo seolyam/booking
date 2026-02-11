@@ -11,7 +11,51 @@ interface ReviewDecisionPanelProps {
     currentStatus: string;
 }
 
-export default function ReviewDecisionPanel({ requestId, currentStatus }: ReviewDecisionPanelProps) {
+// Moved outside component to avoid re-creation on render
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const DecisionButton = ({
+    id,
+    icon: Icon,
+    label,
+    sublabel,
+    selectedDecision,
+    setSelectedDecision,
+}: {
+    id: "approve" | "revision" | "reject" | "close" | "hold";
+    icon: any;
+    label: string;
+    sublabel: string;
+    selectedDecision: string | null;
+    setSelectedDecision: (id: "approve" | "revision" | "reject" | "close" | "hold") => void;
+}) => {
+    const isSelected = selectedDecision === id;
+    let activeClass = "";
+
+    if (isSelected) {
+        if (id === "approve") activeClass = "border-green-500 bg-green-50 text-green-700 ring-1 ring-green-500";
+        else if (id === "reject") activeClass = "border-red-500 bg-red-50 text-red-700 ring-1 ring-red-500";
+        else if (id === "close") activeClass = "border-gray-500 bg-gray-50 text-gray-900 ring-1 ring-gray-500";
+        else activeClass = "border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500";
+    }
+
+    return (
+        <button
+            onClick={() => setSelectedDecision(id)}
+            className={cn(
+                "flex flex-col items-start p-4 rounded-xl border transition-all text-left h-full w-full",
+                isSelected ? activeClass : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
+            )}
+        >
+            <div className="flex items-center gap-2 mb-2">
+                <Icon className={cn("h-5 w-5", isSelected ? "currentColor" : "text-gray-400")} />
+                <span className={cn("font-bold text-sm", isSelected ? "currentColor" : "text-gray-900")}>{label}</span>
+            </div>
+            <span className={cn("text-xs", isSelected ? "currentColor" : "text-gray-500")}>{sublabel}</span>
+        </button>
+    );
+};
+
+export default function ReviewDecisionPanel({ requestId }: { requestId: string; currentStatus?: string }) {
     const [selectedDecision, setSelectedDecision] = useState<"approve" | "revision" | "reject" | "close" | "hold" | null>(null);
     const [comment, setComment] = useState("");
     const [isPending, startTransition] = useTransition();
