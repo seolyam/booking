@@ -26,14 +26,17 @@ export default async function AdminApprovalsPage() {
     redirect("/dashboard");
   }
 
-  // Fetch pending/rejected users
-  const pendingUsers = await db.query.users.findMany({
-    where: or(
-      eq(users.approval_status, "pending"),
-      eq(users.approval_status, "rejected"),
-    ),
-    orderBy: (users, { desc }) => [desc(users.created_at)],
-  });
+  // Fetch pending/rejected users ONLY if superadmin
+  let pendingUsers: Awaited<ReturnType<typeof db.query.users.findMany>> = [];
+  if (appUser.role === "superadmin") {
+    pendingUsers = await db.query.users.findMany({
+      where: or(
+        eq(users.approval_status, "pending"),
+        eq(users.approval_status, "rejected"),
+      ),
+      orderBy: (users, { desc }) => [desc(users.created_at)],
+    });
+  }
 
   // Fetch 'reviewed' requests (pending final approval)
   const pendingRequests = await db.query.requests.findMany({
@@ -56,10 +59,8 @@ export default async function AdminApprovalsPage() {
   });
 
   // Transform data to match component expectations
-  // User list is compatible directly if types match, let's cast or ensure fields
   const usersForList = pendingUsers.map(u => ({
     ...u,
-    // Add missing fields if any or ensure strictly compliant
     rejection_reason: u.rejection_reason || null,
   }));
 
@@ -92,6 +93,7 @@ export default async function AdminApprovalsPage() {
       <ApprovalsTabs
         userApprovals={<UserApprovalsList users={usersForList} />}
         requestApprovals={<RequestApprovalsList requests={requestsForList} />}
+        showUserApprovals={appUser.role === "superadmin"}
       />
     </div>
   );
