@@ -55,8 +55,8 @@ export async function getDashboardStats() {
         .from(requests)
         .where(
           baseWhere
-            ? and(baseWhere, inArray(requests.status, ["submitted", "pending_review", "on_hold"]))
-            : inArray(requests.status, ["submitted", "pending_review", "on_hold"])
+            ? and(baseWhere, inArray(requests.status, ["submitted", "pending_review", "on_hold", "resubmitted"]))
+            : inArray(requests.status, ["submitted", "pending_review", "on_hold", "resubmitted"])
         ),
       db
         .select({ count: count() })
@@ -313,14 +313,39 @@ export async function updateRequestStatus(
   });
   if (!existing) throw new Error("Request not found");
 
-  // Only admins/superadmins can approve/reject; requesters can submit/cancel
+  // Only admins/superadmins can approve/reject; requesters can submit/cancel/resubmit
   if (appUser.role === "requester") {
-    if (!["submitted", "draft"].includes(newStatus)) {
+    if (!["submitted", "draft", "resubmitted"].includes(newStatus)) {
       throw new Error("Insufficient permissions");
     }
     if (existing.requester_id !== appUser.id) {
       throw new Error("Not your request");
     }
+    // Requesters can only resubmit when status is needs_revision
+    if (newStatus === "resubmitted" && existing.status !== "needs_revision") {
+      throw new Error("Can only resubmit when revision is requested");
+    }
+  }
+
+  // Transition validation for admin actions
+  const VALID_TRANSITIONS: Record<string, string[]> = {
+    draft: ["submitted"],
+    submitted: ["pending_review"],
+    pending_review: ["approved", "rejected", "on_hold", "needs_revision"],
+    reviewed: ["approved", "rejected", "on_hold", "needs_revision", "closed"],
+    on_hold: ["pending_review", "approved", "rejected", "needs_revision", "closed"],
+    needs_revision: ["resubmitted"],
+    resubmitted: ["pending_review"],
+    approved: ["closed"],
+    rejected: ["closed"],
+    closed: [],
+  };
+
+  const allowedNextStatuses = VALID_TRANSITIONS[existing.status];
+  if (allowedNextStatuses && !allowedNextStatuses.includes(newStatus)) {
+    throw new Error(
+      `Invalid transition from "${existing.status}" to "${newStatus}"`
+    );
   }
 
   const previousStatus = existing.status;
@@ -330,7 +355,7 @@ export async function updateRequestStatus(
     .set({
       status: newStatus as Request["status"],
       updated_at: new Date(),
-      ...(newStatus === "rejected" && comment
+      ...((newStatus === "rejected" || newStatus === "needs_revision") && comment
         ? { rejection_reason: comment }
         : {}),
       ...(newStatus === "closed"
@@ -352,10 +377,14 @@ export async function updateRequestStatus(
   // Notify requester if admin changed status
   if (appUser.id !== existing.requester_id) {
     const categoryMeta = CATEGORY_MAP[existing.category];
+    const statusLabel =
+      newStatus === "needs_revision" ? "sent back for revision" :
+      newStatus === "approved" ? "resolved" :
+      newStatus;
     await db.insert(notifications).values({
       user_id: existing.requester_id,
-      title: `Request ${newStatus}`,
-      message: `Your ${categoryMeta?.label ?? existing.category} request "${existing.title}" has been ${newStatus}.`,
+      title: `Request ${statusLabel}`,
+      message: `Your ${categoryMeta?.label ?? existing.category} request "${existing.title}" has been ${statusLabel}.`,
       type: newStatus === "approved" ? "success" : newStatus === "rejected" ? "error" : "info",
       link: `/dashboard/requests/${requestId}`,
       resource_id: requestId,

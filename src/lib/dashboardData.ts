@@ -31,10 +31,11 @@ export const getRequesterDashboardData = unstable_cache(
     const stats = {
       totalSubmitted: myRequests.filter((r) => r.status !== "draft").length,
       pendingReview: myRequests.filter(
-        (r) => r.status === "submitted" || r.status === "pending_review",
+        (r) => r.status === "submitted" || r.status === "pending_review" || r.status === "resubmitted",
       ).length,
       approved: myRequests.filter((r) => r.status === "approved").length,
       onHold: myRequests.filter((r) => r.status === "on_hold").length,
+      needsRevision: myRequests.filter((r) => r.status === "needs_revision").length,
     };
 
     return { myRequests, stats };
@@ -64,11 +65,12 @@ export const getSuperadminDashboardData = unstable_cache(
     const stats = {
       totalRequests: nonDraft.length,
       pendingReview: nonDraft.filter(
-        (r) => r.status === "submitted" || r.status === "pending_review",
+        (r) => r.status === "submitted" || r.status === "pending_review" || r.status === "resubmitted",
       ).length,
       approved: nonDraft.filter((r) => r.status === "approved").length,
       rejected: nonDraft.filter((r) => r.status === "rejected").length,
       onHold: nonDraft.filter((r) => r.status === "on_hold").length,
+      needsRevision: nonDraft.filter((r) => r.status === "needs_revision").length,
       closed: nonDraft.filter((r) => r.status === "closed").length,
     };
 
@@ -120,11 +122,12 @@ export const getAdminDashboardData = unstable_cache(
     const stats = {
       totalRequests: nonDraft.length,
       pendingReview: nonDraft.filter(
-        (r) => r.status === "submitted" || r.status === "pending_review",
+        (r) => r.status === "submitted" || r.status === "pending_review" || r.status === "resubmitted",
       ).length,
       approved: nonDraft.filter((r) => r.status === "approved").length,
       rejected: nonDraft.filter((r) => r.status === "rejected").length,
       onHold: nonDraft.filter((r) => r.status === "on_hold").length,
+      needsRevision: nonDraft.filter((r) => r.status === "needs_revision").length,
       closed: nonDraft.filter((r) => r.status === "closed").length,
     };
 
