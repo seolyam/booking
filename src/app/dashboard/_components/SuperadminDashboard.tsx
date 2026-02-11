@@ -8,6 +8,7 @@ import {
   UsersTabContent,
 } from "./Superadmin/SuperadminTabContents";
 import type { RequestTableRow } from "./RequestTable";
+import { RequestsFilter } from "@/components/dashboard/RequestsFilter";
 
 interface SuperadminDashboardProps {
   stats: {
@@ -57,6 +58,12 @@ export default function SuperadminDashboard({
               value="requests"
               className="p-4 md:p-8 space-y-6 md:space-y-8"
             >
+              <div className="flex flex-col gap-4">
+                <h2 className="text-xl font-bold text-gray-900">Recent Requests</h2>
+                <div className="flex items-center">
+                  <RequestsFilter />
+                </div>
+              </div>
               <AllRequestsTabContent
                 rows={rows}
               />

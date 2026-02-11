@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import RequestTable, { type RequestTableRow } from "./RequestTable";
 import { Button } from "@/components/ui/button";
+import { RequestsFilter } from "@/components/dashboard/RequestsFilter";
 
 interface AdminDashboardStats {
     totalRequests: number;
@@ -111,9 +112,13 @@ export default function AdminDashboard({
 
             {/* Booking Requests Table Card */}
             <div className="bg-white rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-sm border border-gray-100/50">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">Booking Requests</h3>
-                    {/* Create Request button removed as per admin restrictions */}
+                <div className="flex flex-col gap-4 mb-6">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-gray-900">Booking Requests</h3>
+                    </div>
+                    <div className="flex items-center">
+                        <RequestsFilter />
+                    </div>
                 </div>
 
                 <RequestTable rows={rows} emptyMessage="No requests found." showRequester={false} />

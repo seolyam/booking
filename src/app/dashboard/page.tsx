@@ -23,7 +23,12 @@ function getStatusVariant(status: string): "success" | "warning" | "error" | "in
   return config?.variant ?? "default";
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
   const user = await getAuthUser();
 
   if (!user) {
@@ -39,9 +44,43 @@ export default async function DashboardPage() {
     > | null,
   });
 
+  // Parse filters
+  let dateRange: { from?: Date; to?: Date } | undefined;
+  const datePreset = typeof params.datePreset === 'string' ? params.datePreset : undefined;
+
+  if (datePreset && datePreset !== "all") {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (datePreset === "yesterday") {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yEnd = new Date(yesterday);
+      yEnd.setHours(23, 59, 59, 999);
+      dateRange = { from: yesterday, to: yEnd };
+    } else if (datePreset === "daily") {
+      const tEnd = new Date(today);
+      tEnd.setHours(23, 59, 59, 999);
+      dateRange = { from: today, to: tEnd };
+    } else if (datePreset === "weekly") {
+      const lastWeek = new Date(today);
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      dateRange = { from: lastWeek, to: new Date() };
+    } else if (datePreset === "monthly") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      dateRange = { from: startOfMonth, to: new Date() };
+    }
+  }
+
+  const filters = {
+    status: typeof params.status === 'string' ? [params.status] : Array.isArray(params.status) ? params.status : undefined,
+    category: typeof params.category === 'string' ? [params.category] : Array.isArray(params.category) ? params.category : undefined,
+    dateRange,
+  };
+
   // Superadmin dashboard
   if (appUser.role === "superadmin") {
-    const data = await getSuperadminDashboardData();
+    const data = await getSuperadminDashboardData(filters);
 
     const rows = data.allRequests.slice(0, 10).map((r) => ({
       requestId: r.id,
@@ -67,13 +106,13 @@ export default async function DashboardPage() {
 
   // Admin dashboard
   if (appUser.role === "admin") {
-    const data = await getAdminDashboardData(appUser.id);
+    const data = await getAdminDashboardData(appUser.id, filters);
     const rows = data.allRequests.slice(0, 10).map((r) => ({
       requestId: r.id,
       ticketNumber: formatTicketNumber(r.ticket_number),
       category: CATEGORY_MAP[r.category]?.label ?? r.category,
-      categoryCode: CATEGORY_MAP[r.category]?.code ?? "REQ", // Add category code
-      title: r.title, // Add title
+      categoryCode: CATEGORY_MAP[r.category]?.code ?? "REQ",
+      title: r.title,
       requesterName: r.requester?.full_name ?? r.requester?.email ?? "Unknown",
       branchName: r.branch?.name ?? "—",
       priority: r.priority,
@@ -92,8 +131,8 @@ export default async function DashboardPage() {
     );
   }
 
-  // Default to requester (or regular admin if we haven't built special dashboard yet)
-  const data = await getRequesterDashboardData(appUser.id);
+  // Default to requester
+  const data = await getRequesterDashboardData(appUser.id, filters);
 
   const rows = data.myRequests.slice(0, 10).map((r) => {
     const cat = CATEGORY_MAP[r.category];

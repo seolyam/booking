@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Eye, Plus, Search } from "lucide-react";
 import {
   MobileCardList,
   type MobileCardData,
 } from "@/components/ui/mobile-card";
-
-export type StatusFilter = "all" | "approved" | "pending" | "on_hold" | "needs_revision" | "rejected" | "draft";
+import { RequestsFilter } from "@/components/dashboard/RequestsFilter";
 
 export type RequestsListRow = {
   id: string;
@@ -34,7 +34,7 @@ function statusToVariant(
   status: string,
 ): "success" | "warning" | "error" | "info" | "default" {
   if (status === "approved") return "success";
-  if (status === "on_hold" || status === "needs_revision") return "warning";
+  if (status === "on_hold" || status === "needs_revision" || status === "pending_review") return "warning";
   if (status === "rejected") return "error";
   if (status === "draft" || status === "closed") return "default";
   return "info";
@@ -70,83 +70,54 @@ function statusPill(status: string) {
   return `inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${cls}`;
 }
 
-function includesQuery(haystack: string | null | undefined, q: string) {
-  if (!haystack) return false;
-  return haystack.toLowerCase().includes(q);
-}
-
-function matchesStatus(rowStatus: string, filter: StatusFilter) {
-  if (filter === "all") return true;
-  if (filter === "approved") return rowStatus === "approved";
-  if (filter === "rejected") return rowStatus === "rejected";
-  if (filter === "on_hold") return rowStatus === "on_hold";
-  if (filter === "needs_revision") return rowStatus === "needs_revision";
-  if (filter === "draft") return rowStatus === "draft";
-  // pending = submitted + pending_review + resubmitted
-  return rowStatus === "submitted" || rowStatus === "pending_review" || rowStatus === "resubmitted";
-}
-
 export function RequestsListClient(props: {
   rows: RequestsListRow[];
   initialQuery?: string;
-  initialStatus?: StatusFilter;
   showRequester?: boolean;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
   const [query, setQuery] = useState(props.initialQuery ?? "");
-  const [status, setStatus] = useState<StatusFilter>(
-    props.initialStatus ?? "all",
-  );
   const deferredQuery = useDeferredValue(query);
 
-  const normalizedQuery = deferredQuery.trim().toLowerCase();
-
-  const filteredRows = useMemo(() => {
-    let result = props.rows;
-
-    // "all" hides drafts
-    if (status === "all") {
-      result = result.filter((r) => r.status !== "draft");
+  // Sync search to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (deferredQuery) {
+      params.set("search", deferredQuery);
     } else {
-      result = result.filter((r) => matchesStatus(r.status, status));
+      params.delete("search");
     }
-
-    if (!normalizedQuery) return result;
-
-    return result.filter((r) => {
-      return (
-        includesQuery(r.ticketNumber, normalizedQuery) ||
-        includesQuery(r.category, normalizedQuery) ||
-        includesQuery(r.categoryKey, normalizedQuery) ||
-        includesQuery(r.statusLabel, normalizedQuery) ||
-        includesQuery(r.priority, normalizedQuery) ||
-        includesQuery(r.branchName, normalizedQuery) ||
-        (props.showRequester && includesQuery(r.requesterName, normalizedQuery))
-      );
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
     });
-  }, [props.rows, normalizedQuery, status, props.showRequester]);
+  }, [deferredQuery, pathname, router]); // searchParams omitted to avoid loop, we just use it for init
 
-  const mobileCards: MobileCardData[] = useMemo(() => {
-    return filteredRows.map((r) => {
-      const createdAt = new Date(r.created_at_iso);
-      return {
-        id: r.id,
-        displayId: r.ticketNumber,
-        title: r.category,
-        subtitle: props.showRequester && r.requesterName 
-          ? `${r.requesterName} • ${r.branchName}` 
-          : r.branchName,
-        status: {
-          label: r.statusLabel,
-          variant: statusToVariant(r.status),
-        },
-        date: formatDateShort(createdAt),
-        actionHref: `/dashboard/requests/${r.id}`,
-        actionLabel: "View",
-      } satisfies MobileCardData;
-    });
-  }, [filteredRows, props.showRequester]);
+  // Use props.rows directly as they are already filtered by the server
+  const filteredRows = props.rows;
+  const hasFilters = searchParams.toString().length > 0;
 
-  const hasFilters = query.trim().length > 0 || status !== "all";
+  const mobileCards: MobileCardData[] = filteredRows.map((r) => {
+    const createdAt = new Date(r.created_at_iso);
+    return {
+      id: r.id,
+      displayId: r.ticketNumber,
+      title: r.category,
+      subtitle: props.showRequester && r.requesterName
+        ? `${r.requesterName} • ${r.branchName}`
+        : r.branchName,
+      status: {
+        label: r.statusLabel,
+        variant: statusToVariant(r.status),
+      },
+      date: formatDateShort(createdAt),
+      actionHref: `/dashboard/requests/${r.id}`,
+      actionLabel: "View",
+    } satisfies MobileCardData;
+  });
 
   return (
     <div className="-m-4 md:-m-8 p-4 md:p-8 w-full mx-auto flex flex-col min-h-[calc(100vh-theme(spacing.16))]">
@@ -156,13 +127,16 @@ export function RequestsListClient(props: {
           <h1 className="text-xl font-bold text-gray-900">
             {props.showRequester ? "All Requests" : "My Requests"}
           </h1>
-          <Link
-            href="/dashboard/requests/create"
-            className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
-            aria-label="New Request"
-          >
-            <Plus className="h-5 w-5" />
-          </Link>
+          <div className="flex gap-2">
+            <RequestsFilter />
+            <Link
+              href="/dashboard/requests/create"
+              className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
+              aria-label="New Request"
+            >
+              <Plus className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
 
         {/* Mobile Search */}
@@ -174,48 +148,6 @@ export function RequestsListClient(props: {
             placeholder="Search requests..."
             className="h-12 w-full rounded-xl bg-gray-100 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-[#358334]/20 focus:bg-white transition-all"
           />
-        </div>
-
-        {/* Mobile Filter Chips */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          {(["all", "approved", "pending", "on_hold", "needs_revision", "rejected", "draft"] as const).map((v) => {
-            const isActive = status === v;
-
-            const base =
-              v === "approved"
-                ? isActive ? "bg-green-500 text-white" : "bg-white text-green-600 border border-green-200"
-                : v === "pending"
-                  ? isActive ? "bg-blue-500 text-white" : "bg-white text-blue-600 border border-blue-200"
-                  : v === "on_hold"
-                    ? isActive ? "bg-orange-500 text-white" : "bg-white text-orange-600 border border-orange-200"
-                    : v === "needs_revision"
-                      ? isActive ? "bg-amber-500 text-white" : "bg-white text-amber-600 border border-amber-200"
-                      : v === "rejected"
-                        ? isActive ? "bg-red-500 text-white" : "bg-white text-red-600 border border-red-200"
-                        : v === "draft"
-                          ? isActive ? "bg-gray-500 text-white" : "bg-white text-gray-900 border border-gray-200"
-                          : isActive ? "bg-gray-800 text-white" : "bg-white text-gray-900 border border-gray-200";
-
-            const label =
-              v === "all" ? "All"
-                : v === "approved" ? "Approved"
-                  : v === "pending" ? "Pending"
-                    : v === "on_hold" ? "On Hold"
-                      : v === "needs_revision" ? "Revision"
-                        : v === "rejected" ? "Rejected"
-                          : "Draft";
-
-            return (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setStatus(v)}
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${base}`}
-              >
-                {label}
-              </button>
-            );
-          })}
         </div>
       </div>
 
@@ -232,9 +164,12 @@ export function RequestsListClient(props: {
 
       {/* Desktop Header */}
       <div className="hidden md:flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {props.showRequester ? "All Requests" : "My Requests"}
-        </h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {props.showRequester ? "All Requests" : "My Requests"}
+          </h1>
+          <RequestsFilter />
+        </div>
         <Link
           href="/dashboard/requests/create"
           className="inline-flex items-center gap-2 rounded-lg bg-[#358334] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm"
@@ -246,7 +181,7 @@ export function RequestsListClient(props: {
       {/* Desktop Table View */}
       <div className="hidden md:flex flex-col flex-1 w-full rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden h-full">
         <div className="p-5 md:p-6 border-b border-gray-100 shrink-0">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
             <div className="relative w-full md:w-96">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -255,62 +190,6 @@ export function RequestsListClient(props: {
                 placeholder="Search..."
                 className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
               />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 md:gap-3">
-              {[
-                { label: "Approved", val: "approved", color: "green" },
-                { label: "Pending", val: "pending", color: "blue" },
-                { label: "On Hold", val: "on_hold", color: "orange" },
-                { label: "Revision", val: "needs_revision", color: "amber" },
-                { label: "Rejected", val: "rejected", color: "red" },
-                { label: "Draft", val: "draft", color: "gray" },
-              ].map((tab) => {
-                const isActive = status === tab.val;
-                const activeClass =
-                  tab.color === "green"
-                    ? "bg-green-50 text-green-700 border-green-200 ring-green-200"
-                    : tab.color === "blue"
-                      ? "bg-blue-50 text-blue-700 border-blue-200 ring-blue-200"
-                      : tab.color === "orange"
-                        ? "bg-orange-50 text-orange-700 border-orange-200 ring-orange-200"
-                        : tab.color === "amber"
-                          ? "bg-amber-50 text-amber-700 border-amber-200 ring-amber-200"
-                          : tab.color === "red"
-                            ? "bg-red-50 text-red-700 border-red-200 ring-red-200"
-                            : "bg-gray-200 text-gray-900 border-gray-200 ring-gray-200";
-
-                return (
-                  <button
-                    key={tab.val}
-                    type="button"
-                    onClick={() => setStatus(tab.val as StatusFilter)}
-                    className={`
-                      px-4 py-2 rounded-lg text-sm font-medium transition-all border
-                      ${
-                        isActive
-                          ? activeClass + " border ring-1"
-                          : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                      }
-                    `}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-
-              {hasFilters && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery("");
-                    setStatus("all");
-                  }}
-                  className="text-sm text-gray-500 hover:text-gray-900 ml-2"
-                >
-                  Clear filters
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -375,11 +254,11 @@ export function RequestsListClient(props: {
                         </div>
                       </td>
                       {props.showRequester && (
-                         <td className="py-5 px-4">
-                           <div className="text-sm font-medium text-gray-900">
-                             {r.requesterName}
-                           </div>
-                         </td>
+                        <td className="py-5 px-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {r.requesterName}
+                          </div>
+                        </td>
                       )}
                       <td className="py-5 px-4">
                         <span className={priorityPill(r.priority)}>

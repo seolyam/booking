@@ -1,5 +1,6 @@
 "use client";
 
+import { RequestsFilter } from "@/components/dashboard/RequestsFilter";
 import Link from "next/link";
 import {
   FileText,
@@ -68,12 +69,14 @@ export default function RequesterDashboard({
             Overview of your booking requests
           </p>
         </div>
-        <Link
-          href="/dashboard/requests/create"
-          className="inline-flex items-center justify-center rounded-xl bg-[#358334] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#2F5E3D] hover:shadow-lg shadow-md hover:-translate-y-0.5"
-        >
-          + Create Request
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/requests/create"
+            className="inline-flex items-center justify-center rounded-xl bg-[#358334] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#2F5E3D] hover:shadow-lg shadow-md hover:-translate-y-0.5"
+          >
+            + Create Request
+          </Link>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -110,11 +113,16 @@ export default function RequesterDashboard({
 
       {/* Booking Requests Table Card */}
       <div className="bg-white rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-sm border border-gray-100/50">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Recent Requests</h3>
-          <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">
-            View all
-          </Link>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-gray-900">Recent Requests</h3>
+            <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">
+              View all
+            </Link>
+          </div>
+          <div className="flex items-center">
+            <RequestsFilter />
+          </div>
         </div>
 
         <RequestTable rows={rows} emptyMessage="No requests found." showRequester={false} />
