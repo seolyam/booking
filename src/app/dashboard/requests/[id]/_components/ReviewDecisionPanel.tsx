@@ -1,46 +1,42 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle2, AlertCircle, XCircle, Archive } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { CheckCircle2, XCircle, Archive, RotateCcw } from "lucide-react";
 import { updateRequestStatus } from "@/actions/request";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-interface ReviewDecisionPanelProps {
-    requestId: string;
-    currentStatus: string;
-}
+type DecisionId = "approve" | "revision" | "reject" | "close" | "hold";
 
-// Moved outside component to avoid re-creation on render
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DecisionButton = ({
+const ACTIVE_CLASSES: Record<DecisionId, string> = {
+    approve: "border-green-500 bg-green-50 text-green-700 ring-1 ring-green-500",
+    reject: "border-red-500 bg-red-50 text-red-700 ring-1 ring-red-500",
+    close: "border-gray-500 bg-gray-50 text-gray-900 ring-1 ring-gray-500",
+    revision: "border-amber-500 bg-amber-50 text-amber-700 ring-1 ring-amber-500",
+    hold: "border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500",
+};
+
+function DecisionButton({
     id,
     icon: Icon,
     label,
     sublabel,
-    selectedDecision,
-    setSelectedDecision,
+    isSelected,
+    onSelect,
 }: {
-    id: "approve" | "revision" | "reject" | "close" | "hold";
-    icon: any;
+    id: DecisionId;
+    icon: LucideIcon;
     label: string;
     sublabel: string;
-    selectedDecision: string | null;
-    setSelectedDecision: (id: "approve" | "revision" | "reject" | "close" | "hold") => void;
-}) => {
-    const isSelected = selectedDecision === id;
-    let activeClass = "";
-
-    if (isSelected) {
-        if (id === "approve") activeClass = "border-green-500 bg-green-50 text-green-700 ring-1 ring-green-500";
-        else if (id === "reject") activeClass = "border-red-500 bg-red-50 text-red-700 ring-1 ring-red-500";
-        else if (id === "close") activeClass = "border-gray-500 bg-gray-50 text-gray-900 ring-1 ring-gray-500";
-        else activeClass = "border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500";
-    }
+    isSelected: boolean;
+    onSelect: (id: DecisionId) => void;
+}) {
+    const activeClass = isSelected ? ACTIVE_CLASSES[id] : "";
 
     return (
         <button
-            onClick={() => setSelectedDecision(id)}
+            onClick={() => onSelect(id)}
             className={cn(
                 "flex flex-col items-start p-4 rounded-xl border transition-all text-left h-full w-full",
                 isSelected ? activeClass : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
@@ -53,10 +49,10 @@ const DecisionButton = ({
             <span className={cn("text-xs", isSelected ? "currentColor" : "text-gray-500")}>{sublabel}</span>
         </button>
     );
-};
+}
 
 export default function ReviewDecisionPanel({ requestId }: { requestId: string; currentStatus?: string }) {
-    const [selectedDecision, setSelectedDecision] = useState<"approve" | "revision" | "reject" | "close" | "hold" | null>(null);
+    const [selectedDecision, setSelectedDecision] = useState<DecisionId | null>(null);
     const [comment, setComment] = useState("");
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
@@ -73,11 +69,10 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
                 let status = "";
                 switch (selectedDecision) {
                     case "approve":
-                        // resolved -> approved status (displayed as "Resolved")
                         status = "approved";
                         break;
                     case "revision":
-                        status = "on_hold"; // Both revision and hold map to on_hold for now
+                        status = "needs_revision";
                         break;
                     case "hold":
                         status = "on_hold";
@@ -101,44 +96,6 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
         });
     };
 
-    const DecisionButton = ({
-        id,
-        icon: Icon,
-        label,
-        sublabel,
-    }: {
-        id: "approve" | "revision" | "reject" | "close" | "hold";
-        icon: any;
-        label: string;
-        sublabel: string;
-    }) => {
-        const isSelected = selectedDecision === id;
-        let activeClass = "";
-
-        if (isSelected) {
-            if (id === "approve") activeClass = "border-green-500 bg-green-50 text-green-700 ring-1 ring-green-500";
-            else if (id === "reject") activeClass = "border-red-500 bg-red-50 text-red-700 ring-1 ring-red-500";
-            else if (id === "close") activeClass = "border-gray-500 bg-gray-50 text-gray-900 ring-1 ring-gray-500";
-            else activeClass = "border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500";
-        }
-
-        return (
-            <button
-                onClick={() => setSelectedDecision(id)}
-                className={cn(
-                    "flex flex-col items-start p-4 rounded-xl border transition-all text-left h-full w-full",
-                    isSelected ? activeClass : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
-                )}
-            >
-                <div className="flex items-center gap-2 mb-2">
-                    <Icon className={cn("h-5 w-5", isSelected ? "currentColor" : "text-gray-400")} />
-                    <span className={cn("font-bold text-sm", isSelected ? "currentColor" : "text-gray-900")}>{label}</span>
-                </div>
-                <span className={cn("text-xs", isSelected ? "currentColor" : "text-gray-500")}>{sublabel}</span>
-            </button>
-        );
-    };
-
     return (
         <div className="bg-white rounded-3xl p-6 shadow-sm ring-1 ring-gray-100">
             <h3 className="font-bold text-gray-900 mb-6">Make Decision</h3>
@@ -149,24 +106,32 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
                     icon={CheckCircle2}
                     label="Resolved"
                     sublabel="Finalize request"
+                    isSelected={selectedDecision === "approve"}
+                    onSelect={setSelectedDecision}
                 />
                 <DecisionButton
                     id="revision"
-                    icon={AlertCircle}
+                    icon={RotateCcw}
                     label="Request Revision"
                     sublabel="Send back to user"
+                    isSelected={selectedDecision === "revision"}
+                    onSelect={setSelectedDecision}
                 />
                 <DecisionButton
                     id="hold"
                     icon={Archive}
                     label="On Hold"
                     sublabel="Pause processing"
+                    isSelected={selectedDecision === "hold"}
+                    onSelect={setSelectedDecision}
                 />
                 <DecisionButton
                     id="reject"
                     icon={XCircle}
                     label="Rejected"
                     sublabel="Decline request"
+                    isSelected={selectedDecision === "reject"}
+                    onSelect={setSelectedDecision}
                 />
             </div>
 
@@ -179,7 +144,13 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
                         <textarea
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
-                            placeholder={selectedDecision === "approve" ? "Reason for resolution..." : "Additional note"}
+                            placeholder={
+                                selectedDecision === "approve"
+                                    ? "Reason for resolution..."
+                                    : selectedDecision === "revision"
+                                    ? "Describe what needs to be revised..."
+                                    : "Additional note"
+                            }
                             className="w-full rounded-lg border-gray-200 text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0"
                         />
                     </div>

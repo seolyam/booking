@@ -32,6 +32,7 @@ import { eq } from "drizzle-orm";
 import RequestComments from "./_components/RequestComments";
 import RequestInfoCard from "./_components/RequestInfoCard";
 import ReviewDecisionPanel from "./_components/ReviewDecisionPanel";
+import ResubmitPanel from "./_components/ResubmitPanel";
 import ExportButton from "./_components/ExportButton";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,18 @@ function statusMeta(status: string) {
         cls: "bg-orange-50 text-orange-700 border-orange-100",
         icon: <AlertCircle className="h-4 w-4" />,
       };
+    case "needs_revision":
+      return {
+        label: "Needs Revision",
+        cls: "bg-amber-50 text-amber-700 border-amber-100",
+        icon: <AlertCircle className="h-4 w-4" />,
+      };
+    case "resubmitted":
+      return {
+        label: "Resubmitted",
+        cls: "bg-indigo-50 text-indigo-700 border-indigo-100",
+        icon: <CheckCircle2 className="h-4 w-4" />,
+      };
     case "reviewed":
       return {
         label: "Reviewed",
@@ -113,6 +126,7 @@ function actionLabel(action: string) {
   const map: Record<string, string> = {
     created: "Created",
     submitted: "Submitted",
+    resubmitted: "Resubmitted",
     status_changed: "Status Updated",
     comment_added: "Comment Added",
     file_uploaded: "File Uploaded",
@@ -121,6 +135,7 @@ function actionLabel(action: string) {
     closed: "Closed",
     reopened: "Reopened",
     reviewed: "Reviewed",
+    needs_revision: "Revision Requested",
   };
   // Handle dynamic status change labels
   if (action.startsWith("status_changed_to_")) {
@@ -140,8 +155,8 @@ function computeSteps(status: string): WorkflowStep[] {
 
   let activeIndex = 0;
   if (status === "draft") activeIndex = 0;
-  else if (status === "submitted" || status === "pending_review") activeIndex = 1;
-  else if (status === "reviewed" || status === "on_hold") activeIndex = 2;
+  else if (status === "submitted" || status === "pending_review" || status === "resubmitted") activeIndex = 1;
+  else if (status === "reviewed" || status === "on_hold" || status === "needs_revision") activeIndex = 2;
   else if (status === "approved" || status === "rejected" || status === "closed") activeIndex = 3;
 
   // Handle terminal states label overrides
@@ -314,7 +329,7 @@ export default async function RequestDetailPage({
   const isAdmin = appUser.role === "admin" || appUser.role === "superadmin";
 
   if (isAdmin) {
-    const actionableStatuses = ["submitted", "pending_review", "on_hold", "reviewed"];
+    const actionableStatuses = ["submitted", "pending_review", "on_hold", "reviewed", "resubmitted", "needs_revision"];
 
     // Check branch assignment
     if (appUser.role === "superadmin") {
@@ -330,9 +345,12 @@ export default async function RequestDetailPage({
     }
 
     if (hasBranchAccess) {
-      // Auto-transition: If View status is 'Open' (submitted), change to 'Pending' (pending_review)
-      if (request.status === "submitted") {
-        await updateRequestStatus(request.id, "pending_review", "Request viewed by admin - status updated to Pending");
+      // Auto-transition: If status is 'Open' (submitted) or 'Resubmitted', change to 'Pending' (pending_review)
+      if (request.status === "submitted" || request.status === "resubmitted") {
+        const msg = request.status === "resubmitted"
+          ? "Resubmitted request viewed by admin - status updated to Pending"
+          : "Request viewed by admin - status updated to Pending";
+        await updateRequestStatus(request.id, "pending_review", msg, true);
         redirect(`/dashboard/requests/${request.id}`); // Reload to reflect change
       }
 
@@ -360,6 +378,16 @@ export default async function RequestDetailPage({
 
   // Determine if this is a Review View (Admin/Superadmin && (Actionable Status OR Explicit Review Mode))
   const isReviewMode = canApprove || (isAdmin && hasBranchAccess && mode === "review");
+
+  // Determine if the current user is the requester viewing their own request
+  const isRequester = appUser.id === request.requester_id;
+  const canResubmit = isRequester && request.status === "needs_revision";
+
+  // Get the latest revision reason from activity logs
+  const latestRevisionLog = request.activityLogs.find(
+    (log) => log.new_status === "needs_revision"
+  );
+  const revisionReason = latestRevisionLog?.comment ?? null;
 
   // Common Header & Content Structure for both views to ensure matching design
   return (
@@ -441,6 +469,11 @@ export default async function RequestDetailPage({
         <div className="lg:col-span-4 space-y-6">
           {/* Timeline (Only for Tracking, unless Review also needs it? Review usually focuses on decision) */}
           {!isReviewMode && <WorkflowProgress steps={steps} events={events} />}
+
+          {/* Resubmit Panel (Requester sees this when status is needs_revision) */}
+          {canResubmit && (
+            <ResubmitPanel requestId={request.id} revisionReason={revisionReason} />
+          )}
 
           {/* Attachments */}
           <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />

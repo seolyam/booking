@@ -8,7 +8,7 @@ import {
   type MobileCardData,
 } from "@/components/ui/mobile-card";
 
-export type StatusFilter = "all" | "approved" | "pending" | "on_hold" | "rejected" | "draft";
+export type StatusFilter = "all" | "approved" | "pending" | "on_hold" | "needs_revision" | "rejected" | "draft";
 
 export type RequestsListRow = {
   id: string;
@@ -34,7 +34,7 @@ function statusToVariant(
   status: string,
 ): "success" | "warning" | "error" | "info" | "default" {
   if (status === "approved") return "success";
-  if (status === "on_hold") return "warning";
+  if (status === "on_hold" || status === "needs_revision") return "warning";
   if (status === "rejected") return "error";
   if (status === "draft" || status === "closed") return "default";
   return "info";
@@ -56,10 +56,12 @@ function statusPill(status: string) {
   let cls = "bg-gray-100 text-gray-900";
   if (status === "approved") {
     cls = "bg-green-50 text-green-600";
-  } else if (status === "submitted" || status === "pending_review") {
+  } else if (status === "submitted" || status === "pending_review" || status === "resubmitted") {
     cls = "bg-blue-50 text-blue-600";
   } else if (status === "on_hold") {
     cls = "bg-orange-50 text-orange-600";
+  } else if (status === "needs_revision") {
+    cls = "bg-amber-50 text-amber-600";
   } else if (status === "rejected") {
     cls = "bg-red-50 text-red-600";
   } else if (status === "closed") {
@@ -78,9 +80,10 @@ function matchesStatus(rowStatus: string, filter: StatusFilter) {
   if (filter === "approved") return rowStatus === "approved";
   if (filter === "rejected") return rowStatus === "rejected";
   if (filter === "on_hold") return rowStatus === "on_hold";
+  if (filter === "needs_revision") return rowStatus === "needs_revision";
   if (filter === "draft") return rowStatus === "draft";
-  // pending = submitted + pending_review
-  return rowStatus === "submitted" || rowStatus === "pending_review";
+  // pending = submitted + pending_review + resubmitted
+  return rowStatus === "submitted" || rowStatus === "pending_review" || rowStatus === "resubmitted";
 }
 
 export function RequestsListClient(props: {
@@ -175,7 +178,7 @@ export function RequestsListClient(props: {
 
         {/* Mobile Filter Chips */}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          {(["all", "approved", "pending", "on_hold", "rejected", "draft"] as const).map((v) => {
+          {(["all", "approved", "pending", "on_hold", "needs_revision", "rejected", "draft"] as const).map((v) => {
             const isActive = status === v;
 
             const base =
@@ -185,19 +188,22 @@ export function RequestsListClient(props: {
                   ? isActive ? "bg-blue-500 text-white" : "bg-white text-blue-600 border border-blue-200"
                   : v === "on_hold"
                     ? isActive ? "bg-orange-500 text-white" : "bg-white text-orange-600 border border-orange-200"
-                    : v === "rejected"
-                      ? isActive ? "bg-red-500 text-white" : "bg-white text-red-600 border border-red-200"
-                      : v === "draft"
-                        ? isActive ? "bg-gray-500 text-white" : "bg-white text-gray-900 border border-gray-200"
-                        : isActive ? "bg-gray-800 text-white" : "bg-white text-gray-900 border border-gray-200";
+                    : v === "needs_revision"
+                      ? isActive ? "bg-amber-500 text-white" : "bg-white text-amber-600 border border-amber-200"
+                      : v === "rejected"
+                        ? isActive ? "bg-red-500 text-white" : "bg-white text-red-600 border border-red-200"
+                        : v === "draft"
+                          ? isActive ? "bg-gray-500 text-white" : "bg-white text-gray-900 border border-gray-200"
+                          : isActive ? "bg-gray-800 text-white" : "bg-white text-gray-900 border border-gray-200";
 
             const label =
               v === "all" ? "All"
                 : v === "approved" ? "Approved"
                   : v === "pending" ? "Pending"
                     : v === "on_hold" ? "On Hold"
-                      : v === "rejected" ? "Rejected"
-                        : "Draft";
+                      : v === "needs_revision" ? "Revision"
+                        : v === "rejected" ? "Rejected"
+                          : "Draft";
 
             return (
               <button
@@ -256,6 +262,7 @@ export function RequestsListClient(props: {
                 { label: "Approved", val: "approved", color: "green" },
                 { label: "Pending", val: "pending", color: "blue" },
                 { label: "On Hold", val: "on_hold", color: "orange" },
+                { label: "Revision", val: "needs_revision", color: "amber" },
                 { label: "Rejected", val: "rejected", color: "red" },
                 { label: "Draft", val: "draft", color: "gray" },
               ].map((tab) => {
@@ -267,9 +274,11 @@ export function RequestsListClient(props: {
                       ? "bg-blue-50 text-blue-700 border-blue-200 ring-blue-200"
                       : tab.color === "orange"
                         ? "bg-orange-50 text-orange-700 border-orange-200 ring-orange-200"
-                        : tab.color === "red"
-                          ? "bg-red-50 text-red-700 border-red-200 ring-red-200"
-                          : "bg-gray-200 text-gray-900 border-gray-200 ring-gray-200";
+                        : tab.color === "amber"
+                          ? "bg-amber-50 text-amber-700 border-amber-200 ring-amber-200"
+                          : tab.color === "red"
+                            ? "bg-red-50 text-red-700 border-red-200 ring-red-200"
+                            : "bg-gray-200 text-gray-900 border-gray-200 ring-gray-200";
 
                 return (
                   <button

@@ -142,7 +142,7 @@ export default function RequestTable({
                       {r.dateLabel}
                     </td>
                     <td className="py-5 pr-4 text-right">
-                      {r.statusLabel === "Submitted" ? (
+                      {r.statusLabel === "Submitted" || r.statusLabel === "Resubmitted" || r.statusLabel === "Open" ? (
                         <Link
                           href={r.actionHref}
                           className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors shadow-sm"
