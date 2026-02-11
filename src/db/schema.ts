@@ -52,6 +52,8 @@ export const requestStatusEnum = pgEnum("request_status", [
   "pending_review",
   "reviewed",
   "on_hold",
+  "needs_revision",
+  "resubmitted",
   "approved",
   "rejected",
   "closed",
@@ -464,11 +466,13 @@ export const STATUS_CONFIG: Record<
   { label: string; variant: "success" | "warning" | "error" | "info" | "default" }
 > = {
   draft: { label: "Draft", variant: "default" },
-  submitted: { label: "Submitted", variant: "info" },
-  pending_review: { label: "Pending Review", variant: "warning" },
+  submitted: { label: "Open", variant: "info" },
+  pending_review: { label: "Pending", variant: "warning" },
   reviewed: { label: "Reviewed", variant: "info" },
   on_hold: { label: "On Hold", variant: "warning" },
-  approved: { label: "Approved", variant: "success" },
+  needs_revision: { label: "Needs Revision", variant: "warning" },
+  resubmitted: { label: "Resubmitted", variant: "info" },
+  approved: { label: "Resolved", variant: "success" },
   rejected: { label: "Rejected", variant: "error" },
   closed: { label: "Closed", variant: "default" },
 };

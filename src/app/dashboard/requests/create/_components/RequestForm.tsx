@@ -15,6 +15,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getBranches } from "@/actions/request";
 import type { CategoryMeta } from "@/db/schema";
+import { DocumentUpload } from "./DocumentUpload";
+import { ArrowLeft, Save, Send } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Branch = { id: string; name: string; code: string };
 
@@ -167,47 +170,44 @@ function to12Hour(timeStr: string) {
 export function RequestForm({
   category,
   initialValues,
+  files,
+  onFilesChange,
+  requiredPdfs,
   onSubmit,
+  onCancel,
   onBack,
+  isSubmitting,
 }: {
   category: CategoryMeta;
   initialValues: Record<string, unknown>;
-  onSubmit: (values: Record<string, unknown>) => void;
+  files: File[];
+  onFilesChange: (files: File[]) => void;
+  requiredPdfs: string[];
+  onSubmit: (values: Record<string, unknown>, asDraft: boolean) => void;
+  onCancel: () => void;
   onBack: () => void;
+  isSubmitting: boolean;
 }) {
   const fields = CATEGORY_FIELDS[category.key] ?? [];
 
   // Initialize values, converting any 12h time strings back to 24h for the inputs
   const [values, setValues] = useState<Record<string, unknown>>(() => {
-    // Only use initialValues if they match the current category, otherwise start fresh
-    // But since the parent manages formValues and might hold values from a previous category selection
-    // we should be careful.
-    // However, the user request is "make sure the fields do not automatically fills up from the previous submission".
-    // This usually means clearing the form after submission or when starting new.
-    // In `create/page.tsx`, `formValues` is state. If the user submits, `formValues` might persist if not cleared.
-    // But `handleSubmit` in `create/page.tsx` redirects or shows modal.
-    // If the user comes back to `create/page.tsx`, the state in `page.tsx` is fresh (component remounts).
-    // Unless the user hits "Back" in the browser? No, usually fresh state.
-    // Maybe they mean if they change category mid-creation?
-    // If I switch category in step 1, `formValues` in parent might still hold old keys.
-    // So here, we should perhaps filter `initialValues` to only include keys relevant to the current category + common fields.
-    
     const processed: Record<string, unknown> = {};
-    
+
     // Copy common fields
     if (initialValues.title) processed.title = initialValues.title;
     if (initialValues.priority) processed.priority = initialValues.priority;
     if (initialValues.branch_id) processed.branch_id = initialValues.branch_id;
-    
+
     // Copy category fields if they exist in initialValues
     fields.forEach((field) => {
-       if (initialValues[field.name] !== undefined) {
-         if (field.type === "time" && typeof initialValues[field.name] === "string") {
-            processed[field.name] = to24Hour(initialValues[field.name] as string);
-         } else {
-            processed[field.name] = initialValues[field.name];
-         }
-       }
+      if (initialValues[field.name] !== undefined) {
+        if (field.type === "time" && typeof initialValues[field.name] === "string") {
+          processed[field.name] = to24Hour(initialValues[field.name] as string);
+        } else {
+          processed[field.name] = initialValues[field.name];
+        }
+      }
     });
 
     return processed;
@@ -249,8 +249,10 @@ export function RequestForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent, asDraft: boolean) => {
     e.preventDefault();
+    // For drafts, we might skip validation or loosen it, but typically we want at least basic fields.
+    // Let's validate for now to ensure data integrity.
     if (validate()) {
       // Transform 24h time values to 12h format before submitting
       const processed = { ...values };
@@ -259,31 +261,40 @@ export function RequestForm({
           processed[field.name] = to12Hour(processed[field.name] as string);
         }
       });
-      onSubmit(processed);
+      onSubmit(processed, asDraft);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg text-gray-900">
-            {category.label} — Request Details
-          </CardTitle>
+    <form className="space-y-6" autoComplete="off">
+      <div className="flex items-center gap-2 mb-4">
+        <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+      </div>
+
+      <Card className="rounded-[2rem] border-gray-100/50 shadow-sm bg-white">
+        <CardHeader className="p-8 pb-0">
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <span>{category.label}</span>
+            </CardTitle>
+          </div>
+          <p className="text-sm text-gray-500">Fill in the required information</p>
         </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Common fields */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Label htmlFor="title" className="text-gray-900">
+        <CardContent className="space-y-8 p-8">
+          {/* Common fields (Row 1) */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="title" className="text-gray-900 font-medium">
                 Project Title <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="title"
                 value={(values.title as string) ?? ""}
                 onChange={(e) => handleChange("title", e.target.value)}
-                placeholder="Enter project title"
-                className="mt-1.5"
+                placeholder="Enter project name"
+                className="mt-1.5 h-11"
               />
               {errors.title && (
                 <p className="text-xs text-red-500 mt-1">{errors.title}</p>
@@ -291,12 +302,27 @@ export function RequestForm({
             </div>
 
             <div>
-              <Label htmlFor="priority" className="text-gray-900">Priority Level</Label>
+              <Label htmlFor="ticket_id" className="text-gray-900 text-gray-400 font-medium">
+                Ticket ID
+              </Label>
+              <Input
+                id="ticket_id"
+                disabled
+                value="Auto-generated"
+                className="mt-1.5 bg-gray-50 text-gray-500 h-11"
+              />
+            </div>
+          </div>
+
+          {/* Common fields (Row 2) */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="priority" className="text-gray-900 font-medium">Priority Level <span className="text-red-500">*</span></Label>
               <Select
                 value={(values.priority as string) ?? "medium"}
                 onValueChange={(v) => handleChange("priority", v)}
               >
-                <SelectTrigger className="mt-1.5">
+                <SelectTrigger className="mt-1.5 h-11">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -309,14 +335,14 @@ export function RequestForm({
             </div>
 
             <div>
-              <Label htmlFor="branch_id" className="text-gray-900">
+              <Label htmlFor="branch_id" className="text-gray-900 font-medium">
                 Branch <span className="text-red-500">*</span>
               </Label>
               <Select
                 value={(values.branch_id as string) ?? ""}
                 onValueChange={(v) => handleChange("branch_id", v)}
               >
-                <SelectTrigger className="mt-1.5">
+                <SelectTrigger className="mt-1.5 h-11">
                   <SelectValue placeholder="Select branch" />
                 </SelectTrigger>
                 <SelectContent>
@@ -333,18 +359,13 @@ export function RequestForm({
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-gray-100 pt-5">
-            <p className="text-sm font-bold text-gray-900 mb-4">
-              Category-specific information
-            </p>
-          </div>
-
           {/* Dynamic fields */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {fields.map((field) => {
               const isFullWidth =
-                field.type === "textarea" || field.name.includes("address");
+                (field.type === "textarea" && field.name !== "purpose_of_stay") ||
+                (field.name.includes("address") && field.name !== "hotel_address") ||
+                field.name === "justification";
 
               return (
                 <div
@@ -352,7 +373,7 @@ export function RequestForm({
                   className={isFullWidth ? "sm:col-span-2" : ""}
                 >
                   <div className="flex justify-between items-end mb-1.5">
-                    <Label htmlFor={field.name} className="text-gray-900">
+                    <Label htmlFor={field.name} className="text-gray-900 font-medium">
                       {field.label}
                       {field.required && (
                         <span className="text-red-500"> *</span>
@@ -365,7 +386,7 @@ export function RequestForm({
                           const today = new Date().toISOString().split("T")[0];
                           handleChange(field.name, today);
                         }}
-                        className="text-[10px] text-[#2F5E3D] hover:underline font-medium"
+                        className="text-[10px] text-[#358334] hover:underline font-medium"
                       >
                         Current date today
                       </button>
@@ -381,14 +402,14 @@ export function RequestForm({
                       }
                       placeholder={field.placeholder ?? `Enter ${field.label.toLowerCase()}`}
                       className=""
-                      rows={3}
+                      rows={field.name === "purpose_of_stay" || field.name === "justification" ? 3 : 3}
                     />
                   ) : field.type === "select" ? (
                     <Select
                       value={(values[field.name] as string) ?? ""}
                       onValueChange={(v) => handleChange(field.name, v)}
                     >
-                      <SelectTrigger className="">
+                      <SelectTrigger className="h-11">
                         <SelectValue
                           placeholder={`Select ${field.label.toLowerCase()}`}
                         />
@@ -454,31 +475,70 @@ export function RequestForm({
                       placeholder={
                         field.placeholder ?? `Enter ${field.label.toLowerCase()}`
                       }
-                        className={
-                          field.type === "time"
-                            ? "[&::-webkit-calendar-picker-indicator]:cursor-pointer text-gray-900"
-                            : "text-gray-900"
-                        }
-                      />
-                    )}
+                      className={cn(
+                        "h-11",
+                        field.type === "time"
+                          ? "[&::-webkit-calendar-picker-indicator]:cursor-pointer text-gray-900"
+                          : "text-gray-900"
+                      )}
+                    />
+                  )}
 
-                    {errors[field.name] && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {errors[field.name]}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  {errors[field.name] && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors[field.name]}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Document Upload Section */}
+          <div className="pt-6 border-t border-gray-100">
+            <DocumentUpload
+              category={category}
+              requiredPdfs={requiredPdfs}
+              files={files}
+              onFilesChange={onFilesChange}
+              error={null}
+            />
+          </div>
+
+          <p className="text-xs text-gray-500 italic mt-4">Please review all information before submitting. You cannot edit after submission.</p>
+
         </CardContent>
       </Card>
 
-      <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={onBack}>
-          Back
+      <div className="flex items-center justify-between pt-4">
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="bg-[#F95018] hover:bg-[#d64112] text-white"
+        >
+          Cancel
         </Button>
-        <Button type="submit">Next</Button>
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={(e) => handleFormSubmit(e, true)}
+            disabled={isSubmitting}
+            className="border-gray-300 text-gray-700 gap-2"
+          >
+            <Save className="h-4 w-4" /> Save as draft
+          </Button>
+          <Button
+            type="button"
+            onClick={(e) => handleFormSubmit(e, false)}
+            disabled={isSubmitting}
+            className="bg-[#358334] hover:bg-[#2d6f2c] text-white gap-2"
+          >
+            <Send className="h-4 w-4" /> Submit request
+          </Button>
+        </div>
       </div>
     </form>
   );

@@ -45,6 +45,8 @@ export function RequestFilters({
           <SelectItem value="submitted">Submitted</SelectItem>
           <SelectItem value="pending_review">Pending Review</SelectItem>
           <SelectItem value="on_hold">On Hold</SelectItem>
+          <SelectItem value="needs_revision">Needs Revision</SelectItem>
+          <SelectItem value="resubmitted">Resubmitted</SelectItem>
           <SelectItem value="approved">Approved</SelectItem>
           <SelectItem value="rejected">Rejected</SelectItem>
           <SelectItem value="closed">Closed</SelectItem>

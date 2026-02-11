@@ -4,14 +4,10 @@ import Link from "next/link";
 import {
   FileText,
   Clock,
-  CheckCircle2,
-  XCircle,
-  PlusCircle,
-  ArrowRight,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import RequestTable, { type RequestTableRow } from "./RequestTable";
 
 interface RequesterDashboardProps {
   stats: {
@@ -20,176 +16,115 @@ interface RequesterDashboardProps {
     approved: number;
     onHold: number;
   };
-  rows: {
-    requestId: string;
-    ticketNumber: string;
-    category: string;
-    categoryCode: string;
-    title: string;
-    statusLabel: string;
-    statusVariant: string;
-    dateLabel: string;
-  }[];
+  rows: RequestTableRow[];
 }
 
-const statusBadgeColors: Record<string, string> = {
-  success: "bg-green-100 text-green-700",
-  warning: "bg-yellow-100 text-yellow-700",
-  error: "bg-red-100 text-red-700",
-  info: "bg-blue-100 text-blue-700",
-  default: "bg-gray-100 text-gray-900",
-};
+function StatCard({
+  icon,
+  value,
+  label,
+  href,
+  colorClass,
+}: {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+  href: string;
+  colorClass: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col justify-between rounded-[2rem] bg-white shadow-sm p-6 hover:shadow-md transition-shadow group h-full border border-gray-100/50"
+    >
+      <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${colorClass} mb-4 transition-transform group-hover:scale-105`}>
+        {icon}
+      </div>
+      <div>
+        <div className="text-5xl font-bold text-gray-900 tracking-tight mb-2">
+          {value}
+        </div>
+        <div className="text-sm font-semibold text-gray-500">
+          {label}
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function RequesterDashboard({
   stats,
   rows,
 }: RequesterDashboardProps) {
-  const statCards = [
-    {
-      label: "Total Submitted",
-      value: stats.totalSubmitted,
-      icon: FileText,
-      color: "text-[#2F5E3D]",
-      bg: "bg-[#2F5E3D]/10",
-    },
-    {
-      label: "Pending",
-      value: stats.pendingReview,
-      icon: Clock,
-      color: "text-yellow-600",
-      bg: "bg-yellow-50",
-    },
-    {
-      label: "Approved",
-      value: stats.approved,
-      icon: CheckCircle2,
-      color: "text-green-600",
-      bg: "bg-green-50",
-    },
-    {
-      label: "On Hold",
-      value: stats.onHold,
-      icon: XCircle, // Maybe use PauseCircle? Budget used XCircle for Rejected in main dashboard but PauseCircle for On Hold
-      color: "text-orange-600",
-      bg: "bg-orange-50",
-    },
-  ];
-
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-1">
+            Dashboard
+          </h1>
+          <p className="text-gray-500 font-medium">
             Overview of your booking requests
           </p>
         </div>
-        <Link href="/dashboard/requests/create">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Request
-          </Button>
+        <Link
+          href="/dashboard/requests/create"
+          className="inline-flex items-center justify-center rounded-xl bg-[#358334] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#2F5E3D] hover:shadow-lg shadow-md hover:-translate-y-0.5"
+        >
+          + Create Request
         </Link>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {statCards.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="flex items-center gap-4 p-4 md:p-6">
-              <div
-                className={cn(
-                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg",
-                  stat.bg
-                )}
-              >
-                <stat.icon className={cn("h-6 w-6", stat.color)} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm text-gray-500">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stat.value}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={<FileText className="h-6 w-6" />}
+          value={stats.totalSubmitted}
+          label="Total submitted"
+          href="/dashboard/requests"
+          colorClass="bg-blue-50 text-blue-600"
+        />
+        <StatCard
+          icon={<Clock className="h-6 w-6" />}
+          value={stats.pendingReview}
+          label="Pending review"
+          href="/dashboard/requests?status=pending"
+          colorClass="bg-[#FFF4DE] text-[#FFB020]"
+        />
+        <StatCard
+          icon={<CheckCircle className="h-6 w-6" />}
+          value={stats.approved}
+          label="Approved"
+          href="/dashboard/requests?status=approved"
+          colorClass="bg-green-50 text-green-600"
+        />
+        <StatCard
+          icon={<AlertCircle className="h-6 w-6" />}
+          value={stats.onHold}
+          label="On Hold"
+          href="/dashboard/requests?status=on_hold"
+          colorClass="bg-orange-50 text-orange-600"
+        />
       </div>
 
-      {/* Recent Requests */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Recent Requests</CardTitle>
-          <Link href="/dashboard/requests">
-            <Button variant="ghost" size="sm">
-              View all
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
+      {/* Booking Requests Table Card */}
+      <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100/50">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900">Recent Requests</h3>
+          <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">
+            View all
           </Link>
-        </CardHeader>
-        <CardContent>
-          {rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <FileText className="h-12 w-12 text-gray-300 mb-4" />
-              <p className="text-sm font-medium text-gray-900">
-                No requests yet
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Create your first booking request to get started.
-              </p>
-              <Link href="/dashboard/requests/create" className="mt-4">
-                <Button size="sm">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Request
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {rows.map((req) => {
-                const badgeColor =
-                  statusBadgeColors[req.statusVariant] ?? statusBadgeColors.default;
+        </div>
 
-                return (
-                  <Link
-                    key={req.requestId}
-                    href={`/dashboard/requests/${req.requestId}`}
-                    className="flex items-center justify-between py-3 px-1 hover:bg-gray-50 rounded-md transition-colors -mx-1"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-gray-400">
-                          #{req.ticketNumber}
-                        </span>
-                        <span className="text-xs font-medium text-[#2F5E3D] bg-[#2F5E3D]/10 px-2 py-0.5 rounded">
-                          {req.categoryCode}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium text-gray-900 mt-0.5 truncate">
-                        {req.title}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 ml-4 shrink-0">
-                      <span
-                        className={cn(
-                          "text-xs font-medium px-2.5 py-1 rounded-full",
-                          badgeColor
-                        )}
-                      >
-                        {req.statusLabel}
-                      </span>
-                      <span className="text-xs text-gray-400 hidden sm:block">
-                        {req.dateLabel}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <RequestTable rows={rows} emptyMessage="No requests found." showRequester={false} />
+
+        <div className="mt-6 flex justify-end md:hidden">
+          <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4">
+            View all
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
