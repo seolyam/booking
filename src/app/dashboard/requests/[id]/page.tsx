@@ -14,7 +14,7 @@ import {
   MapPin,
   Building2,
 } from "lucide-react";
-import { getRequestById } from "@/actions/request";
+import { getRequestById, updateRequestStatus } from "@/actions/request";
 import {
   CATEGORY_MAP,
 } from "@/db/schema";
@@ -60,7 +60,7 @@ function statusMeta(status: string) {
   switch (status) {
     case "approved":
       return {
-        label: "Approved",
+        label: "Resolved",
         cls: "bg-green-50 text-green-700 border-green-100",
         icon: <CheckCircle2 className="h-4 w-4" />,
       };
@@ -90,13 +90,13 @@ function statusMeta(status: string) {
       };
     case "pending_review":
       return {
-        label: "Pending Review",
+        label: "Pending",
         cls: "bg-blue-50 text-blue-700 border-blue-100",
         icon: <Clock className="h-4 w-4" />,
       };
     case "submitted":
       return {
-        label: "Submitted",
+        label: "Open",
         cls: "bg-yellow-50 text-yellow-700 border-yellow-100",
         icon: <CheckCircle2 className="h-4 w-4" />,
       };
@@ -116,7 +116,7 @@ function actionLabel(action: string) {
     status_changed: "Status Updated",
     comment_added: "Comment Added",
     file_uploaded: "File Uploaded",
-    approved: "Approved",
+    approved: "Resolved",
     rejected: "Rejected",
     closed: "Closed",
     reopened: "Reopened",
@@ -133,9 +133,9 @@ function actionLabel(action: string) {
 function computeSteps(status: string): WorkflowStep[] {
   const steps: Array<{ key: string; label: string }> = [
     { key: "created", label: "Created" },
-    { key: "submitted", label: "Submitted" },
-    { key: "reviewed", label: "Reviewed" },
-    { key: "approved", label: "Approved" },
+    { key: "submitted", label: "Open" },
+    { key: "reviewed", label: "Pending" },
+    { key: "approved", label: "Resolved" },
   ];
 
   let activeIndex = 0;
@@ -164,134 +164,19 @@ function computeSteps(status: string): WorkflowStep[] {
 }
 
 // ============================================================================
-// Form Data Renderers
-// ============================================================================
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function InfoCard({ label, value }: { label: string; value: any }) {
-  if (value === null || value === undefined || value === "") return <div className="flex flex-col"><span className="text-xs text-gray-400">{label}</span><span className="text-sm font-medium text-gray-900">—</span></div>;
-  return (
-    <div className="flex flex-col">
-      <span className="text-xs text-gray-500 mb-1">{label}</span>
-      <span className="text-sm font-semibold text-gray-900 break-words">{String(value)}</span>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function FlightDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.departure_from} → {data.destination}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.airline || "Any Airline"} • {data.travel_class}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Departure" value={data.departure_date} />
-        <InfoCard label="Return" value={data.return_date || "One-way"} />
-        <InfoCard label="Passengers" value={data.number_of_passengers} />
-        <InfoCard label="Passenger Name" value={data.passenger_name} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <span className="text-xs text-gray-500 block mb-2">Purpose of Travel</span>
-        <p className="text-sm text-gray-900">{data.purpose_of_travel}</p>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function HotelDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.hotel_name}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.hotel_address}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Check-in" value={data.check_in_date} />
-        <InfoCard label="Check-out" value={data.check_out_date} />
-        <InfoCard label="Guests" value={data.number_of_guests} />
-        <InfoCard label="Rooms" value={data.number_of_rooms} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <span className="text-xs text-gray-500 block mb-2">Name of guest(s)</span>
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">{data.guest_names}</p>
-          </div>
-          <div>
-            <span className="text-xs text-gray-500 block mb-2">Purpose of stay</span>
-            <p className="text-sm text-gray-900">{data.purpose_of_stay}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MealsDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.event_name}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.venue}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Date" value={data.meal_date} />
-        <InfoCard label="Time" value={data.meal_time} />
-        <InfoCard label="Pax" value={data.number_of_pax} />
-        <InfoCard label="Type" value={data.meal_type} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <span className="text-xs text-gray-500 block mb-2">Special Requests</span>
-        <p className="text-sm text-gray-900">{data.special_requests || "None"}</p>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function DefaultDetails({ data }: { data: any }) {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-      {Object.entries(data).map(([key, value]) => (
-        <InfoCard
-          key={key}
-          label={key.replace(/_/g, " ")}
-          value={value}
-        />
-      ))}
-    </div>
-  );
-}
-
-// ============================================================================
 // Main Page
 // ============================================================================
 
 export default async function RequestDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { id } = await params;
+  const { mode } = await searchParams || {};
+
   const user = await getAuthUser();
   if (!user) redirect("/login");
 
@@ -304,22 +189,36 @@ export default async function RequestDetailPage({
   const request = await getRequestById(id);
   if (!request) notFound();
 
-  // Determine if user can approve/reject
+  // Permissions Check & Auto-Transition
+  let hasBranchAccess = false;
   let canApprove = false;
-  if ((appUser.role === "admin" || appUser.role === "superadmin")) {
-    const actionableStatuses = ["submitted", "pending_review", "on_hold"];
-    if (actionableStatuses.includes(request.status)) {
-      if (appUser.role === "superadmin") {
+  const isAdmin = appUser.role === "admin" || appUser.role === "superadmin";
+
+  if (isAdmin) {
+    const actionableStatuses = ["submitted", "pending_review", "on_hold", "reviewed"];
+
+    // Check branch assignment
+    if (appUser.role === "superadmin") {
+      hasBranchAccess = true;
+    } else {
+      const assignments = await db.query.adminBranches.findMany({
+        where: eq(adminBranches.admin_id, appUser.id),
+      });
+      const branchIds = assignments.map((a) => a.branch_id);
+      if (branchIds.includes(request.branch_id)) {
+        hasBranchAccess = true;
+      }
+    }
+
+    if (hasBranchAccess) {
+      // Auto-transition: If View status is 'Open' (submitted), change to 'Pending' (pending_review)
+      if (request.status === "submitted") {
+        await updateRequestStatus(request.id, "pending_review", "Request viewed by admin - status updated to Pending");
+        redirect(`/dashboard/requests/${request.id}`); // Reload to reflect change
+      }
+
+      if (actionableStatuses.includes(request.status)) {
         canApprove = true;
-      } else {
-        // Check branch assignment
-        const assignments = await db.query.adminBranches.findMany({
-          where: eq(adminBranches.admin_id, appUser.id),
-        });
-        const branchIds = assignments.map((a) => a.branch_id);
-        if (branchIds.includes(request.branch_id)) {
-          canApprove = true;
-        }
       }
     }
   }
@@ -337,72 +236,10 @@ export default async function RequestDetailPage({
     action: log.action,
   }));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const formData = request.form_data as any;
+  // Determine if this is a Review View (Admin/Superadmin && (Actionable Status OR Explicit Review Mode))
+  const isReviewMode = canApprove || (isAdmin && hasBranchAccess && mode === "review");
 
-  // Determine if this is a Review View (Admin/Superadmin && Actionable Status)
-  const isReviewMode = canApprove;
-
-  if (isReviewMode) {
-    return (
-      <div className="space-y-8">
-        {/* Review Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard/requests"
-              className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm"
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Request Review</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Review and verify request details before approving
-              </p>
-            </div>
-          </div>
-          <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
-            <Bell className="h-6 w-6" />
-          </button>
-        </div>
-
-        {/* Title Section */}
-        <div className="mb-8 px-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h2 className="text-2xl font-bold text-gray-900">{request.title}</h2>
-            <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase">
-              {CATEGORY_MAP[request.category]?.code || "REQ"}
-            </span>
-          </div>
-          <div className="text-sm text-gray-500">
-            REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Request Info */}
-          <div className="lg:col-span-8">
-            <RequestInfoCard request={request} hideComments={true} />
-          </div>
-
-          {/* Right Column: Attachments & Decision */}
-          <div className="lg:col-span-4 space-y-6">
-            <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
-
-            <div className="mt-8">
-              <ReviewDecisionPanel requestId={request.id} />
-            </div>
-
-            <div className="mt-8">
-              <RequestComments comments={request.comments} />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Common Header & Content Structure for both views to ensure matching design
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -415,28 +252,47 @@ export default async function RequestDetailPage({
             <ArrowLeft className="h-6 w-6" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Request Tracking</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isReviewMode ? "Request Review" : "Request Tracking"}
+            </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Track the complete lifecycle and history of this booking request
+              {isReviewMode
+                ? "Review and verify request details before approving"
+                : "Track the complete lifecycle and history of this booking request"}
             </p>
           </div>
         </div>
-        <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
-          <Bell className="h-6 w-6" />
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Manage Request Button for Admins (Only visible in Tracking View) */}
+          {!isReviewMode && isAdmin && hasBranchAccess && (
+            <Link
+              href={`/dashboard/requests/${id}?mode=review`}
+              className="bg-gray-700 hover:bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
+            >
+              Manage Request
+            </Link>
+          )}
+          <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
+            <Bell className="h-6 w-6" />
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Request Details */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-8 shadow-sm ring-1 ring-gray-100">
-          {/* Title Row */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-gray-900">{request.title}</h2>
-              <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase">
-                {CATEGORY_MAP[request.category]?.code || "REQ"}
-              </span>
-            </div>
+      {/* Title & Status Section (Common for both) */}
+      <div className="mb-8 px-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 mb-2">
+            <h2 className="text-2xl font-bold text-gray-900">{request.title}</h2>
+            <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase">
+              {CATEGORY_MAP[request.category]?.code || "REQ"}
+            </span>
+          </div>
+          {/* Status Badge (Only show here for Tracking View, Review View might implement it differently or doesn't show it in header) 
+                Wait, the previous Review View didn't show status badge in Title Section. 
+                Tracking View mockup showed it. 
+                Let's include it for Tracking View. 
+            */}
+          {!isReviewMode && (
             <div className={cn(
               "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border",
               status.cls
@@ -504,24 +360,42 @@ export default async function RequestDetailPage({
               <p className="text-red-800 text-sm">{request.rejection_reason}</p>
             </div>
           )}
+        </div>
 
+        <div className="text-sm text-gray-500">
+          REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Request Info */}
+        <div className="lg:col-span-8">
+          <RequestInfoCard request={request} hideComments={true} />
         </div>
 
         {/* Right Column: Widgets */}
-        <div className="space-y-6">
-          {/* Timeline */}
-          <WorkflowProgress steps={steps} events={events} />
+        <div className="lg:col-span-4 space-y-6">
+          {/* Timeline (Only for Tracking, unless Review also needs it? Review usually focuses on decision) */}
+          {!isReviewMode && <WorkflowProgress steps={steps} events={events} />}
 
           {/* Attachments */}
           <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
 
-          {/* Admin Actions (Conditional) */}
-          {canApprove && (
-            <div className="bg-blue-50 rounded-xl border border-blue-100 p-6">
-              <h3 className="font-bold text-blue-900 mb-3">Admin Actions</h3>
-              <ApprovalActions requestId={request.id} />
+          {/* Review Decision Panel (Only for Review Mode) */}
+          {isReviewMode && (
+            <div className="mt-8">
+              <ReviewDecisionPanel requestId={request.id} currentStatus={request.status} />
             </div>
           )}
+
+          {/* Approval Actions (Conditional - Old way, kept for backward compat if ReviewDecisionPanel isn't fully replacing yet, 
+              but ReviewDecisionPanel is the new standard for Review Mode. 
+              The 'canApprove' logic handled this earlier. 
+              If canApprove is true, we are in Review Mode. 
+              So we use ReviewDecisionPanel.
+          */}
+
+          {/* Actions for Tracking Mode (Non-Review, but Admin might see something? No, Manage Request handles that) */}
 
           {/* Comments Section */}
           <div className="mt-6">

@@ -363,6 +363,15 @@ export async function updateRequestStatus(
     });
   }
 
+  // Also add to comments table if a comment was provided, so it appears in the discussion thread
+  if (comment && comment.trim()) {
+    await db.insert(comments).values({
+      request_id: requestId,
+      user_id: appUser.id,
+      content: comment.trim(),
+    });
+  }
+
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/requests");
   revalidatePath(`/dashboard/requests/${requestId}`);
