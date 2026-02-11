@@ -10,7 +10,6 @@ import {
   FileText,
   Ban,
   Archive,
-  Bell,
   MapPin,
   Building2,
 } from "lucide-react";
@@ -391,49 +390,46 @@ export default async function RequestDetailPage({
 
   // Common Header & Content Structure for both views to ensure matching design
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 md:gap-4">
           <Link
             href="/dashboard/requests"
-            className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm"
+            className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm shrink-0"
           >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
               {isReviewMode ? "Request Review" : "Request Tracking"}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs md:text-sm text-gray-500 mt-1 line-clamp-2">
               {isReviewMode
                 ? "Review and verify request details before approving"
                 : "Track the complete lifecycle and history of this booking request"}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Manage Request Button for Admins (Only visible in Tracking View) */}
-          {!isReviewMode && isAdmin && hasBranchAccess && (
-            <Link
-              href={`/dashboard/requests/${id}?mode=review`}
-              className="bg-gray-700 hover:bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
-            >
-              Manage Request
-            </Link>
-          )}
-          <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
-            <Bell className="h-6 w-6" />
-          </button>
-        </div>
+         <div className="flex items-center gap-2 md:gap-3 shrink-0">
+           {/* Manage Request Button for Admins (Only visible in Tracking View) */}
+           {!isReviewMode && isAdmin && hasBranchAccess && (
+             <Link
+               href={`/dashboard/requests/${id}?mode=review`}
+               className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
+             >
+               Manage Request
+             </Link>
+           )}
+         </div>
       </div>
 
       {/* Title & Status Section (Common for both) */}
-      <div className="mb-8 px-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 mb-2">
-            <h2 className="text-2xl font-bold text-gray-900">{request.title}</h2>
-            <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase">
+      <div className="mb-4 md:mb-8 px-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 break-words">{request.title}</h2>
+            <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase shrink-0">
               {CATEGORY_MAP[request.category]?.code || "REQ"}
             </span>
           </div>
@@ -454,12 +450,12 @@ export default async function RequestDetailPage({
         </div>
 
         {/* Subtitle */}
-        <div className="text-sm text-gray-500 mb-8">
+        <div className="text-xs md:text-sm text-gray-500 mb-4 md:mb-8">
           REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* Left Column: Request Info */}
         <div className="lg:col-span-8">
           <RequestInfoCard request={request} hideComments={true} />

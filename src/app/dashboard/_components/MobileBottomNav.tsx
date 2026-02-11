@@ -61,7 +61,27 @@ function getNavItems(role: Role): NavItemConfig[] {
   ];
 
   const superadminItems: NavItemConfig[] = [
-    ...adminItems,
+    {
+      key: "dashboard",
+      label: "Home",
+      href: "/dashboard",
+      icon: Home,
+      activeMatch: (p) => p === "/dashboard",
+    },
+    {
+      key: "create",
+      label: "New",
+      href: "/dashboard/requests/create",
+      icon: PlusCircle,
+      activeMatch: (p) => p.startsWith("/dashboard/requests/create"),
+    },
+    {
+      key: "admin_requests",
+      label: "All Req",
+      href: "/dashboard/admin/requests",
+      icon: ClipboardList,
+      activeMatch: (p) => p.startsWith("/dashboard/admin/requests"),
+    },
     {
       key: "approvals",
       label: "Approvals",
@@ -71,7 +91,7 @@ function getNavItems(role: Role): NavItemConfig[] {
     },
   ];
 
-  if (role === "superadmin") return superadminItems.slice(0, 5); // Limit to 5 for bottom bar
+  if (role === "superadmin") return superadminItems;
   if (role === "admin") return adminItems;
   return requesterItems;
 }

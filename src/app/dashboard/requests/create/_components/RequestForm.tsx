@@ -273,8 +273,8 @@ export function RequestForm({
         </button>
       </div>
 
-      <Card className="rounded-[2rem] border-gray-100/50 shadow-sm bg-white">
-        <CardHeader className="p-8 pb-0">
+      <Card className="rounded-2xl md:rounded-[2rem] border-gray-100/50 shadow-sm bg-white">
+        <CardHeader className="p-4 md:p-8 pb-0">
           <div className="flex items-center gap-3">
             <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <span>{category.label}</span>
@@ -282,7 +282,7 @@ export function RequestForm({
           </div>
           <p className="text-sm text-gray-500">Fill in the required information</p>
         </CardHeader>
-        <CardContent className="space-y-8 p-8">
+        <CardContent className="space-y-6 md:space-y-8 p-4 md:p-8">
           {/* Common fields (Row 1) */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
@@ -510,23 +510,23 @@ export function RequestForm({
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between pt-4">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4">
         <Button
           type="button"
           variant="destructive"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="bg-[#F95018] hover:bg-[#d64112] text-white"
+          className="bg-[#F95018] hover:bg-[#d64112] text-white w-full sm:w-auto"
         >
           Cancel
         </Button>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Button
             type="button"
             variant="outline"
             onClick={(e) => handleFormSubmit(e, true)}
             disabled={isSubmitting}
-            className="border-gray-300 text-gray-700 gap-2"
+            className="border-gray-300 text-gray-700 gap-2 w-full sm:w-auto"
           >
             <Save className="h-4 w-4" /> Save as draft
           </Button>
@@ -534,7 +534,7 @@ export function RequestForm({
             type="button"
             onClick={(e) => handleFormSubmit(e, false)}
             disabled={isSubmitting}
-            className="bg-[#358334] hover:bg-[#2d6f2c] text-white gap-2"
+            className="bg-[#358334] hover:bg-[#2d6f2c] text-white gap-2 w-full sm:w-auto"
           >
             <Send className="h-4 w-4" /> Submit request
           </Button>

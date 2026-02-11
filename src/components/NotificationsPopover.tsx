@@ -94,9 +94,9 @@ export default function NotificationsPopover() {
                     )}
                 </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden rounded-2xl bg-white text-gray-900 border-gray-100 shadow-xl">
+            <DialogContent className="sm:max-w-[480px] w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden rounded-2xl bg-white text-gray-900 border-gray-100 shadow-xl">
                 <div className="flex flex-col border-b border-gray-100 bg-white">
-                    <div className="flex items-center justify-between px-6 py-5 pb-2">
+                    <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 pb-2">
                         <div>
                             <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">Notifications</DialogTitle>
                         </div>
@@ -112,7 +112,7 @@ export default function NotificationsPopover() {
                         )}
                     </div>
 
-                    <div className="px-6 pb-0 flex items-center gap-6">
+                    <div className="px-4 sm:px-6 pb-0 flex items-center gap-6">
                         <button
                             onClick={() => setFilter("all")}
                             className={cn(
@@ -146,7 +146,7 @@ export default function NotificationsPopover() {
                     </div>
                 </div>
 
-                <ScrollArea className="h-[60vh] max-h-[500px] bg-white">
+                <ScrollArea className="h-[50vh] sm:h-[60vh] max-h-[500px] bg-white">
                     {loading ? (
                         <div className="flex items-center justify-center py-12 text-gray-400">
                             <Loader2 className="h-8 w-8 animate-spin text-gray-200" />
@@ -178,7 +178,7 @@ export default function NotificationsPopover() {
                                     key={n.id}
                                     onClick={() => !n.is_read ? handleMarkRead(n.id, { stopPropagation: () => { }, preventDefault: () => { } } as React.MouseEvent) : undefined}
                                     className={cn(
-                                        "flex gap-4 p-5 transition-all hover:bg-gray-50/80 cursor-pointer group relative",
+                                        "flex gap-3 sm:gap-4 p-4 sm:p-5 transition-all hover:bg-gray-50/80 cursor-pointer group relative",
                                         !n.is_read ? "bg-white" : "bg-white/50"
                                     )}
                                 >

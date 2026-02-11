@@ -35,13 +35,13 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="flex flex-col justify-between rounded-[2rem] bg-white shadow-sm p-6 hover:shadow-md transition-shadow group h-full border border-gray-100/50"
+      className="flex flex-col justify-between rounded-2xl md:rounded-[2rem] bg-white shadow-sm p-4 md:p-6 hover:shadow-md transition-shadow group h-full border border-gray-100/50"
     >
       <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${colorClass} mb-4 transition-transform group-hover:scale-105`}>
         {icon}
       </div>
       <div>
-        <div className="text-5xl font-bold text-gray-900 tracking-tight mb-2">
+        <div className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tight mb-2">
           {value}
         </div>
         <div className="text-sm font-semibold text-gray-500">
@@ -109,7 +109,7 @@ export default function RequesterDashboard({
       </div>
 
       {/* Booking Requests Table Card */}
-      <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100/50">
+      <div className="bg-white rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-sm border border-gray-100/50">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-gray-900">Recent Requests</h3>
           <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">
