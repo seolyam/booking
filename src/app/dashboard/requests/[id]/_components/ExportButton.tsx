@@ -86,14 +86,15 @@ export default function ExportButton({ targetId, fileName = "request-details" }:
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isExporting}
-        className="flex items-center gap-2 bg-gray-700 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+        className="flex items-center gap-2 bg-gray-700 text-white text-sm font-medium px-3 sm:px-4 py-2 min-h-[44px] rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 touch-manipulation"
       >
         {isExporting ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <Download className="h-4 w-4" />
         )}
-        Export Details
+        <span className="hidden sm:inline">Export Details</span>
+        <span className="sm:hidden">Export</span>
         <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
       </button>
 
@@ -103,16 +104,16 @@ export default function ExportButton({ targetId, fileName = "request-details" }:
             className="fixed inset-0 z-10" 
             onClick={() => setIsOpen(false)} 
           />
-          <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
+          <div className="absolute right-0 sm:right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
             <button
               onClick={() => handleExport("png")}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 min-h-[44px] touch-manipulation"
             >
               <FileImage className="h-4 w-4" /> Export as PNG
             </button>
             <button
               onClick={() => handleExport("pdf")}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 min-h-[44px] touch-manipulation"
             >
               <FileText className="h-4 w-4" /> Export as PDF
             </button>

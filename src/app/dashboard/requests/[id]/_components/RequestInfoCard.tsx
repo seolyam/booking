@@ -62,7 +62,7 @@ function HotelDetails({ data }: { data: any }) {
             </div>
 
             {/* Grid Specs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-8 border-y border-gray-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 py-6 md:py-8 border-y border-gray-100">
                 <InfoCard label="Check-in" value={data.check_in_date} />
                 <InfoCard label="Check-out" value={data.check_out_date} />
                 <InfoCard label="Guests" value={data.number_of_guests} />
@@ -70,7 +70,7 @@ function HotelDetails({ data }: { data: any }) {
             </div>
 
             {/* Bottom info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                 <div>
                     <span className="text-sm text-gray-500 block mb-3">Name of guest(s)</span>
                     <div className="text-base font-medium text-gray-900 space-y-1">
@@ -154,7 +154,7 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
     const formData = request.form_data as any;
 
     return (
-        <div id="request-printable-area" className="bg-white rounded-3xl p-8 shadow-sm ring-1 ring-gray-100 h-full">
+        <div id="request-printable-area" className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm ring-1 ring-gray-100 h-full">
             {/* Main Info Block */}
             <div className="mb-8">
                 {/* Header Line */}
@@ -171,8 +171,8 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
                 </div>
 
                 {/* Primary Metric Strip */}
-                <div className="bg-gray-50/80 rounded-2xl p-6 mb-10">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="bg-gray-50/80 rounded-xl md:rounded-2xl p-4 md:p-6 mb-6 md:mb-10">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         <InfoCard label="Requester" value={request.requester.full_name || request.requester.email} className="items-center md:items-start text-center md:text-left" />
                         <InfoCard label="Branch" value={request.branch?.name || "Main Branch"} className="items-center md:items-start text-center md:text-left" />
                         <InfoCard label="Budget" value={formatCurrency(formData.allocated_budget || formData.budget || formData.total_budget)} className="items-center md:items-start text-center md:text-left" />
@@ -194,7 +194,7 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
                 </div>
 
                 {/* Footer Button */}
-                <div className="flex justify-end mt-12 bg-transparent">
+                <div className="flex justify-end mt-8 md:mt-12 bg-transparent">
                     <ExportButton 
                         targetId="request-printable-area" 
                         fileName={`REQ-${String(request.ticket_number).padStart(4, "0")}-Details`}

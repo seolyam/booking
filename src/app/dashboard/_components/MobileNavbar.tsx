@@ -4,6 +4,7 @@ import * as React from "react";
 import { LogOut } from "lucide-react";
 import { signOut } from "@/actions/auth";
 import type { Role } from "./nav";
+import NotificationsPopover from "@/components/NotificationsPopover";
 
 type Profile = { fullName: string; positionLine: string; initials: string };
 
@@ -38,15 +39,18 @@ export default function MobileNavbar({
           </div>
         </div>
 
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="p-2 rounded-lg hover:bg-black/5 min-h-11 min-w-11 flex items-center justify-center"
-            aria-label="Logout"
-          >
-            <LogOut className="h-5 w-5 text-[#E34B33]" />
-          </button>
-        </form>
+        <div className="flex items-center gap-1">
+          <NotificationsPopover />
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="p-2 rounded-lg hover:bg-black/5 min-h-11 min-w-11 flex items-center justify-center"
+              aria-label="Logout"
+            >
+              <LogOut className="h-5 w-5 text-[#E34B33]" />
+            </button>
+          </form>
+        </div>
       </header>
     </>
   );

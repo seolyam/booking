@@ -176,7 +176,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="flex-1 bg-white p-8 md:p-12 lg:p-16 flex items-center justify-center overflow-y-auto">
+      <div className="flex-1 bg-white p-6 md:p-12 lg:p-16 flex items-center justify-center overflow-y-auto">
         <div className="w-full max-w-md space-y-8">
           {error && (
             <Alert variant="destructive">
@@ -294,7 +294,7 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="idNumber" className="text-gray-900">
                       ID Number
@@ -370,7 +370,7 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="reg-password" className="text-gray-900">
                       Password

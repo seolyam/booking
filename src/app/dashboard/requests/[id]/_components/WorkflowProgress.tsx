@@ -140,8 +140,8 @@ export default function WorkflowProgress({
           aria-modal="true"
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 mx-2 sm:mx-0">
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 md:px-6 py-4">
               <h3 className="text-base font-semibold text-gray-900">Activity History</h3>
               <button
                 onClick={() => setIsOpen(false)}
@@ -154,7 +154,7 @@ export default function WorkflowProgress({
               </button>
             </div>
             
-            <div className="overflow-y-auto p-6">
+            <div className="overflow-y-auto p-4 md:p-6">
               {events.length === 0 ? (
                 <div className="text-sm text-gray-500 text-center py-8">No activity recorded yet.</div>
               ) : (
