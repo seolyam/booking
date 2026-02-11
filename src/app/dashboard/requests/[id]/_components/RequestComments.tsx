@@ -1,6 +1,5 @@
 "use client";
 
-import { MessageSquare } from "lucide-react";
 import type { Comment } from "@/db/schema";
 import { formatDateTime } from "@/lib/utils";
 
@@ -31,7 +30,7 @@ export default function RequestComments({ comments }: RequestCommentsProps) {
                                     </span>
                                 </div>
                                 <div className="text-sm text-gray-900 bg-gray-50 rounded-lg p-3 rounded-tl-none italic leading-relaxed">
-                                    "{comment.content}"
+                                    &ldquo;{comment.content}&rdquo;
                                 </div>
                             </div>
                         </div>

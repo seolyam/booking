@@ -39,7 +39,7 @@ export default function ExportButton({ targetId, fileName = "request-details" }:
         cacheBust: true,
         backgroundColor: "#ffffff",
         pixelRatio: 2, // Better resolution
-        filter: filter as any, // Type cast might be needed depending on html-to-image types
+        filter: filter as (node: Node) => boolean,
         skipFonts: true, // Fix for "font is undefined" error
       });
 
