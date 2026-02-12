@@ -126,8 +126,8 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { name: "unit_cost", label: "Unit Cost (estimated)", type: "number" },
     { name: "total_budget", label: "Total Budget", type: "number" },
     { name: "date_needed", label: "Date Needed", type: "date", required: true },
-    { name: "justification", label: "Justification / Purpose", type: "textarea", required: true },
     { name: "vendor_name", label: "Preferred Vendor", type: "text" },
+    { name: "justification", label: "Justification / Purpose", type: "textarea", required: true },
   ],
 };
 
