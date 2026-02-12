@@ -42,63 +42,33 @@ export const dynamic = "force-dynamic";
 
 function statusMeta(status: string) {
   switch (status) {
-    case "approved":
+    case "resolved":
       return {
         label: "Resolved",
         cls: "bg-green-50 text-green-700 border-green-100",
         icon: <CheckCircle2 className="h-4 w-4" />,
       };
-    case "rejected":
+    case "cancelled":
       return {
-        label: "Rejected",
-        cls: "bg-red-50 text-red-700 border-red-100",
+        label: "Cancelled",
+        cls: "bg-gray-50 text-gray-900 border-gray-100",
         icon: <XCircle className="h-4 w-4" />,
       };
-    case "closed":
-      return {
-        label: "Closed",
-        cls: "bg-gray-50 text-gray-900 border-gray-100",
-        icon: <Archive className="h-4 w-4" />,
-      };
-    case "on_hold":
-      return {
-        label: "On Hold",
-        cls: "bg-orange-50 text-orange-700 border-orange-100",
-        icon: <AlertCircle className="h-4 w-4" />,
-      };
-    case "needs_revision":
-      return {
-        label: "Needs Revision",
-        cls: "bg-amber-50 text-amber-700 border-amber-100",
-        icon: <AlertCircle className="h-4 w-4" />,
-      };
-    case "resubmitted":
-      return {
-        label: "Resubmitted",
-        cls: "bg-indigo-50 text-indigo-700 border-indigo-100",
-        icon: <CheckCircle2 className="h-4 w-4" />,
-      };
-    case "reviewed":
-      return {
-        label: "Reviewed",
-        cls: "bg-purple-50 text-purple-700 border-purple-100",
-        icon: <CheckCircle2 className="h-4 w-4" />,
-      };
-    case "pending_review":
+    case "pending":
       return {
         label: "Pending",
-        cls: "bg-blue-50 text-blue-700 border-blue-100",
+        cls: "bg-orange-50 text-orange-700 border-orange-100",
         icon: <Clock className="h-4 w-4" />,
       };
-    case "submitted":
+    case "open":
       return {
         label: "Open",
-        cls: "bg-yellow-50 text-yellow-700 border-yellow-100",
-        icon: <CheckCircle2 className="h-4 w-4" />,
+        cls: "bg-blue-50 text-blue-700 border-blue-100",
+        icon: <FileText className="h-4 w-4" />,
       };
-    default: // draft
+    default:
       return {
-        label: "Draft",
+        label: status,
         cls: "bg-gray-50 text-gray-900 border-gray-100",
         icon: <FileText className="h-4 w-4" />,
       };
@@ -131,21 +101,19 @@ function actionLabel(action: string) {
 function computeSteps(status: string): WorkflowStep[] {
   const steps: Array<{ key: string; label: string }> = [
     { key: "created", label: "Created" },
-    { key: "submitted", label: "Open" },
-    { key: "reviewed", label: "Pending" },
-    { key: "approved", label: "Resolved" },
+    { key: "open", label: "Open" },
+    { key: "pending", label: "Pending" },
+    { key: "resolved", label: "Resolved" },
   ];
 
   let activeIndex = 0;
-  if (status === "draft") activeIndex = 0;
-  else if (status === "submitted" || status === "pending_review" || status === "resubmitted") activeIndex = 1;
-  else if (status === "reviewed" || status === "on_hold" || status === "needs_revision") activeIndex = 2;
-  else if (status === "approved" || status === "rejected" || status === "closed") activeIndex = 3;
+  if (status === "open") activeIndex = 1;
+  else if (status === "pending") activeIndex = 2;
+  else if (status === "resolved" || status === "cancelled") activeIndex = 3;
 
   // Handle terminal states label overrides
-  if (activeIndex === 3) {
-    if (status === "rejected") steps[3] = { ...steps[3], label: "Rejected" };
-    else if (status === "closed") steps[3] = { ...steps[3], label: "Closed" };
+  if (activeIndex === 3 && status === "cancelled") {
+    steps[3] = { ...steps[3], label: "Cancelled" };
   }
 
   return steps.map((s, idx) => {
@@ -196,7 +164,7 @@ export default async function RequestDetailPage({
   const isAdmin = appUser.role === "admin" || appUser.role === "superadmin";
 
   if (isAdmin) {
-    const actionableStatuses = ["submitted", "pending_review", "on_hold", "reviewed", "resubmitted", "needs_revision"];
+    const actionableStatuses = ["open", "pending"];
 
     // Check branch assignment
     if (appUser.role === "superadmin") {
@@ -212,12 +180,10 @@ export default async function RequestDetailPage({
     }
 
     if (hasBranchAccess) {
-      // Auto-transition: If status is 'Open' (submitted) or 'Resubmitted', change to 'Pending' (pending_review)
-      if (request.status === "submitted" || request.status === "resubmitted") {
-        const msg = request.status === "resubmitted"
-          ? "Resubmitted request viewed by admin - status updated to Pending"
-          : "Request viewed by admin - status updated to Pending";
-        await updateRequestStatus(request.id, "pending_review", msg, true);
+      // Auto-transition: If status is 'Open', change to 'Pending' when admin views
+      if (request.status === "open") {
+        const msg = "Request viewed by admin - status updated to Pending";
+        await updateRequestStatus(request.id, "pending", msg, true);
         redirect(`/dashboard/requests/${request.id}`); // Reload to reflect change
       }
 
@@ -249,11 +215,11 @@ export default async function RequestDetailPage({
 
   // Determine if the current user is the requester viewing their own request
   const isRequester = appUser.id === request.requester_id;
-  const canResubmit = isRequester && request.status === "needs_revision";
+  const canResubmit = false; // No longer applicable with simplified status system
 
-  // Get the latest revision reason from activity logs
+  // Get the latest revision reason from activity logs (kept for historical data)
   const latestRevisionLog = request.activityLogs.find(
-    (log) => log.new_status === "needs_revision"
+    (log) => log.new_status === "pending"
   );
   const revisionReason = latestRevisionLog?.comment ?? null;
 
@@ -293,7 +259,7 @@ export default async function RequestDetailPage({
 
           {/* Manage Request or Reopen Button for Admins */}
           {!isReviewMode && isAdmin && hasBranchAccess && (
-            request.status === "approved" ? (
+            request.status === "resolved" ? (
               <ReopenButton requestId={id} />
             ) : (
               <Link

@@ -87,18 +87,13 @@ function WorkflowStepper({
 }) {
   // Map statuses to step indexes
   const statusStepMap: Record<string, number> = {
-    draft: 0,
-    submitted: 1,
-    pending_review: 2,
-    on_hold: 2,
-    needs_revision: 2,
-    resubmitted: 1,
-    approved: 3,
-    rejected: 2,
-    closed: 4,
+    open: 0,
+    pending: 1,
+    resolved: 2,
+    cancelled: 2,
   };
   const currentStep = statusStepMap[currentStatus] ?? 0;
-  const isRejected = currentStatus === "rejected";
+  const isRejected = currentStatus === "cancelled";
 
   return (
     <div className="flex items-center justify-between">
@@ -519,59 +514,47 @@ export function RequestDetailView({
         </TabsContent>
       </Tabs>
 
-      {/* Admin actions (for non-draft/non-closed requests) */}
-      {userRole !== "requester" && !["draft", "closed"].includes(request.status) && (
+      {/* Admin actions (for non-cancelled requests) */}
+      {userRole !== "requester" && !["cancelled"].includes(request.status) && (
         <Card>
           <CardContent className="p-4 flex flex-wrap gap-3">
-            {request.status === "submitted" && (
+            {request.status === "open" && (
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleStatusChange("pending_review")}
+                onClick={() => handleStatusChange("pending")}
                 disabled={isUpdatingStatus}
               >
                 Start Review
               </Button>
             )}
-            {["submitted", "pending_review", "on_hold", "needs_revision", "resubmitted"].includes(
-              request.status
-            ) && (
+            {["open", "pending"].includes(request.status) && (
               <>
                 <Button
                   size="sm"
-                  onClick={() => handleStatusChange("approved")}
+                  onClick={() => handleStatusChange("resolved")}
                   disabled={isUpdatingStatus}
                 >
-                  Approve
+                  Resolve
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => handleStatusChange("rejected")}
+                  onClick={() => handleStatusChange("cancelled")}
                   disabled={isUpdatingStatus}
                 >
-                  Reject
+                  Cancel
                 </Button>
-                {request.status !== "on_hold" && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleStatusChange("on_hold")}
-                    disabled={isUpdatingStatus}
-                  >
-                    Put On Hold
-                  </Button>
-                )}
               </>
             )}
-            {request.status === "approved" && (
+            {request.status === "resolved" && (
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => handleStatusChange("closed")}
+                onClick={() => handleStatusChange("pending")}
                 disabled={isUpdatingStatus}
               >
-                Close Request
+                Reopen
               </Button>
             )}
           </CardContent>

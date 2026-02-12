@@ -14,9 +14,14 @@ import {
 } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
-import { eq, desc, and, count, inArray, gte, lte } from "drizzle-orm";
+import { eq, desc, and, count, inArray, gte, lte, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z, ZodError } from "zod";
+import {
+  sendNewRequestNotification,
+  sendStatusChangeNotification,
+  sendRatingRequestEmail,
+} from "@/lib/email";
 
 // ============================================================================
 // Helpers
@@ -32,6 +37,19 @@ async function requireAppUser() {
   });
 }
 
+async function getAdminEmails(): Promise<string[]> {
+  const admins = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(
+      and(
+        or(eq(users.role, "admin"), eq(users.role, "superadmin")),
+        eq(users.approval_status, "approved"),
+      ),
+    );
+  return admins.map((a) => a.email);
+}
+
 // ============================================================================
 // Queries
 // ============================================================================
@@ -44,7 +62,7 @@ export async function getDashboardStats() {
       ? eq(requests.requester_id, appUser.id)
       : undefined;
 
-  const [totalResult, pendingResult, approvedResult, rejectedResult] =
+  const [totalResult, openResult, pendingResult, resolvedResult, cancelledResult] =
     await Promise.all([
       db
         .select({ count: count() })
@@ -55,32 +73,41 @@ export async function getDashboardStats() {
         .from(requests)
         .where(
           baseWhere
-            ? and(baseWhere, inArray(requests.status, ["submitted", "pending_review", "on_hold", "resubmitted"]))
-            : inArray(requests.status, ["submitted", "pending_review", "on_hold", "resubmitted"])
+            ? and(baseWhere, eq(requests.status, "open"))
+            : eq(requests.status, "open")
         ),
       db
         .select({ count: count() })
         .from(requests)
         .where(
           baseWhere
-            ? and(baseWhere, eq(requests.status, "approved"))
-            : eq(requests.status, "approved")
+            ? and(baseWhere, eq(requests.status, "pending"))
+            : eq(requests.status, "pending")
         ),
       db
         .select({ count: count() })
         .from(requests)
         .where(
           baseWhere
-            ? and(baseWhere, eq(requests.status, "rejected"))
-            : eq(requests.status, "rejected")
+            ? and(baseWhere, eq(requests.status, "resolved"))
+            : eq(requests.status, "resolved")
+        ),
+      db
+        .select({ count: count() })
+        .from(requests)
+        .where(
+          baseWhere
+            ? and(baseWhere, eq(requests.status, "cancelled"))
+            : eq(requests.status, "cancelled")
         ),
     ]);
 
   return {
     total: totalResult[0]?.count ?? 0,
+    open: openResult[0]?.count ?? 0,
     pending: pendingResult[0]?.count ?? 0,
-    approved: approvedResult[0]?.count ?? 0,
-    rejected: rejectedResult[0]?.count ?? 0,
+    resolved: resolvedResult[0]?.count ?? 0,
+    cancelled: cancelledResult[0]?.count ?? 0,
   };
 }
 
@@ -253,7 +280,7 @@ const createRequestSchema = z.object({
   priority: z.enum(["low", "medium", "high", "urgent"]),
   branch_id: z.string().uuid("Branch is required"),
   form_data: z.record(z.string(), z.unknown()),
-  status: z.enum(["draft", "submitted"]).default("draft"),
+  status: z.enum(["open"]).default("open"),
 });
 
 export async function createRequest(formData: {
@@ -262,7 +289,7 @@ export async function createRequest(formData: {
   priority: string;
   branch_id: string;
   form_data: Record<string, unknown>;
-  status?: "draft" | "submitted";
+  status?: "open";
 }) {
   const appUser = await requireAppUser();
 
@@ -287,7 +314,7 @@ export async function createRequest(formData: {
         branch_id: parsed.branch_id,
         requester_id: appUser.id,
         form_data: processedFormData,
-        status: parsed.status ?? "draft",
+        status: parsed.status ?? "open",
       })
       .returning({ id: requests.id, ticket_number: requests.ticket_number });
 
@@ -297,8 +324,20 @@ export async function createRequest(formData: {
     await db.insert(activityLogs).values({
       request_id: inserted.id,
       actor_id: appUser.id,
-      action: parsed.status === "submitted" ? "submitted" : "created",
-      new_status: parsed.status ?? "draft",
+      action: "created",
+      new_status: parsed.status ?? "open",
+    });
+
+    // Notify all admins via email (fire-and-forget)
+    const categoryMeta = CATEGORY_MAP[parsed.category];
+    getAdminEmails().then((adminEmails) => {
+      sendNewRequestNotification({
+        adminEmails,
+        requesterName: appUser.fullName ?? appUser.email,
+        requestTitle: parsed.title,
+        category: categoryMeta?.label ?? parsed.category,
+        requestId: inserted.id,
+      }).catch(() => {});
     });
 
     revalidatePath("/dashboard");
@@ -330,32 +369,22 @@ export async function updateRequestStatus(
   });
   if (!existing) throw new Error("Request not found");
 
-  // Only admins/superadmins can approve/reject; requesters can submit/cancel/resubmit
+  // Only admins/superadmins can resolve/cancel; requesters can reopen their own
   if (appUser.role === "requester") {
-    if (!["submitted", "draft", "resubmitted"].includes(newStatus)) {
+    if (!["open"].includes(newStatus)) {
       throw new Error("Insufficient permissions");
     }
     if (existing.requester_id !== appUser.id) {
       throw new Error("Not your request");
     }
-    // Requesters can only resubmit when status is needs_revision
-    if (newStatus === "resubmitted" && existing.status !== "needs_revision") {
-      throw new Error("Can only resubmit when revision is requested");
-    }
   }
 
-  // Transition validation for admin actions
+  // Transition validation
   const VALID_TRANSITIONS: Record<string, string[]> = {
-    draft: ["submitted"],
-    submitted: ["pending_review"],
-    pending_review: ["approved", "rejected", "on_hold", "needs_revision"],
-    reviewed: ["approved", "rejected", "on_hold", "needs_revision", "closed"],
-    on_hold: ["pending_review", "approved", "rejected", "needs_revision", "closed"],
-    needs_revision: ["resubmitted"],
-    resubmitted: ["pending_review"],
-    approved: ["closed", "pending_review"],
-    rejected: ["closed"],
-    closed: [],
+    open: ["pending", "cancelled"],
+    pending: ["open", "resolved", "cancelled"],
+    resolved: ["pending"],  // reopen
+    cancelled: [],           // terminal
   };
 
   const allowedNextStatuses = VALID_TRANSITIONS[existing.status];
@@ -372,10 +401,10 @@ export async function updateRequestStatus(
     .set({
       status: newStatus as Request["status"],
       updated_at: new Date(),
-      ...((newStatus === "rejected" || newStatus === "needs_revision") && comment
+      ...(newStatus === "cancelled" && comment
         ? { rejection_reason: comment }
         : {}),
-      ...(newStatus === "closed"
+      ...(newStatus === "resolved"
         ? { closed_at: new Date(), closed_by: appUser.id }
         : {}),
     })
@@ -394,19 +423,44 @@ export async function updateRequestStatus(
   // Notify requester if admin changed status
   if (appUser.id !== existing.requester_id) {
     const categoryMeta = CATEGORY_MAP[existing.category];
-    const statusLabel =
-      newStatus === "needs_revision" ? "sent back for revision" :
-        newStatus === "approved" ? "resolved" :
-          newStatus;
+    const statusLabel = newStatus;
     await db.insert(notifications).values({
       user_id: existing.requester_id,
       title: `Request ${statusLabel}`,
       message: `Your ${categoryMeta?.label ?? existing.category} request "${existing.title}" has been ${statusLabel}.`,
-      type: newStatus === "approved" ? "success" : newStatus === "rejected" ? "error" : "info",
+      type: newStatus === "resolved" ? "success" : newStatus === "cancelled" ? "error" : "info",
       link: `/dashboard/requests/${requestId}`,
       resource_id: requestId,
       resource_type: "request",
     });
+
+    // Email notification to requester (fire-and-forget)
+    db.select({ email: users.email, full_name: users.full_name })
+      .from(users)
+      .where(eq(users.id, existing.requester_id))
+      .limit(1)
+      .then((rows) => {
+        const requester = rows[0];
+        if (!requester) return;
+        sendStatusChangeNotification({
+          requesterEmail: requester.email,
+          requesterName: requester.full_name ?? requester.email,
+          requestTitle: existing.title,
+          newStatus,
+          comment,
+          requestId,
+        }).catch(() => {});
+
+        // Send rating request email when resolved
+        if (newStatus === "resolved") {
+          sendRatingRequestEmail({
+            requesterEmail: requester.email,
+            requesterName: requester.full_name ?? requester.email,
+            requestTitle: existing.title,
+            requestId,
+          }).catch(() => {});
+        }
+      });
   }
 
   // Also add to comments table if a comment was provided, so it appears in the discussion thread
@@ -528,8 +582,8 @@ export async function updateRequest(
     throw new Error("Insufficient permissions");
   }
 
-  // Requesters can only edit draft or needs_revision
-  if (isRequester && !["draft", "needs_revision"].includes(existing.status)) {
+  // Requesters can only edit open requests
+  if (isRequester && !["open"].includes(existing.status)) {
     throw new Error("Cannot edit request in current status");
   }
 

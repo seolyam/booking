@@ -14,11 +14,10 @@ import { RequestsFilter } from "@/components/dashboard/RequestsFilter";
 interface SuperadminDashboardProps {
   stats: {
     totalRequests: number;
-    pendingReview: number;
-    approved: number;
-    rejected: number;
-    onHold: number;
-    closed: number;
+    open: number;
+    pending: number;
+    resolved: number;
+    cancelled: number;
   };
   rows: RequestTableRow[];
   pendingUserCount: number;

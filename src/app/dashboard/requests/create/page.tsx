@@ -44,7 +44,7 @@ export default function CreateRequestPage() {
   };
 
   // No longer separate intermediate step handler.
-  const handleSubmit = async (values: Record<string, unknown>, asDraft: boolean) => {
+  const handleSubmit = async (values: Record<string, unknown>, _asDraft: boolean) => {
     if (!selectedCategory) return;
     setIsSubmitting(true);
     setFormValues(values); // Save for potential back navigation
@@ -56,7 +56,7 @@ export default function CreateRequestPage() {
         priority: (values.priority as string) || "medium",
         branch_id: values.branch_id as string,
         form_data: values,
-        status: asDraft ? "draft" : "submitted",
+        status: "open",
       });
 
       if (files.length > 0) {

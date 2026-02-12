@@ -47,16 +47,10 @@ export const requestCategoryEnum = pgEnum("request_category", [
 ]);
 
 export const requestStatusEnum = pgEnum("request_status", [
-  "draft",
-  "submitted",
-  "pending_review",
-  "reviewed",
-  "on_hold",
-  "needs_revision",
-  "resubmitted",
-  "approved",
-  "rejected",
-  "closed",
+  "open",
+  "pending",
+  "resolved",
+  "cancelled",
 ]);
 
 export const requestPriorityEnum = pgEnum("request_priority", [
@@ -150,7 +144,7 @@ export const requests = pgTable(
       .references(() => branches.id)
       .notNull(),
     category: requestCategoryEnum("category").notNull(),
-    status: requestStatusEnum("status").default("draft").notNull(),
+    status: requestStatusEnum("status").default("open").notNull(),
     priority: requestPriorityEnum("priority").default("medium").notNull(),
     form_data: jsonb("form_data").notNull().default({}),
     remarks: text("remarks"),
@@ -282,6 +276,43 @@ export const formConfigs = pgTable(
   }
 );
 
+export const visitorLogs = pgTable(
+  "visitor_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    company: text("company"),
+    contact_number: text("contact_number"),
+    purpose_of_visit: text("purpose_of_visit").notNull(),
+    time_in: timestamp("time_in", { withTimezone: true }).defaultNow().notNull(),
+    time_out: timestamp("time_out", { withTimezone: true }),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_visitor_logs_time_in").on(table.time_in),
+  ],
+);
+
+export const requestRatings = pgTable(
+  "request_ratings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    request_id: uuid("request_id")
+      .references(() => requests.id, { onDelete: "cascade" })
+      .notNull(),
+    rating: integer("rating").notNull(),
+    comments: text("comments"),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_request_ratings_request").on(table.request_id),
+  ],
+);
+
 // ============================================================================
 // Relations
 // ============================================================================
@@ -326,6 +357,7 @@ export const requestsRelations = relations(requests, ({ one, many }) => ({
   attachments: many(attachments),
   comments: many(comments),
   activityLogs: many(activityLogs),
+  ratings: many(requestRatings),
 }));
 
 export const attachmentsRelations = relations(attachments, ({ one }) => ({
@@ -368,6 +400,13 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   }),
 }));
 
+export const requestRatingsRelations = relations(requestRatings, ({ one }) => ({
+  request: one(requests, {
+    fields: [requestRatings.request_id],
+    references: [requests.id],
+  }),
+}));
+
 // ============================================================================
 // Type exports
 // ============================================================================
@@ -388,6 +427,10 @@ export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
 export type FormConfig = typeof formConfigs.$inferSelect;
 export type NewFormConfig = typeof formConfigs.$inferInsert;
+export type VisitorLog = typeof visitorLogs.$inferSelect;
+export type NewVisitorLog = typeof visitorLogs.$inferInsert;
+export type RequestRating = typeof requestRatings.$inferSelect;
+export type NewRequestRating = typeof requestRatings.$inferInsert;
 
 // ============================================================================
 // Category metadata
@@ -481,23 +524,16 @@ export const STATUS_CONFIG: Record<
   string,
   { label: string; variant: "success" | "warning" | "error" | "info" | "default" }
 > = {
-  draft: { label: "Draft", variant: "default" },
-  submitted: { label: "Open", variant: "info" },
-  pending_review: { label: "Pending", variant: "warning" },
-  reviewed: { label: "Reviewed", variant: "info" },
-  on_hold: { label: "On Hold", variant: "warning" },
-  needs_revision: { label: "Needs Revision", variant: "warning" },
-  resubmitted: { label: "Resubmitted", variant: "info" },
-  approved: { label: "Resolved", variant: "success" },
-  rejected: { label: "Rejected", variant: "error" },
-  closed: { label: "Closed", variant: "default" },
+  open: { label: "Open", variant: "info" },
+  pending: { label: "Pending", variant: "warning" },
+  resolved: { label: "Resolved", variant: "success" },
+  cancelled: { label: "Cancelled", variant: "default" },
 };
 
 // Workflow steps for progress display
 export const WORKFLOW_STEPS = [
   "Created",
-  "Submitted",
-  "Pending Review",
-  "Approved",
-  "Closed",
+  "Open",
+  "Pending",
+  "Resolved",
 ];

@@ -10,13 +10,13 @@ export default function ReopenButton({ requestId }: { requestId: string }) {
     const router = useRouter();
 
     const handleReopen = () => {
-        if (!confirm("Are you sure you want to reopen this request? It will be set to 'Pending Review'.")) {
+        if (!confirm("Are you sure you want to reopen this request? It will be set to 'Pending'.")) {
             return;
         }
 
         startTransition(async () => {
             try {
-                await updateRequestStatus(requestId, "pending_review", "Request reopened by admin");
+                await updateRequestStatus(requestId, "pending", "Request reopened by admin");
                 router.refresh();
             } catch (error) {
                 console.error("Failed to reopen request:", error);
