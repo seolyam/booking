@@ -17,11 +17,11 @@ async function main() {
   const db = drizzle(client, { schema });
 
   const branchData = [
-    { name: "Main Office", code: "MAIN", address: "123 Corporate Blvd" },
-    { name: "North Branch", code: "NTH", address: "456 North St" },
-    { name: "South Branch", code: "STH", address: "789 South Ave" },
-    { name: "East Branch", code: "EST", address: "321 East Rd" },
-    { name: "West Branch", code: "WST", address: "654 West Ln" },
+    { name: "Prime Electric", code: "MAIN", address: "Philippines" },
+    { name: "Negros Power", code: "NGP", address: "Negros Occidental" },
+    { name: "MORE Power", code: "MOR", address: "Iloilo" },
+    { name: "Bohol Light", code: "BHL", address: "Bohol" },
+    { name: "Ignite Power", code: "IGP", address: "Mindanao" },
   ];
 
   console.log("Inserting branches...");
