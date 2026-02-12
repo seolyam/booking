@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import {
     Dialog,
@@ -11,7 +11,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { STATUS_CONFIG, CATEGORIES } from "@/db/schema";
+import { CATEGORIES } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 const DATE_PRESETS = [
@@ -51,16 +51,16 @@ export function RequestsFilter() {
 
     const [open, setOpen] = useState(false);
 
-    // Sync state with URL when opening dialog
-    useEffect(() => {
-        if (open) {
+    const handleOpenChange = (newOpen: boolean) => {
+        if (newOpen) {
             setDateFilter(searchParams.get("datePreset") || "all");
             const s = searchParams.getAll("status");
             setSelectedStatuses(s.length === 0 || s.includes("all") ? ["all"] : s);
             const c = searchParams.getAll("category");
             setSelectedCategories(c.length === 0 || c.includes("all") ? ["all"] : c);
         }
-    }, [open, searchParams]);
+        setOpen(newOpen);
+    };
 
     const handleStatusToggle = (val: string) => {
         if (val === "all") {
@@ -129,9 +129,9 @@ export function RequestsFilter() {
     }, [dateFilter, selectedStatuses, selectedCategories]);
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className={cn("h-10 w-10 relative bg-white hover:bg-gray-50", activeCount > 0 && "border-green-500 text-green-600 bg-green-50 hover:bg-green-100")}>
+                <Button variant="outline" size="icon" className={cn("h-10 w-10 relative bg-white hover:bg-gray-50 border-gray-200 text-gray-500", activeCount > 0 && "border-green-500 text-green-600 bg-green-50 hover:bg-green-100")}>
                     <Filter className="h-4 w-4" />
                     {activeCount > 0 && (
                         <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white" />

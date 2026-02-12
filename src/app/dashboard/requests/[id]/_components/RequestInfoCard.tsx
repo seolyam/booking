@@ -2,16 +2,48 @@
 
 import { cn } from "@/lib/utils";
 import { MapPin, Building2, Ban, MessageSquare } from "lucide-react";
-import {
-    CATEGORY_MAP,
-} from "@/db/schema";
+import dynamic from "next/dynamic";
 import type { Request, Comment } from "@/db/schema";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
-import ExportButton from "./ExportButton";
+
+const ExportButton = dynamic(() => import("./ExportButton"), { ssr: false });
+
+// Form Data Types
+interface FlightFormData {
+    departure_from?: string;
+    destination?: string;
+    airline?: string;
+    travel_class?: string;
+    departure_date?: string;
+    return_date?: string;
+    number_of_passengers?: number;
+    passenger_name?: string;
+    purpose_of_travel?: string;
+}
+
+interface HotelFormData {
+    hotel_name?: string;
+    hotel_address?: string;
+    check_in_date?: string;
+    check_out_date?: string;
+    number_of_guests?: number;
+    number_of_rooms?: number;
+    guest_names?: string;
+    purpose_of_stay?: string;
+}
+
+interface MealsFormData {
+    event_name?: string;
+    venue?: string;
+    meal_date?: string;
+    meal_time?: string;
+    number_of_pax?: number;
+    meal_type?: string;
+    special_requests?: string;
+}
 
 // Form Data Helpers
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function InfoCard({ label, value, className }: { label: string; value: any; className?: string }) {
+function InfoCard({ label, value, className }: { label: string; value: string | number | null | undefined; className?: string }) {
     if (value === null || value === undefined || value === "") return <div className={cn("flex flex-col", className)}><span className="text-xs text-gray-500 mb-1">{label}</span><span className="text-base font-semibold text-gray-900">—</span></div>;
     return (
         <div className={cn("flex flex-col", className)}>
@@ -21,8 +53,7 @@ function InfoCard({ label, value, className }: { label: string; value: any; clas
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function FlightDetails({ data }: { data: any }) {
+function FlightDetails({ data }: { data: FlightFormData }) {
     return (
         <div className="space-y-6">
             <div className="flex items-start gap-3">
@@ -48,8 +79,7 @@ function FlightDetails({ data }: { data: any }) {
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function HotelDetails({ data }: { data: any }) {
+function HotelDetails({ data }: { data: HotelFormData }) {
     return (
         <div className="space-y-8">
             {/* Title & Location */}
@@ -94,8 +124,7 @@ function HotelDetails({ data }: { data: any }) {
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MealsDetails({ data }: { data: any }) {
+function MealsDetails({ data }: { data: MealsFormData }) {
     return (
         <div className="space-y-6">
             <div className="flex items-start gap-3">
@@ -121,15 +150,14 @@ function MealsDetails({ data }: { data: any }) {
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function DefaultDetails({ data }: { data: any }) {
+function DefaultDetails({ data }: { data: Record<string, unknown> }) {
     return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {Object.entries(data).map(([key, value]) => (
                 <InfoCard
                     key={key}
                     label={key.replace(/_/g, " ")}
-                    value={value}
+                    value={value as string | number | null | undefined}
                 />
             ))}
         </div>
@@ -150,8 +178,8 @@ interface RequestInfoCardProps {
 }
 
 export default function RequestInfoCard({ request, hideComments = false }: RequestInfoCardProps) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const formData = request.form_data as any;
+    const formData = (request.form_data as Record<string, unknown>) ?? {};
+    const budget = (formData.allocated_budget ?? formData.budget ?? formData.total_budget) as string | number | null | undefined;
 
     return (
         <div id="request-printable-area" className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm ring-1 ring-gray-100 h-full">
@@ -175,7 +203,7 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         <InfoCard label="Requester" value={request.requester.full_name || request.requester.email} className="items-center md:items-start text-center md:text-left" />
                         <InfoCard label="Branch" value={request.branch?.name || "Main Branch"} className="items-center md:items-start text-center md:text-left" />
-                        <InfoCard label="Budget" value={formatCurrency(formData.allocated_budget || formData.budget || formData.total_budget)} className="items-center md:items-start text-center md:text-left" />
+                        <InfoCard label="Budget" value={formatCurrency(budget)} className="items-center md:items-start text-center md:text-left" />
                         <InfoCard label="Created" value={formatDateShort(request.created_at)} className="items-center md:items-start text-center md:text-left" />
                     </div>
                 </div>
@@ -183,11 +211,11 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
                 {/* Category Details (Dynamic) */}
                 <div className="px-1">
                     {request.category === "flight_booking" ? (
-                        <FlightDetails data={formData} />
+                        <FlightDetails data={formData as FlightFormData} />
                     ) : request.category === "hotel_accommodation" ? (
-                        <HotelDetails data={formData} />
+                        <HotelDetails data={formData as HotelFormData} />
                     ) : request.category === "meals" ? (
-                        <MealsDetails data={formData} />
+                        <MealsDetails data={formData as MealsFormData} />
                     ) : (
                         <DefaultDetails data={formData} />
                     )}

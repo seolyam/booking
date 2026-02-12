@@ -2,7 +2,7 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { users, requests } from "@/db/schema";
-import { eq, or, and } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import Link from "next/link";
 import ApprovalsTabs from "./_components/ApprovalsTabs";
 import UserApprovalsList from "./_components/UserApprovalsList";

@@ -9,7 +9,6 @@ import { createRequest, saveAttachments } from "@/actions/request";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { CategorySelect } from "./_components/CategorySelect";
 import { RequestForm } from "./_components/RequestForm";
-import { DocumentUpload } from "./_components/DocumentUpload";
 import SuccessModal from "@/components/SuccessModal";
 
 const STEPS = [
@@ -27,7 +26,6 @@ export default function CreateRequestPage() {
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
 
@@ -49,7 +47,6 @@ export default function CreateRequestPage() {
   const handleSubmit = async (values: Record<string, unknown>, asDraft: boolean) => {
     if (!selectedCategory) return;
     setIsSubmitting(true);
-    setError(null);
     setFormValues(values); // Save for potential back navigation
 
     try {
@@ -99,7 +96,7 @@ export default function CreateRequestPage() {
       setNewRequestId(result.id);
       setShowSuccessModal(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create request");
+      console.error(err instanceof Error ? err.message : "Failed to create request");
       setIsSubmitting(false);
     }
   };

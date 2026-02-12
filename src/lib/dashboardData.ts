@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { requests, users, adminBranches } from "@/db/schema";
+import { requests, users, adminBranches, requestStatusEnum, requestCategoryEnum } from "@/db/schema";
 import { desc, eq, inArray, gte, lte, and } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
@@ -49,10 +49,10 @@ export async function getRequesterDashboardData(
       const conditions = [eq(requests.requester_id, userId)];
 
       if (filters?.status && filters.status.length > 0 && !filters.status.includes("all")) {
-        conditions.push(inArray(requests.status, filters.status as any[]));
+        conditions.push(inArray(requests.status, filters.status as (typeof requestStatusEnum.enumValues[number])[]));
       }
       if (filters?.category && filters.category.length > 0 && !filters.category.includes("all")) {
-        conditions.push(inArray(requests.category, filters.category as any[]));
+        conditions.push(inArray(requests.category, filters.category as (typeof requestCategoryEnum.enumValues[number])[]));
       }
       if (filters?.dateRange?.from) {
         conditions.push(gte(requests.created_at, filters.dateRange.from));
@@ -97,10 +97,10 @@ export async function getSuperadminDashboardData(
       const conditions = [];
 
       if (filters?.status && filters.status.length > 0 && !filters.status.includes("all")) {
-        conditions.push(inArray(requests.status, filters.status as any[]));
+        conditions.push(inArray(requests.status, filters.status as (typeof requestStatusEnum.enumValues[number])[]));
       }
       if (filters?.category && filters.category.length > 0 && !filters.category.includes("all")) {
-        conditions.push(inArray(requests.category, filters.category as any[]));
+        conditions.push(inArray(requests.category, filters.category as (typeof requestCategoryEnum.enumValues[number])[]));
       }
       if (filters?.dateRange?.from) {
         conditions.push(gte(requests.created_at, filters.dateRange.from));
@@ -181,10 +181,10 @@ export async function getAdminDashboardData(
       const conditions = [inArray(requests.branch_id, branchIds)];
 
       if (filters?.status && filters.status.length > 0 && !filters.status.includes("all")) {
-        conditions.push(inArray(requests.status, filters.status as any[]));
+        conditions.push(inArray(requests.status, filters.status as (typeof requestStatusEnum.enumValues[number])[]));
       }
       if (filters?.category && filters.category.length > 0 && !filters.category.includes("all")) {
-        conditions.push(inArray(requests.category, filters.category as any[]));
+        conditions.push(inArray(requests.category, filters.category as (typeof requestCategoryEnum.enumValues[number])[]));
       }
       if (filters?.dateRange?.from) {
         conditions.push(gte(requests.created_at, filters.dateRange.from));
