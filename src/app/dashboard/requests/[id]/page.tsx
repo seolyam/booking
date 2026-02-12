@@ -6,9 +6,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  AlertCircle,
   FileText,
-  Archive,
   MapPin,
   Building2,
   Pencil,
@@ -83,12 +81,12 @@ function actionLabel(action: string) {
     status_changed: "Status Updated",
     comment_added: "Comment Added",
     file_uploaded: "File Uploaded",
-    approved: "Resolved",
-    rejected: "Rejected",
-    closed: "Closed",
+    approved: "Approved",
+    rejected: "Cancelled",
     reopened: "Reopened",
-    reviewed: "Reviewed",
-    needs_revision: "Revision Requested",
+    resolved: "Resolved",
+    cancelled: "Cancelled",
+    pending: "Moved to Pending",
   };
   // Handle dynamic status change labels
   if (action.startsWith("status_changed_to_")) {

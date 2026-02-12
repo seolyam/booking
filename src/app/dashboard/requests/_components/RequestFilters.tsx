@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORIES } from "@/db/schema";
+import { CATEGORIES, STATUS_CONFIG } from "@/db/schema";
 
 export function RequestFilters({
   currentStatus,
@@ -41,15 +41,11 @@ export function RequestFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="draft">Draft</SelectItem>
-          <SelectItem value="submitted">Submitted</SelectItem>
-          <SelectItem value="pending_review">Pending Review</SelectItem>
-          <SelectItem value="on_hold">On Hold</SelectItem>
-          <SelectItem value="needs_revision">Needs Revision</SelectItem>
-          <SelectItem value="resubmitted">Resubmitted</SelectItem>
-          <SelectItem value="approved">Approved</SelectItem>
-          <SelectItem value="rejected">Rejected</SelectItem>
-          <SelectItem value="closed">Closed</SelectItem>
+          {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+            <SelectItem key={key} value={key}>
+              {config.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

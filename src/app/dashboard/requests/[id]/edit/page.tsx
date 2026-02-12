@@ -35,8 +35,8 @@ export default async function EditRequestPage({ params }: { params: { id: string
         redirect("/dashboard/requests"); // Not authorized
     }
 
-    // Requester validation: can only edit draft or needs_revision
-    if (isRequester && !["draft", "needs_revision"].includes(request.status)) {
+    // Requester validation: can only edit while still open
+    if (isRequester && request.status !== "open") {
         redirect(`/dashboard/requests/${id}`); // Cannot edit
     }
 

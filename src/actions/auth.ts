@@ -1,8 +1,9 @@
 "use server";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, getAuthUser } from "@/lib/supabase/server";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, branches, visitorLogs } from "@/db/schema";
+import { eq, and, isNull, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -89,7 +90,7 @@ export async function signIn(email: string, password: string) {
 
   const supabase = await createSupabaseServerClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
     email: validated.data.email,
     password: validated.data.password,
   });
@@ -98,11 +99,77 @@ export async function signIn(email: string, password: string) {
     return { error: error.message };
   }
 
+  // Auto-insert visitor log on successful login
+  try {
+    const userId = authData.user?.id;
+    if (userId) {
+      const appUser = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      let branchName: string | null = null;
+      if (appUser?.branch_id) {
+        const branch = await db.query.branches.findFirst({
+          where: eq(branches.id, appUser.branch_id),
+          columns: { name: true },
+        });
+        branchName = branch?.name ?? null;
+      }
+
+      await db.insert(visitorLogs).values({
+        name: appUser?.full_name || validated.data.email,
+        company: branchName || appUser?.department || null,
+        contact_number: "N/A",
+        purpose_of_visit: "System Access",
+      });
+    }
+  } catch {
+    // Don't block login if visitor log insertion fails
+  }
+
   redirect("/dashboard");
 }
 
 export async function signOut() {
   const supabase = await createSupabaseServerClient();
+
+  // Auto-set time_out on the most recent open visitor log for this user
+  try {
+    const authUser = await getAuthUser();
+    if (authUser) {
+      const appUser = await db.query.users.findFirst({
+        where: eq(users.id, authUser.id),
+      });
+
+      const displayName = appUser?.full_name || authUser.email || "";
+
+      if (displayName) {
+        // Find the most recent open log for this user (name match + "System Access" + no time_out)
+        const openLog = await db
+          .select({ id: visitorLogs.id })
+          .from(visitorLogs)
+          .where(
+            and(
+              eq(visitorLogs.name, displayName),
+              eq(visitorLogs.purpose_of_visit, "System Access"),
+              isNull(visitorLogs.time_out),
+            ),
+          )
+          .orderBy(desc(visitorLogs.time_in))
+          .limit(1);
+
+        if (openLog[0]) {
+          await db
+            .update(visitorLogs)
+            .set({ time_out: new Date() })
+            .where(eq(visitorLogs.id, openLog[0].id));
+        }
+      }
+    }
+  } catch {
+    // Don't block logout if visitor log update fails
+  }
+
   await supabase.auth.signOut();
   redirect("/login");
 }
