@@ -8,7 +8,6 @@ import {
   Clock,
   AlertCircle,
   FileText,
-  Ban,
   Archive,
   MapPin,
   Building2,
@@ -22,8 +21,7 @@ import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
 } from "./_components/WorkflowProgress";
-import { cn } from "@/lib/utils";
-import ApprovalActions from "./_components/ApprovalActions";
+import { cn, formatDateShort } from "@/lib/utils";
 import AttachmentHandler from "./_components/AttachmentHandler";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
@@ -41,22 +39,6 @@ export const dynamic = "force-dynamic";
 // ============================================================================
 // Helpers
 // ============================================================================
-
-function formatDateShort(input: Date | string) {
-  const d = new Date(input);
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = String(d.getFullYear());
-  return `${mm}-${dd}-${yyyy}`;
-}
-
-function formatCurrency(amount: number | string | null | undefined) {
-  if (!amount) return "—";
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(Number(amount));
-}
 
 function statusMeta(status: string) {
   switch (status) {
@@ -180,125 +162,6 @@ function computeSteps(status: string): WorkflowStep[] {
 }
 
 // ============================================================================
-// Form Data Renderers
-// ============================================================================
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function InfoCard({ label, value }: { label: string; value: any }) {
-  if (value === null || value === undefined || value === "") return <div className="flex flex-col"><span className="text-xs text-gray-400">{label}</span><span className="text-sm font-medium text-gray-900">—</span></div>;
-  return (
-    <div className="flex flex-col">
-      <span className="text-xs text-gray-500 mb-1">{label}</span>
-      <span className="text-sm font-semibold text-gray-900 break-words">{String(value)}</span>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function FlightDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.departure_from} → {data.destination}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.airline || "Any Airline"} • {data.travel_class}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Departure" value={data.departure_date} />
-        <InfoCard label="Return" value={data.return_date || "One-way"} />
-        <InfoCard label="Passengers" value={data.number_of_passengers} />
-        <InfoCard label="Passenger Name" value={data.passenger_name} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <span className="text-xs text-gray-500 block mb-2">Purpose of Travel</span>
-        <p className="text-sm text-gray-900">{data.purpose_of_travel}</p>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function HotelDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.hotel_name}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.hotel_address}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Check-in" value={data.check_in_date} />
-        <InfoCard label="Check-out" value={data.check_out_date} />
-        <InfoCard label="Guests" value={data.number_of_guests} />
-        <InfoCard label="Rooms" value={data.number_of_rooms} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <span className="text-xs text-gray-500 block mb-2">Name of guest(s)</span>
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">{data.guest_names}</p>
-          </div>
-          <div>
-            <span className="text-xs text-gray-500 block mb-2">Purpose of stay</span>
-            <p className="text-sm text-gray-900">{data.purpose_of_stay}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MealsDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.event_name}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.venue}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Date" value={data.meal_date} />
-        <InfoCard label="Time" value={data.meal_time} />
-        <InfoCard label="Pax" value={data.number_of_pax} />
-        <InfoCard label="Type" value={data.meal_type} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <span className="text-xs text-gray-500 block mb-2">Special Requests</span>
-        <p className="text-sm text-gray-900">{data.special_requests || "None"}</p>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function DefaultDetails({ data }: { data: any }) {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-      {Object.entries(data).map(([key, value]) => (
-        <InfoCard
-          key={key}
-          label={key.replace(/_/g, " ")}
-          value={value}
-        />
-      ))}
-    </div>
-  );
-}
-
-// ============================================================================
 // Main Page
 // ============================================================================
 
@@ -315,13 +178,16 @@ export default async function RequestDetailPage({
   const user = await getAuthUser();
   if (!user) redirect("/login");
 
-  const appUser = await getOrCreateAppUserFromAuthUser({
-    id: user.id,
-    email: user.email ?? null,
-    user_metadata: (user.user_metadata ?? null) as Record<string, unknown> | null,
-  });
+  // Parallelize independent data fetches
+  const [appUser, request] = await Promise.all([
+    getOrCreateAppUserFromAuthUser({
+      id: user.id,
+      email: user.email ?? null,
+      user_metadata: (user.user_metadata ?? null) as Record<string, unknown> | null,
+    }),
+    getRequestById(id),
+  ]);
 
-  const request = await getRequestById(id);
   if (!request) notFound();
 
   // Permissions Check & Auto-Transition

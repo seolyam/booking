@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   OverviewSection,
@@ -58,15 +59,23 @@ export default function SuperadminDashboard({
               value="requests"
               className="p-4 md:p-8 space-y-6 md:space-y-8"
             >
-              <div className="flex flex-col gap-4">
-                <h2 className="text-xl font-bold text-gray-900">Recent Requests</h2>
-                <div className="flex items-center">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold text-gray-900">Recent Requests</h2>
                   <RequestsFilter />
                 </div>
+                <Link href="/dashboard/admin/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">
+                  View all
+                </Link>
               </div>
               <AllRequestsTabContent
                 rows={rows}
               />
+              <div className="mt-6 flex justify-end md:hidden">
+                <Link href="/dashboard/admin/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4">
+                  View all
+                </Link>
+              </div>
             </TabsContent>
 
             {/* Users Tab */}

@@ -91,8 +91,8 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { name: "start_time", label: "Start Time", type: "time", required: true },
     { name: "end_time", label: "End Time", type: "time", required: true },
     { name: "number_of_attendees", label: "Number of Attendees", type: "number", required: true },
-    { name: "purpose", label: "Purpose", type: "textarea", required: true },
     { name: "equipment_needed", label: "Equipment Needed", type: "textarea", placeholder: "Projector, whiteboard, etc." },
+    { name: "purpose", label: "Purpose", type: "textarea", required: true },
   ],
   business_permits: [
     { name: "permit_type", label: "Permit Type", type: "text", required: true },
@@ -126,8 +126,8 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { name: "unit_cost", label: "Unit Cost (estimated)", type: "number" },
     { name: "total_budget", label: "Total Budget", type: "number" },
     { name: "date_needed", label: "Date Needed", type: "date", required: true },
-    { name: "justification", label: "Justification / Purpose", type: "textarea", required: true },
     { name: "vendor_name", label: "Preferred Vendor", type: "text" },
+    { name: "justification", label: "Justification / Purpose", type: "textarea", required: true },
   ],
 };
 
@@ -520,7 +520,6 @@ export function RequestForm({
           {/* Document Upload Section */}
           <div className="pt-6 border-t border-gray-100">
             <DocumentUpload
-              category={category}
               requiredPdfs={requiredPdfs}
               files={files}
               onFilesChange={onFilesChange}

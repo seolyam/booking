@@ -33,9 +33,7 @@ export default async function RequestsPage({
     if (datePreset === "yesterday") {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
-      const endYesterday = new Date(today); // Today 00:00 is end of yesterday loosely if considering < today, or use detailed 23:59
       // Simply: [yesterday 00:00, today 00:00]
-      dateRange = { from: yesterday, to: today }; // to is exclusive logic usually? But logic is lte. so set to 23:59:59
       const yEnd = new Date(yesterday);
       yEnd.setHours(23, 59, 59, 999);
       dateRange = { from: yesterday, to: yEnd };

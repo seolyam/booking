@@ -79,7 +79,7 @@ export function RequestsListClient(props: {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const [query, setQuery] = useState(props.initialQuery ?? "");
   const deferredQuery = useDeferredValue(query);
@@ -95,7 +95,7 @@ export function RequestsListClient(props: {
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`);
     });
-  }, [deferredQuery, pathname, router]); // searchParams omitted to avoid loop, we just use it for init
+  }, [deferredQuery, pathname, router, searchParams]);
 
   // Use props.rows directly as they are already filtered by the server
   const filteredRows = props.rows;
