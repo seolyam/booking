@@ -21,114 +21,14 @@ import { cn } from "@/lib/utils";
 
 type Branch = { id: string; name: string; code: string };
 
-// Dynamic form field definitions per category
-type FieldDef = {
+// fieldDefs passed as prop
+export type FieldDef = {
   name: string;
   label: string;
-  type: "text" | "date" | "number" | "textarea" | "select" | "time";
+  type: "text" | "date" | "number" | "textarea" | "select" | "time" | "email" | "checkbox";
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string }[];
-};
-
-const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
-  flight_booking: [
-    { name: "passenger_name", label: "Passenger Name", type: "text", required: true },
-    { name: "departure_from", label: "Departure From", type: "text", required: true },
-    { name: "destination", label: "Destination", type: "text", required: true },
-    { name: "departure_date", label: "Departure Date", type: "date", required: true },
-    { name: "return_date", label: "Return Date", type: "date" },
-    { name: "number_of_passengers", label: "Number of Passengers", type: "number", required: true },
-    {
-      name: "travel_class", label: "Travel Class", type: "select", options: [
-        { label: "Economy", value: "economy" },
-        { label: "Business", value: "business" },
-        { label: "First Class", value: "first_class" },
-      ]
-    },
-    { name: "allocated_budget", label: "Allocated Budget", type: "number", placeholder: "e.g. 50000" },
-    { name: "purpose_of_travel", label: "Purpose of Travel", type: "textarea", required: true },
-  ],
-  hotel_accommodation: [
-    { name: "hotel_name", label: "Hotel Name", type: "text" },
-    { name: "hotel_address", label: "Hotel Address", type: "text" },
-    { name: "check_in_date", label: "Check-in Date", type: "date", required: true },
-    { name: "check_out_date", label: "Check-out Date", type: "date", required: true },
-    { name: "number_of_rooms", label: "Number of Rooms", type: "number", required: true },
-    { name: "number_of_guests", label: "Number of Guests", type: "number", required: true },
-    { name: "guest_names", label: "Guest Names", type: "textarea", placeholder: "One name per line" },
-    { name: "allocated_budget", label: "Allocated Budget", type: "number", placeholder: "e.g. 25000" },
-    { name: "purpose_of_stay", label: "Purpose of Stay", type: "textarea", required: true },
-  ],
-  meals: [
-    { name: "event_name", label: "Event / Occasion", type: "text", required: true },
-    { name: "meal_date", label: "Date", type: "date", required: true },
-    { name: "meal_time", label: "Time", type: "time" },
-    { name: "number_of_pax", label: "Number of Pax", type: "number", required: true },
-    { name: "venue", label: "Venue / Restaurant", type: "text" },
-    {
-      name: "meal_type", label: "Meal Type", type: "select", options: [
-        { label: "Breakfast", value: "breakfast" },
-        { label: "Lunch", value: "lunch" },
-        { label: "Dinner", value: "dinner" },
-        { label: "Snacks / Refreshments", value: "snacks" },
-      ]
-    },
-    {
-      name: "serving_style", label: "Serving Style", type: "select", options: [
-        { label: "Plated", value: "plated" },
-        { label: "Buffet", value: "buffet" },
-        { label: "Packed / Bento", value: "packed" },
-        { label: "Snacks", value: "snacks" },
-      ]
-    },
-    { name: "allocated_budget", label: "Allocated Budget", type: "number" },
-    { name: "special_requests", label: "Special Requests / Dietary", type: "textarea" },
-  ],
-  room_reservation: [
-    { name: "room_name", label: "Room / Space", type: "text", required: true },
-    { name: "reservation_date", label: "Date", type: "date", required: true },
-    { name: "start_time", label: "Start Time", type: "time", required: true },
-    { name: "end_time", label: "End Time", type: "time", required: true },
-    { name: "number_of_attendees", label: "Number of Attendees", type: "number", required: true },
-    { name: "equipment_needed", label: "Equipment Needed", type: "textarea", placeholder: "Projector, whiteboard, etc." },
-    { name: "purpose", label: "Purpose", type: "textarea", required: true },
-  ],
-  business_permits: [
-    { name: "permit_type", label: "Permit Type", type: "text", required: true },
-    { name: "business_name", label: "Business Name", type: "text", required: true },
-    { name: "business_address", label: "Business Address", type: "text", required: true },
-    { name: "application_date", label: "Application Date", type: "date", required: true },
-    { name: "expiry_date", label: "Expiry Date", type: "date" },
-    { name: "remarks", label: "Remarks / Notes", type: "textarea" },
-  ],
-  radio_licenses: [
-    { name: "license_type", label: "License Type", type: "text", required: true },
-    { name: "equipment_description", label: "Equipment Description", type: "text", required: true },
-    { name: "frequency_range", label: "Frequency Range", type: "text" },
-    { name: "location", label: "Installation Location", type: "text", required: true },
-    { name: "application_date", label: "Application Date", type: "date", required: true },
-    { name: "expiry_date", label: "Expiry Date", type: "date" },
-    { name: "remarks", label: "Remarks / Notes", type: "textarea" },
-  ],
-  work_permit: [
-    { name: "worker_name", label: "Worker Name", type: "text", required: true },
-    { name: "worker_position", label: "Worker Position", type: "text", required: true },
-    { name: "work_location", label: "Work Location", type: "text", required: true },
-    { name: "start_date", label: "Start Date", type: "date", required: true },
-    { name: "end_date", label: "End Date", type: "date", required: true },
-    { name: "permit_type", label: "Permit Type", type: "text" },
-    { name: "remarks", label: "Remarks / Notes", type: "textarea" },
-  ],
-  equipments_assets: [
-    { name: "item_description", label: "Item Description", type: "text", required: true },
-    { name: "quantity", label: "Quantity", type: "number", required: true },
-    { name: "unit_cost", label: "Unit Cost (estimated)", type: "number" },
-    { name: "total_budget", label: "Total Budget", type: "number" },
-    { name: "date_needed", label: "Date Needed", type: "date", required: true },
-    { name: "vendor_name", label: "Preferred Vendor", type: "text" },
-    { name: "justification", label: "Justification / Purpose", type: "textarea", required: true },
-  ],
 };
 
 // Helper to convert 12h format (e.g. "02:30 PM") to 24h format (e.g. "14:30") for <input type="time">
@@ -179,6 +79,7 @@ export function RequestForm({
   isSubmitting,
   existingAttachmentsCount,
   submitLabel,
+  fields = [],
 }: {
   category: CategoryMeta;
   initialValues: Record<string, unknown>;
@@ -191,8 +92,9 @@ export function RequestForm({
   isSubmitting: boolean;
   existingAttachmentsCount?: number;
   submitLabel?: string;
+  fields?: FieldDef[];
 }) {
-  const fields = CATEGORY_FIELDS[category.key] ?? [];
+  // fields prop is now the source of truth
 
   // Initialize values, converting any 12h time strings back to 24h for the inputs
   const [values, setValues] = useState<Record<string, unknown>>(() => {

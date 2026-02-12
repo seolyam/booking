@@ -1,6 +1,6 @@
-import { CATEGORY_MAP, REQUIRED_PDFS, type CategoryMeta } from "@/db/schema";
+import { CATEGORY_MAP, REQUIRED_PDFS } from "@/db/schema";
 import { getFormConfig } from "@/actions/form-config";
-import { ConfigForm } from "./_components/ConfigForm";
+import { FormBuilder } from "../_components/FormBuilder";
 import { notFound, redirect } from "next/navigation";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
@@ -24,17 +24,30 @@ export default async function ManageFormCategoryPage({
         redirect("/dashboard");
     }
 
-    const category = CATEGORY_MAP[categoryKey];
-    if (!category) return notFound();
-
     const config = await getFormConfig(categoryKey);
-    const defaultPdfs = REQUIRED_PDFS[categoryKey] ?? [];
+
+    // If no config found in DB, check if it's a hardcoded category
+    const hardcodedCategory = CATEGORY_MAP[categoryKey];
+
+    if (!config && !hardcodedCategory) {
+        return notFound();
+    }
+
+    // Merge hardcoded defaults if config is missing some fields
+    const initialData = config || {
+        category_key: categoryKey,
+        category_label: hardcodedCategory?.label || categoryKey,
+        description: hardcodedCategory?.description || "",
+        icon_key: hardcodedCategory?.icon || "FileText",
+        is_active: true,
+        required_pdfs: REQUIRED_PDFS[categoryKey] ?? [],
+        fields: [],
+    };
 
     return (
-        <ConfigForm
-            category={category}
-            initialData={config}
-            defaultPdfs={defaultPdfs}
+        <FormBuilder
+            initialData={initialData}
+            mode="edit"
         />
     );
 }
