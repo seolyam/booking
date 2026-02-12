@@ -38,6 +38,11 @@ export function adminNav(): NavSection[] {
         },
 
         {
+          key: "visitor_logs",
+          label: "Visitor Logs",
+          href: "/dashboard/admin/visitor-logs",
+        },
+        {
           key: "manage_forms",
           label: "Manage Forms",
           href: "/dashboard/manage-forms",
