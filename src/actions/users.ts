@@ -3,31 +3,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@/db";
 import { users, branches, notifications } from "@/db/schema";
-import { getAuthUser } from "@/lib/supabase/server";
-import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { eq, and, or, ilike, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
-// ---------------------------------------------------------------------------
-// Auth helpers
-// ---------------------------------------------------------------------------
-
-async function requireSuperadmin() {
-  const authUser = await getAuthUser();
-  if (!authUser) throw new Error("Not authenticated");
-
-  const appUser = await getOrCreateAppUserFromAuthUser({
-    id: authUser.id,
-    email: authUser.email ?? null,
-    user_metadata: authUser.user_metadata ?? null,
-  });
-
-  if (appUser.role !== "superadmin") {
-    throw new Error("Unauthorized: Superadmin access required");
-  }
-  return appUser;
-}
+import { requireSuperadmin } from "@/lib/auth";
 
 /**
  * Creates a Supabase Admin client using the service role key.

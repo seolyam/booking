@@ -2,7 +2,7 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { users, requests } from "@/db/schema";
-import { eq, or, and } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import Link from "next/link";
 import ApprovalsTabs from "./_components/ApprovalsTabs";
 import UserApprovalsList from "./_components/UserApprovalsList";
@@ -26,37 +26,38 @@ export default async function AdminApprovalsPage() {
     redirect("/dashboard");
   }
 
-  // Fetch pending/rejected users ONLY if superadmin
-  let pendingUsers: Awaited<ReturnType<typeof db.query.users.findMany>> = [];
-  if (appUser.role === "superadmin") {
-    pendingUsers = await db.query.users.findMany({
-      where: or(
-        eq(users.approval_status, "pending"),
-        eq(users.approval_status, "rejected"),
-      ),
-      orderBy: (users, { desc }) => [desc(users.created_at)],
-    });
-  }
-
-  // Fetch 'reviewed' requests (pending final approval)
-  const pendingRequests = await db.query.requests.findMany({
-    where: eq(requests.status, "reviewed"),
-    orderBy: (requests, { desc }) => [desc(requests.created_at)],
-    with: {
-      requester: {
-        columns: {
-          full_name: true,
-          email: true,
-          department: true,
+  // Fetch pending/rejected users AND reviewed requests in parallel
+  const [pendingUsers, pendingRequests] = await Promise.all([
+    // Fetch pending/rejected users ONLY if superadmin
+    appUser.role === "superadmin"
+      ? db.query.users.findMany({
+          where: or(
+            eq(users.approval_status, "pending"),
+            eq(users.approval_status, "rejected"),
+          ),
+          orderBy: (users, { desc }) => [desc(users.created_at)],
+        })
+      : Promise.resolve([]),
+    // Fetch 'reviewed' requests (pending final approval)
+    db.query.requests.findMany({
+      where: eq(requests.status, "reviewed"),
+      orderBy: (requests, { desc }) => [desc(requests.created_at)],
+      with: {
+        requester: {
+          columns: {
+            full_name: true,
+            email: true,
+            department: true,
+          },
+        },
+        branch: {
+          columns: {
+            name: true,
+          },
         },
       },
-      branch: {
-        columns: {
-          name: true,
-        },
-      },
-    },
-  });
+    }),
+  ]);
 
   // Transform data to match component expectations
   const usersForList = pendingUsers.map(u => ({

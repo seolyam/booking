@@ -17,7 +17,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Eye, EyeOff, Check } from "lucide-react";
 import { compressImage } from "@/lib/imageCompression";
-import { createBrowserClient } from "@supabase/ssr";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -45,10 +45,7 @@ export default function LoginPage() {
     // Fetch branches from Supabase directly (public table)
     async function fetchBranches() {
       try {
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        );
+        const supabase = createSupabaseBrowserClient();
         const { data } = await supabase
           .from("branches")
           .select("id, name, code")

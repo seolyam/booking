@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/db";
 import { users, branches } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -30,10 +31,10 @@ export type AppUser = {
   department: string | null;
 };
 
-const getCachedAppUser = async (userId: string) => {
+const getCachedAppUser = cache(async (userId: string) => {
   const rows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   return rows[0];
-};
+});
 
 export async function getOrCreateAppUserFromAuthUser(authUser: {
   id: string;

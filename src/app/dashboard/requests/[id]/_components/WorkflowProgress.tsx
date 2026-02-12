@@ -102,7 +102,7 @@ export default function WorkflowProgress({
         
         {/* Steps Container */}
         <div className="flex justify-between relative z-10 w-full">
-          {steps.map((s, idx) => {
+          {steps.map((s) => {
             const isCompleted = s.state === "done" || s.state === "current";
             
             return (

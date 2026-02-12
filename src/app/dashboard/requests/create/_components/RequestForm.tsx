@@ -497,7 +497,6 @@ export function RequestForm({
           {/* Document Upload Section */}
           <div className="pt-6 border-t border-gray-100">
             <DocumentUpload
-              category={category}
               requiredPdfs={requiredPdfs}
               files={files}
               onFilesChange={onFilesChange}
