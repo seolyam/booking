@@ -4,16 +4,13 @@ import { useCallback, useRef } from "react";
 import { Upload, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { CategoryMeta } from "@/db/schema";
 
 export function DocumentUpload({
-  category,
   requiredPdfs,
   files,
   onFilesChange,
   error,
 }: {
-  category: CategoryMeta;
   requiredPdfs: string[];
   files: File[];
   onFilesChange: (files: File[]) => void;

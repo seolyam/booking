@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getBranches } from "@/actions/request";
 import type { CategoryMeta } from "@/db/schema";
 import { DocumentUpload } from "./DocumentUpload";
-import { ArrowLeft, Save, Send } from "lucide-react";
+import { ArrowLeft, Save, Send, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Branch = { id: string; name: string; code: string };
@@ -91,8 +91,8 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { name: "start_time", label: "Start Time", type: "time", required: true },
     { name: "end_time", label: "End Time", type: "time", required: true },
     { name: "number_of_attendees", label: "Number of Attendees", type: "number", required: true },
-    { name: "purpose", label: "Purpose", type: "textarea", required: true },
     { name: "equipment_needed", label: "Equipment Needed", type: "textarea", placeholder: "Projector, whiteboard, etc." },
+    { name: "purpose", label: "Purpose", type: "textarea", required: true },
   ],
   business_permits: [
     { name: "permit_type", label: "Permit Type", type: "text", required: true },
@@ -126,8 +126,8 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { name: "unit_cost", label: "Unit Cost (estimated)", type: "number" },
     { name: "total_budget", label: "Total Budget", type: "number" },
     { name: "date_needed", label: "Date Needed", type: "date", required: true },
-    { name: "justification", label: "Justification / Purpose", type: "textarea", required: true },
     { name: "vendor_name", label: "Preferred Vendor", type: "text" },
+    { name: "justification", label: "Justification / Purpose", type: "textarea", required: true },
   ],
 };
 
@@ -177,6 +177,8 @@ export function RequestForm({
   onCancel,
   onBack,
   isSubmitting,
+  existingAttachmentsCount,
+  submitLabel,
 }: {
   category: CategoryMeta;
   initialValues: Record<string, unknown>;
@@ -187,6 +189,8 @@ export function RequestForm({
   onCancel: () => void;
   onBack: () => void;
   isSubmitting: boolean;
+  existingAttachmentsCount?: number;
+  submitLabel?: string;
 }) {
   const fields = CATEGORY_FIELDS[category.key] ?? [];
 
@@ -229,19 +233,25 @@ export function RequestForm({
     });
   };
 
-  const validate = (): boolean => {
+  const validate = (asDraft: boolean): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!values.title || !(values.title as string).trim()) {
-      newErrors.title = "Project title is required";
+      newErrors.title = "Ticket name is required";
     }
     if (!values.branch_id) {
       newErrors.branch_id = "Branch is required";
     }
 
-    for (const field of fields) {
-      if (field.required && !values[field.name]) {
-        newErrors[field.name] = `${field.label} is required`;
+    if (!asDraft) {
+      if (files.length + (existingAttachmentsCount || 0) === 0) {
+        newErrors.files = "At least one document must be uploaded";
+      }
+
+      for (const field of fields) {
+        if (field.required && !values[field.name]) {
+          newErrors[field.name] = `${field.label} is required`;
+        }
       }
     }
 
@@ -253,7 +263,7 @@ export function RequestForm({
     e.preventDefault();
     // For drafts, we might skip validation or loosen it, but typically we want at least basic fields.
     // Let's validate for now to ensure data integrity.
-    if (validate()) {
+    if (validate(asDraft)) {
       // Transform 24h time values to 12h format before submitting
       const processed = { ...values };
       fields.forEach((field) => {
@@ -273,8 +283,8 @@ export function RequestForm({
         </button>
       </div>
 
-      <Card className="rounded-[2rem] border-gray-100/50 shadow-sm bg-white">
-        <CardHeader className="p-8 pb-0">
+      <Card className="rounded-2xl md:rounded-[2rem] border-gray-100/50 shadow-sm bg-white">
+        <CardHeader className="p-4 md:p-8 pb-0">
           <div className="flex items-center gap-3">
             <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <span>{category.label}</span>
@@ -282,18 +292,18 @@ export function RequestForm({
           </div>
           <p className="text-sm text-gray-500">Fill in the required information</p>
         </CardHeader>
-        <CardContent className="space-y-8 p-8">
+        <CardContent className="space-y-6 md:space-y-8 p-4 md:p-8">
           {/* Common fields (Row 1) */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <Label htmlFor="title" className="text-gray-900 font-medium">
-                Project Title <span className="text-red-500">*</span>
+                Ticket Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="title"
                 value={(values.title as string) ?? ""}
                 onChange={(e) => handleChange("title", e.target.value)}
-                placeholder="Enter project name"
+                placeholder="Enter ticket name"
                 className="mt-1.5 h-11"
               />
               {errors.title && (
@@ -494,14 +504,26 @@ export function RequestForm({
             })}
           </div>
 
+          {/* Existing Attachments Notification */}
+          {existingAttachmentsCount && existingAttachmentsCount > 0 ? (
+            <div className="rounded-lg bg-blue-50 p-4 border border-blue-100">
+              <p className="text-sm text-blue-800 font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                {existingAttachmentsCount} document{existingAttachmentsCount > 1 ? 's' : ''} already attached.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                You can upload additional documents below. To manage existing documents, please visit the request detail page.
+              </p>
+            </div>
+          ) : null}
+
           {/* Document Upload Section */}
           <div className="pt-6 border-t border-gray-100">
             <DocumentUpload
-              category={category}
               requiredPdfs={requiredPdfs}
               files={files}
               onFilesChange={onFilesChange}
-              error={null}
+              error={errors.files ?? null}
             />
           </div>
 
@@ -510,23 +532,23 @@ export function RequestForm({
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between pt-4">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4">
         <Button
           type="button"
           variant="destructive"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="bg-[#F95018] hover:bg-[#d64112] text-white"
+          className="bg-[#F95018] hover:bg-[#d64112] text-white w-full sm:w-auto"
         >
           Cancel
         </Button>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Button
             type="button"
             variant="outline"
             onClick={(e) => handleFormSubmit(e, true)}
             disabled={isSubmitting}
-            className="border-gray-300 text-gray-700 gap-2"
+            className="border-gray-300 text-gray-700 gap-2 w-full sm:w-auto"
           >
             <Save className="h-4 w-4" /> Save as draft
           </Button>
@@ -534,9 +556,9 @@ export function RequestForm({
             type="button"
             onClick={(e) => handleFormSubmit(e, false)}
             disabled={isSubmitting}
-            className="bg-[#358334] hover:bg-[#2d6f2c] text-white gap-2"
+            className="bg-[#358334] hover:bg-[#2d6f2c] text-white gap-2 w-full sm:w-auto"
           >
-            <Send className="h-4 w-4" /> Submit request
+            <Send className="h-4 w-4" /> {submitLabel || "Submit request"}
           </Button>
         </div>
       </div>

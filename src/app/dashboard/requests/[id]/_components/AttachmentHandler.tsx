@@ -52,13 +52,13 @@ export default function AttachmentHandler({ attachments, requestTicketNumber }: 
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
+    <div className="bg-white rounded-xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-100 p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-900">Attachments ({attachments.length})</h3>
         <button
           onClick={downloadAll}
           disabled={isZipping || attachments.length === 0}
-          className="flex items-center gap-1.5 bg-gray-800 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 bg-gray-800 text-white text-xs font-medium px-3 py-1.5 min-h-[36px] rounded-lg hover:bg-gray-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed touch-manipulation"
         >
           <Download className="h-3.5 w-3.5" />
           {isZipping ? "Zipping..." : "Download all"}
@@ -76,14 +76,14 @@ export default function AttachmentHandler({ attachments, requestTicketNumber }: 
                   <FileText className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-gray-900 truncate max-w-[150px]">{file.file_name}</p>
+                  <p className="text-xs font-medium text-gray-900 truncate max-w-[120px] sm:max-w-[200px]">{file.file_name}</p>
                   <p className="text-[10px] text-gray-400">{(file.file_size / 1024).toFixed(1)} KB • Uploaded {formatDateShort(file.created_at)}</p>
                 </div>
               </div>
               <a
                 href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/attachments/${file.file_path}`}
                 download={file.file_name}
-                className="text-gray-400 hover:text-gray-900 p-1"
+                className="text-gray-400 hover:text-gray-900 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
               >
                 <Download className="h-4 w-4" />
               </a>

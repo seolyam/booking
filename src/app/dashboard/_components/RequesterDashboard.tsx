@@ -1,5 +1,6 @@
 "use client";
 
+import { RequestsFilter } from "@/components/dashboard/RequestsFilter";
 import Link from "next/link";
 import {
   FileText,
@@ -8,6 +9,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import RequestTable, { type RequestTableRow } from "./RequestTable";
+import { StatCard } from "@/components/dashboard/StatCard";
 
 interface RequesterDashboardProps {
   stats: {
@@ -17,39 +19,6 @@ interface RequesterDashboardProps {
     onHold: number;
   };
   rows: RequestTableRow[];
-}
-
-function StatCard({
-  icon,
-  value,
-  label,
-  href,
-  colorClass,
-}: {
-  icon: React.ReactNode;
-  value: number;
-  label: string;
-  href: string;
-  colorClass: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col justify-between rounded-[2rem] bg-white shadow-sm p-6 hover:shadow-md transition-shadow group h-full border border-gray-100/50"
-    >
-      <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${colorClass} mb-4 transition-transform group-hover:scale-105`}>
-        {icon}
-      </div>
-      <div>
-        <div className="text-5xl font-bold text-gray-900 tracking-tight mb-2">
-          {value}
-        </div>
-        <div className="text-sm font-semibold text-gray-500">
-          {label}
-        </div>
-      </div>
-    </Link>
-  );
 }
 
 export default function RequesterDashboard({
@@ -68,12 +37,14 @@ export default function RequesterDashboard({
             Overview of your booking requests
           </p>
         </div>
-        <Link
-          href="/dashboard/requests/create"
-          className="inline-flex items-center justify-center rounded-xl bg-[#358334] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#2F5E3D] hover:shadow-lg shadow-md hover:-translate-y-0.5"
-        >
-          + Create Request
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/requests/create"
+            className="inline-flex items-center justify-center rounded-xl bg-[#358334] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#2F5E3D] hover:shadow-lg shadow-md hover:-translate-y-0.5"
+          >
+            + Create Request
+          </Link>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -109,9 +80,12 @@ export default function RequesterDashboard({
       </div>
 
       {/* Booking Requests Table Card */}
-      <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100/50">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Recent Requests</h3>
+      <div className="bg-white rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-sm border border-gray-100/50">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-bold text-gray-900">Recent Requests</h3>
+            <RequestsFilter />
+          </div>
           <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">
             View all
           </Link>

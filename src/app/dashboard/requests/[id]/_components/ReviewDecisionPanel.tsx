@@ -97,10 +97,10 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
     };
 
     return (
-        <div className="bg-white rounded-3xl p-6 shadow-sm ring-1 ring-gray-100">
-            <h3 className="font-bold text-gray-900 mb-6">Make Decision</h3>
+        <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm ring-1 ring-gray-100">
+            <h3 className="font-bold text-gray-900 mb-4 md:mb-6">Make Decision</h3>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
                 <DecisionButton
                     id="approve"
                     icon={CheckCircle2}
@@ -148,10 +148,10 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
                                 selectedDecision === "approve"
                                     ? "Reason for resolution..."
                                     : selectedDecision === "revision"
-                                    ? "Describe what needs to be revised..."
-                                    : "Additional note"
+                                        ? "Describe what needs to be revised..."
+                                        : "Additional note"
                             }
-                            className="w-full rounded-lg border-gray-200 text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0"
+                            className="w-full rounded-lg border-gray-200 text-base md:text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0 text-gray-900"
                         />
                     </div>
 
@@ -159,7 +159,7 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
                         <button
                             onClick={handleSubmit}
                             disabled={isPending}
-                            className="bg-[#358334] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#2d6f2c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
+                            className="bg-[#358334] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#2d6f2c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto min-h-[44px] touch-manipulation"
                         >
                             {isPending ? "Submitting..." : "Submit Decision"}
                         </button>

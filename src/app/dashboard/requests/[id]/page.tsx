@@ -8,11 +8,10 @@ import {
   Clock,
   AlertCircle,
   FileText,
-  Ban,
   Archive,
-  Bell,
   MapPin,
   Building2,
+  Pencil,
 } from "lucide-react";
 import { getRequestById, updateRequestStatus } from "@/actions/request";
 import {
@@ -22,8 +21,7 @@ import WorkflowProgress, {
   type WorkflowEvent,
   type WorkflowStep,
 } from "./_components/WorkflowProgress";
-import { cn } from "@/lib/utils";
-import ApprovalActions from "./_components/ApprovalActions";
+import { cn, formatDateShort } from "@/lib/utils";
 import AttachmentHandler from "./_components/AttachmentHandler";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { db } from "@/db";
@@ -34,28 +32,13 @@ import RequestInfoCard from "./_components/RequestInfoCard";
 import ReviewDecisionPanel from "./_components/ReviewDecisionPanel";
 import ResubmitPanel from "./_components/ResubmitPanel";
 import ExportButton from "./_components/ExportButton";
+import ReopenButton from "./_components/ReopenButton";
 
 export const dynamic = "force-dynamic";
 
 // ============================================================================
 // Helpers
 // ============================================================================
-
-function formatDateShort(input: Date | string) {
-  const d = new Date(input);
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = String(d.getFullYear());
-  return `${mm}-${dd}-${yyyy}`;
-}
-
-function formatCurrency(amount: number | string | null | undefined) {
-  if (!amount) return "—";
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(Number(amount));
-}
 
 function statusMeta(status: string) {
   switch (status) {
@@ -179,125 +162,6 @@ function computeSteps(status: string): WorkflowStep[] {
 }
 
 // ============================================================================
-// Form Data Renderers
-// ============================================================================
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function InfoCard({ label, value }: { label: string; value: any }) {
-  if (value === null || value === undefined || value === "") return <div className="flex flex-col"><span className="text-xs text-gray-400">{label}</span><span className="text-sm font-medium text-gray-900">—</span></div>;
-  return (
-    <div className="flex flex-col">
-      <span className="text-xs text-gray-500 mb-1">{label}</span>
-      <span className="text-sm font-semibold text-gray-900 break-words">{String(value)}</span>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function FlightDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.departure_from} → {data.destination}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.airline || "Any Airline"} • {data.travel_class}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Departure" value={data.departure_date} />
-        <InfoCard label="Return" value={data.return_date || "One-way"} />
-        <InfoCard label="Passengers" value={data.number_of_passengers} />
-        <InfoCard label="Passenger Name" value={data.passenger_name} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <span className="text-xs text-gray-500 block mb-2">Purpose of Travel</span>
-        <p className="text-sm text-gray-900">{data.purpose_of_travel}</p>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function HotelDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.hotel_name}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.hotel_address}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Check-in" value={data.check_in_date} />
-        <InfoCard label="Check-out" value={data.check_out_date} />
-        <InfoCard label="Guests" value={data.number_of_guests} />
-        <InfoCard label="Rooms" value={data.number_of_rooms} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <span className="text-xs text-gray-500 block mb-2">Name of guest(s)</span>
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">{data.guest_names}</p>
-          </div>
-          <div>
-            <span className="text-xs text-gray-500 block mb-2">Purpose of stay</span>
-            <p className="text-sm text-gray-900">{data.purpose_of_stay}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MealsDetails({ data }: { data: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
-        <div>
-          <div className="text-sm font-medium text-gray-900">{data.event_name}</div>
-          <div className="text-xs text-gray-500 mt-1">{data.venue}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-        <InfoCard label="Date" value={data.meal_date} />
-        <InfoCard label="Time" value={data.meal_time} />
-        <InfoCard label="Pax" value={data.number_of_pax} />
-        <InfoCard label="Type" value={data.meal_type} />
-      </div>
-
-      <div className="border-t border-gray-100 pt-6">
-        <span className="text-xs text-gray-500 block mb-2">Special Requests</span>
-        <p className="text-sm text-gray-900">{data.special_requests || "None"}</p>
-      </div>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function DefaultDetails({ data }: { data: any }) {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-      {Object.entries(data).map(([key, value]) => (
-        <InfoCard
-          key={key}
-          label={key.replace(/_/g, " ")}
-          value={value}
-        />
-      ))}
-    </div>
-  );
-}
-
-// ============================================================================
 // Main Page
 // ============================================================================
 
@@ -314,13 +178,16 @@ export default async function RequestDetailPage({
   const user = await getAuthUser();
   if (!user) redirect("/login");
 
-  const appUser = await getOrCreateAppUserFromAuthUser({
-    id: user.id,
-    email: user.email ?? null,
-    user_metadata: (user.user_metadata ?? null) as Record<string, unknown> | null,
-  });
+  // Parallelize independent data fetches
+  const [appUser, request] = await Promise.all([
+    getOrCreateAppUserFromAuthUser({
+      id: user.id,
+      email: user.email ?? null,
+      user_metadata: (user.user_metadata ?? null) as Record<string, unknown> | null,
+    }),
+    getRequestById(id),
+  ]);
 
-  const request = await getRequestById(id);
   if (!request) notFound();
 
   // Permissions Check & Auto-Transition
@@ -376,8 +243,9 @@ export default async function RequestDetailPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formData = request.form_data as any;
 
-  // Determine if this is a Review View (Admin/Superadmin && (Actionable Status OR Explicit Review Mode))
-  const isReviewMode = canApprove || (isAdmin && hasBranchAccess && mode === "review");
+  // Determine if this is a Review View (Admin/Superadmin && Explicit Review Mode)
+  // We strictly check for mode === "review" now, so default view is always Tracking
+  const isReviewMode = isAdmin && hasBranchAccess && mode === "review";
 
   // Determine if the current user is the requester viewing their own request
   const isRequester = appUser.id === request.requester_id;
@@ -391,49 +259,60 @@ export default async function RequestDetailPage({
 
   // Common Header & Content Structure for both views to ensure matching design
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 md:gap-4">
           <Link
             href="/dashboard/requests"
-            className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm"
+            className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm shrink-0"
           >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
               {isReviewMode ? "Request Review" : "Request Tracking"}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs md:text-sm text-gray-500 mt-1 line-clamp-2">
               {isReviewMode
                 ? "Review and verify request details before approving"
                 : "Track the complete lifecycle and history of this booking request"}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Manage Request Button for Admins (Only visible in Tracking View) */}
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Manage Form Button for Admins */}
           {!isReviewMode && isAdmin && hasBranchAccess && (
             <Link
-              href={`/dashboard/requests/${id}?mode=review`}
-              className="bg-gray-700 hover:bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
+              href={`/dashboard/requests/${id}/edit`}
+              className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center gap-2"
             >
-              Manage Request
+              <Pencil className="h-4 w-4" /> Manage Form
             </Link>
           )}
-          <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
-            <Bell className="h-6 w-6" />
-          </button>
+
+          {/* Manage Request or Reopen Button for Admins */}
+          {!isReviewMode && isAdmin && hasBranchAccess && (
+            request.status === "approved" ? (
+              <ReopenButton requestId={id} />
+            ) : (
+              <Link
+                href={`/dashboard/requests/${id}?mode=review`}
+                className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
+              >
+                Manage Request
+              </Link>
+            )
+          )}
         </div>
       </div>
 
       {/* Title & Status Section (Common for both) */}
-      <div className="mb-8 px-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 mb-2">
-            <h2 className="text-2xl font-bold text-gray-900">{request.title}</h2>
-            <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase">
+      <div className="mb-4 md:mb-8 px-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 break-words">{request.title}</h2>
+            <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase shrink-0">
               {CATEGORY_MAP[request.category]?.code || "REQ"}
             </span>
           </div>
@@ -454,12 +333,12 @@ export default async function RequestDetailPage({
         </div>
 
         {/* Subtitle */}
-        <div className="text-sm text-gray-500 mb-8">
+        <div className="text-xs md:text-sm text-gray-500 mb-4 md:mb-8">
           REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* Left Column: Request Info */}
         <div className="lg:col-span-8">
           <RequestInfoCard request={request} hideComments={true} />
@@ -500,6 +379,6 @@ export default async function RequestDetailPage({
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

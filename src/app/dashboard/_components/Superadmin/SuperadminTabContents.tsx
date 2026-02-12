@@ -12,6 +12,7 @@ import {
 import RequestTable, { type RequestTableRow } from "../RequestTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/dashboard/StatCard";
 
 interface SuperadminStats {
   totalRequests: number;
@@ -25,39 +26,6 @@ interface SuperadminStats {
 interface SuperadminOverviewProps {
   stats: SuperadminStats;
   pendingUserCount: number;
-}
-
-function StatCard({
-  icon,
-  value,
-  label,
-  href,
-  colorClass,
-}: {
-  icon: React.ReactNode;
-  value: number;
-  label: string;
-  href: string;
-  colorClass: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col justify-between rounded-[2rem] bg-white shadow-sm p-6 hover:shadow-md transition-shadow group h-full border border-gray-100/50"
-    >
-      <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${colorClass} mb-4 transition-transform group-hover:scale-105`}>
-        {icon}
-      </div>
-      <div>
-        <div className="text-5xl font-bold text-gray-900 tracking-tight mb-2">
-          {value}
-        </div>
-        <div className="text-sm font-semibold text-gray-500">
-          {label}
-        </div>
-      </div>
-    </Link>
-  );
 }
 
 export function OverviewSection({

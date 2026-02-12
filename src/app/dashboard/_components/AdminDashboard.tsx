@@ -4,13 +4,12 @@ import Link from "next/link";
 import {
     FileText,
     CheckCircle,
-    XCircle,
     Clock,
-    PauseCircle,
     AlertCircle,
 } from "lucide-react";
 import RequestTable, { type RequestTableRow } from "./RequestTable";
-import { Button } from "@/components/ui/button";
+import { RequestsFilter } from "@/components/dashboard/RequestsFilter";
+import { StatCard } from "@/components/dashboard/StatCard";
 
 interface AdminDashboardStats {
     totalRequests: number;
@@ -25,39 +24,6 @@ interface AdminDashboardProps {
     userName: string;
     stats: AdminDashboardStats;
     rows: RequestTableRow[];
-}
-
-function StatCard({
-    icon,
-    value,
-    label,
-    href,
-    colorClass,
-}: {
-    icon: React.ReactNode;
-    value: number;
-    label: string;
-    href: string;
-    colorClass: string;
-}) {
-    return (
-        <Link
-            href={href}
-            className="flex flex-col justify-between rounded-[2rem] bg-white shadow-sm p-6 hover:shadow-md transition-shadow group h-full border border-gray-100/50"
-        >
-            <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${colorClass} mb-4 transition-transform group-hover:scale-105`}>
-                {icon}
-            </div>
-            <div>
-                <div className="text-5xl font-bold text-gray-900 tracking-tight mb-2">
-                    {value}
-                </div>
-                <div className="text-sm font-semibold text-gray-500">
-                    {label}
-                </div>
-            </div>
-        </Link>
-    );
 }
 
 export default function AdminDashboard({
@@ -110,15 +76,20 @@ export default function AdminDashboard({
             </div>
 
             {/* Booking Requests Table Card */}
-            <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100/50">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">Booking Requests</h3>
-                    {/* Create Request button removed as per admin restrictions */}
+            <div className="bg-white rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-sm border border-gray-100/50">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-bold text-gray-900">Booking Requests</h3>
+                        <RequestsFilter />
+                    </div>
+                    <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">
+                        View all
+                    </Link>
                 </div>
 
                 <RequestTable rows={rows} emptyMessage="No requests found." showRequester={false} />
 
-                <div className="mt-6 flex justify-end">
+                <div className="mt-6 flex justify-end md:hidden">
                     <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4">
                         View all
                     </Link>

@@ -31,6 +31,7 @@ export default async function AdminAllRequestsPage() {
       branch: { columns: { name: true } },
     },
     orderBy: (requests, { desc }) => [desc(requests.created_at)],
+    limit: 200,
   });
 
   const rows: RequestsListRow[] = allRequests.map((req) => {
@@ -52,7 +53,7 @@ export default async function AdminAllRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <RequestsListClient rows={rows} showRequester={true} />
+      <RequestsListClient rows={rows} showRequester={true} canCreate={appUser?.role === "superadmin"} />
     </div>
   );
 }
