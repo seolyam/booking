@@ -80,6 +80,7 @@ export default async function RequestsPage({
       rows={rows}
       initialQuery={typeof params.search === 'string' ? params.search : undefined}
       showRequester={showRequester}
+      canCreate={appUser?.role === "requester" || appUser?.role === "superadmin"}
     />
   );
 }
