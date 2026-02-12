@@ -36,9 +36,9 @@ export default async function AdminApprovalsPage() {
           orderBy: (users, { desc }) => [desc(users.created_at)],
         })
       : Promise.resolve([]),
-    // Fetch 'reviewed' requests (pending final approval)
+    // Fetch 'pending' requests (pending admin action)
     db.query.requests.findMany({
-      where: eq(requests.status, "reviewed"),
+      where: eq(requests.status, "pending"),
       orderBy: (requests, { desc }) => [desc(requests.created_at)],
       with: {
         requester: {

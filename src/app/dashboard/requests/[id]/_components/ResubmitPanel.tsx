@@ -21,7 +21,7 @@ export default function ResubmitPanel({ requestId, revisionReason }: ResubmitPan
       try {
         await updateRequestStatus(
           requestId,
-          "resubmitted",
+          "open",
           comment.trim() || "Request resubmitted for review",
         );
         router.refresh();

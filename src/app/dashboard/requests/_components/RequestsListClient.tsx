@@ -33,10 +33,10 @@ function formatDateShort(d: Date) {
 function statusToVariant(
   status: string,
 ): "success" | "warning" | "error" | "info" | "default" {
-  if (status === "approved") return "success";
-  if (status === "on_hold" || status === "needs_revision" || status === "pending_review") return "warning";
-  if (status === "rejected") return "error";
-  if (status === "draft" || status === "closed") return "default";
+  if (status === "resolved") return "success";
+  if (status === "pending") return "warning";
+  if (status === "cancelled") return "default";
+  if (status === "open") return "info";
   return "info";
 }
 
@@ -54,17 +54,13 @@ function priorityPill(priority: string) {
 
 function statusPill(status: string) {
   let cls = "bg-gray-100 text-gray-900";
-  if (status === "approved") {
+  if (status === "resolved") {
     cls = "bg-green-50 text-green-600";
-  } else if (status === "submitted" || status === "pending_review" || status === "resubmitted") {
+  } else if (status === "open") {
     cls = "bg-blue-50 text-blue-600";
-  } else if (status === "on_hold") {
+  } else if (status === "pending") {
     cls = "bg-orange-50 text-orange-600";
-  } else if (status === "needs_revision") {
-    cls = "bg-amber-50 text-amber-600";
-  } else if (status === "rejected") {
-    cls = "bg-red-50 text-red-600";
-  } else if (status === "closed") {
+  } else if (status === "cancelled") {
     cls = "bg-gray-200 text-gray-900";
   }
   return `inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${cls}`;
@@ -238,7 +234,7 @@ export function RequestsListClient(props: {
               ) : (
                 filteredRows.map((r) => {
                   const rowOpacity =
-                    r.status === "rejected" ? "opacity-60 bg-gray-50/30" : "";
+                    r.status === "cancelled" ? "opacity-60 bg-gray-50/30" : "";
 
                   return (
                     <tr

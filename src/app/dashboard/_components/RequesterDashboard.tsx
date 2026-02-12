@@ -13,10 +13,10 @@ import { StatCard } from "@/components/dashboard/StatCard";
 
 interface RequesterDashboardProps {
   stats: {
-    totalSubmitted: number;
-    pendingReview: number;
-    approved: number;
-    onHold: number;
+    total: number;
+    open: number;
+    pending: number;
+    resolved: number;
   };
   rows: RequestTableRow[];
 }
@@ -51,31 +51,31 @@ export default function RequesterDashboard({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<FileText className="h-6 w-6" />}
-          value={stats.totalSubmitted}
-          label="Total submitted"
+          value={stats.total}
+          label="Total Requests"
           href="/dashboard/requests"
           colorClass="bg-blue-50 text-blue-600"
         />
         <StatCard
           icon={<Clock className="h-6 w-6" />}
-          value={stats.pendingReview}
-          label="Pending review"
+          value={stats.open}
+          label="Open"
+          href="/dashboard/requests?status=open"
+          colorClass="bg-blue-50 text-blue-600"
+        />
+        <StatCard
+          icon={<AlertCircle className="h-6 w-6" />}
+          value={stats.pending}
+          label="Pending"
           href="/dashboard/requests?status=pending"
           colorClass="bg-[#FFF4DE] text-[#FFB020]"
         />
         <StatCard
           icon={<CheckCircle className="h-6 w-6" />}
-          value={stats.approved}
-          label="Approved"
-          href="/dashboard/requests?status=approved"
+          value={stats.resolved}
+          label="Resolved"
+          href="/dashboard/requests?status=resolved"
           colorClass="bg-green-50 text-green-600"
-        />
-        <StatCard
-          icon={<AlertCircle className="h-6 w-6" />}
-          value={stats.onHold}
-          label="On Hold"
-          href="/dashboard/requests?status=on_hold"
-          colorClass="bg-orange-50 text-orange-600"
         />
       </div>
 

@@ -1,11 +1,5 @@
-import { getAllFormConfigs } from "@/actions/form-config";
-import CreateRequestClient from "./_components/CreateRequestClient";
-import { getAuthUser } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function CreateRequestPage() {
-    const user = await getAuthUser();
-    if (!user) redirect("/login");
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
@@ -17,7 +11,11 @@ import { CategorySelect } from "./_components/CategorySelect";
 import { RequestForm } from "./_components/RequestForm";
 import SuccessModal from "@/components/SuccessModal";
 
-    const configs = await getAllFormConfigs();
+const STEPS = [
+  { label: "Select category", number: 1 },
+  { label: "Fill up form", number: 2 },
+  { label: "Submit", number: 3 },
+];
 
 export default function CreateRequestPage() {
   const router = useRouter();
@@ -46,7 +44,7 @@ export default function CreateRequestPage() {
   };
 
   // No longer separate intermediate step handler.
-  const handleSubmit = async (values: Record<string, unknown>, asDraft: boolean) => {
+  const handleSubmit = async (values: Record<string, unknown>, _asDraft: boolean) => {
     if (!selectedCategory) return;
     setIsSubmitting(true);
     setFormValues(values); // Save for potential back navigation
@@ -58,7 +56,7 @@ export default function CreateRequestPage() {
         priority: (values.priority as string) || "medium",
         branch_id: values.branch_id as string,
         form_data: values,
-        status: asDraft ? "draft" : "submitted",
+        status: "open",
       });
 
       if (files.length > 0) {
