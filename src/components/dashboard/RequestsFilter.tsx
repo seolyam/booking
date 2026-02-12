@@ -24,11 +24,10 @@ const DATE_PRESETS = [
 
 const STATUS_OPTIONS = [
     { label: "All", value: "all" },
-    { label: "Open", value: "submitted" },
+    { label: "Open", value: "open" },
     { label: "Pending", value: "pending" },
-    { label: "Revision", value: "needs_revision" },
-    { label: "Resolved", value: "approved" },
-    { label: "Cancelled", value: "rejected" },
+    { label: "Resolved", value: "resolved" },
+    { label: "Cancelled", value: "cancelled" },
 ];
 
 export function RequestsFilter() {

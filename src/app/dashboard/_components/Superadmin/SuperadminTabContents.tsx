@@ -6,7 +6,6 @@ import {
   CheckCircle,
   Users,
   XCircle,
-  PauseCircle,
   Clock,
 } from "lucide-react";
 import RequestTable, { type RequestTableRow } from "../RequestTable";
@@ -16,11 +15,10 @@ import { StatCard } from "@/components/dashboard/StatCard";
 
 interface SuperadminStats {
   totalRequests: number;
-  pendingReview: number;
-  approved: number;
-  rejected: number;
-  onHold: number;
-  closed: number;
+  open: number;
+  pending: number;
+  resolved: number;
+  cancelled: number;
 }
 
 interface SuperadminOverviewProps {
@@ -54,17 +52,17 @@ export function OverviewSection({
         />
         <StatCard
           icon={<Clock className="h-6 w-6" />}
-          value={stats.pendingReview}
-          label="Pending Review"
-          href="/dashboard/requests?status=pending"
-          colorClass="bg-[#FFF4DE] text-[#FFB020]"
+          value={stats.open}
+          label="Open"
+          href="/dashboard/requests?status=open"
+          colorClass="bg-blue-50 text-blue-600"
         />
         <StatCard
           icon={<CheckCircle className="h-6 w-6" />}
-          value={stats.approved}
-          label="Approved"
-          href="/dashboard/requests?status=approved"
-          colorClass="bg-green-50 text-green-600"
+          value={stats.pending}
+          label="Pending"
+          href="/dashboard/requests?status=pending"
+          colorClass="bg-[#FFF4DE] text-[#FFB020]"
         />
         <StatCard
           icon={<Users className="h-6 w-6" />}
@@ -74,18 +72,18 @@ export function OverviewSection({
           colorClass="bg-purple-50 text-purple-600"
         />
         <StatCard
-          icon={<XCircle className="h-6 w-6" />}
-          value={stats.rejected}
-          label="Rejected"
-          href="/dashboard/requests?status=rejected"
-          colorClass="bg-red-50 text-red-600"
+          icon={<CheckCircle className="h-6 w-6" />}
+          value={stats.resolved}
+          label="Resolved"
+          href="/dashboard/requests?status=resolved"
+          colorClass="bg-green-50 text-green-600"
         />
         <StatCard
-          icon={<PauseCircle className="h-6 w-6" />}
-          value={stats.onHold}
-          label="On Hold"
-          href="/dashboard/requests?status=on_hold"
-          colorClass="bg-orange-50 text-orange-600"
+          icon={<XCircle className="h-6 w-6" />}
+          value={stats.cancelled}
+          label="Cancelled"
+          href="/dashboard/requests?status=cancelled"
+          colorClass="bg-gray-50 text-gray-600"
         />
       </div>
 
@@ -103,13 +101,13 @@ export function OverviewSection({
           </div>
           <div className="p-4 rounded-lg bg-green-50 border border-green-100">
             <div className="flex items-center gap-2">
-              <PauseCircle className="h-4 w-4 text-green-700" />
+              <CheckCircle className="h-4 w-4 text-green-700" />
               <p className="text-sm font-semibold text-green-900">
-                {stats.onHold} on hold / {stats.closed} closed
+                {stats.resolved} resolved / {stats.cancelled} cancelled
               </p>
             </div>
             <p className="text-sm text-green-800 mt-1">
-              Requests that are paused or completed.
+              Requests that are completed or cancelled.
             </p>
           </div>
         </div>

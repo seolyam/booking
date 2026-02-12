@@ -24,10 +24,9 @@ export type WorkflowEvent = {
 function statusToActionColor(action?: string): string {
   if (!action) return "bg-gray-300";
   const lowerAction = action.toLowerCase();
-  if (["approved", "verified", "submitted", "created", "added", "resubmitted"].some(s => lowerAction.includes(s))) return "bg-green-500";
+  if (["resolved", "approved", "verified", "submitted", "created", "added", "resubmitted"].some(s => lowerAction.includes(s))) return "bg-green-500";
   if (["returned", "rejected", "cancelled"].some(s => lowerAction.includes(s))) return "bg-red-500";
-  if (["reviewing", "on_hold", "pending"].some(s => lowerAction.includes(s))) return "bg-blue-500";
-  if (["needs_revision", "revision"].some(s => lowerAction.includes(s))) return "bg-amber-500";
+  if (["reviewing", "pending"].some(s => lowerAction.includes(s))) return "bg-blue-500";
   return "bg-gray-300";
 }
 

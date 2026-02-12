@@ -71,13 +71,10 @@ export async function getRequesterDashboardData(
       });
 
       const stats = {
-        totalSubmitted: myRequests.filter((r) => r.status !== "draft").length,
-        pendingReview: myRequests.filter(
-          (r) => r.status === "submitted" || r.status === "pending_review" || r.status === "resubmitted",
-        ).length,
-        approved: myRequests.filter((r) => r.status === "approved").length,
-        onHold: myRequests.filter((r) => r.status === "on_hold").length,
-        needsRevision: myRequests.filter((r) => r.status === "needs_revision").length,
+        total: myRequests.length,
+        open: myRequests.filter((r) => r.status === "open").length,
+        pending: myRequests.filter((r) => r.status === "pending").length,
+        resolved: myRequests.filter((r) => r.status === "resolved").length,
       };
 
       return { myRequests, stats };
@@ -124,18 +121,12 @@ export async function getSuperadminDashboardData(
         }),
       ]);
 
-      const nonDraft = allRequests.filter((r) => r.status !== "draft");
-
       const stats = {
-        totalRequests: nonDraft.length,
-        pendingReview: nonDraft.filter(
-          (r) => r.status === "submitted" || r.status === "pending_review" || r.status === "resubmitted",
-        ).length,
-        approved: nonDraft.filter((r) => r.status === "approved").length,
-        rejected: nonDraft.filter((r) => r.status === "rejected").length,
-        onHold: nonDraft.filter((r) => r.status === "on_hold").length,
-        needsRevision: nonDraft.filter((r) => r.status === "needs_revision").length,
-        closed: nonDraft.filter((r) => r.status === "closed").length,
+        totalRequests: allRequests.length,
+        open: allRequests.filter((r) => r.status === "open").length,
+        pending: allRequests.filter((r) => r.status === "pending").length,
+        resolved: allRequests.filter((r) => r.status === "resolved").length,
+        cancelled: allRequests.filter((r) => r.status === "cancelled").length,
       };
 
       return {
@@ -169,11 +160,10 @@ export async function getAdminDashboardData(
           allRequests: [],
           stats: {
             totalRequests: 0,
-            pendingReview: 0,
-            approved: 0,
-            rejected: 0,
-            onHold: 0,
-            closed: 0
+            open: 0,
+            pending: 0,
+            resolved: 0,
+            cancelled: 0,
           }
         };
       }
@@ -203,18 +193,12 @@ export async function getAdminDashboardData(
         limit: 100,
       });
 
-      const nonDraft = allRequests.filter((r) => r.status !== "draft");
-
       const stats = {
-        totalRequests: nonDraft.length,
-        pendingReview: nonDraft.filter(
-          (r) => r.status === "submitted" || r.status === "pending_review" || r.status === "resubmitted",
-        ).length,
-        approved: nonDraft.filter((r) => r.status === "approved").length,
-        rejected: nonDraft.filter((r) => r.status === "rejected").length,
-        onHold: nonDraft.filter((r) => r.status === "on_hold").length,
-        needsRevision: nonDraft.filter((r) => r.status === "needs_revision").length,
-        closed: nonDraft.filter((r) => r.status === "closed").length,
+        totalRequests: allRequests.length,
+        open: allRequests.filter((r) => r.status === "open").length,
+        pending: allRequests.filter((r) => r.status === "pending").length,
+        resolved: allRequests.filter((r) => r.status === "resolved").length,
+        cancelled: allRequests.filter((r) => r.status === "cancelled").length,
       };
 
       return {

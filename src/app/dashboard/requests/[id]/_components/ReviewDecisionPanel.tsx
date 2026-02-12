@@ -2,19 +2,17 @@
 
 import { useState, useTransition } from "react";
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle2, XCircle, Archive, RotateCcw } from "lucide-react";
+import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import { updateRequestStatus } from "@/actions/request";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-type DecisionId = "approve" | "revision" | "reject" | "close" | "hold";
+type DecisionId = "resolve" | "reopen" | "cancel";
 
 const ACTIVE_CLASSES: Record<DecisionId, string> = {
-    approve: "border-green-500 bg-green-50 text-green-700 ring-1 ring-green-500",
-    reject: "border-red-500 bg-red-50 text-red-700 ring-1 ring-red-500",
-    close: "border-gray-500 bg-gray-50 text-gray-900 ring-1 ring-gray-500",
-    revision: "border-amber-500 bg-amber-50 text-amber-700 ring-1 ring-amber-500",
-    hold: "border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500",
+    resolve: "border-green-500 bg-green-50 text-green-700 ring-1 ring-green-500",
+    reopen: "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500",
+    cancel: "border-gray-500 bg-gray-50 text-gray-900 ring-1 ring-gray-500",
 };
 
 function DecisionButton({
@@ -59,7 +57,7 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
 
     const handleSubmit = async () => {
         if (!selectedDecision) return;
-        if (selectedDecision !== "approve" && !comment.trim()) {
+        if (selectedDecision !== "resolve" && !comment.trim()) {
             alert("Please provide a comment for this decision.");
             return;
         }
@@ -68,20 +66,14 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
             try {
                 let status = "";
                 switch (selectedDecision) {
-                    case "approve":
-                        status = "approved";
+                    case "resolve":
+                        status = "resolved";
                         break;
-                    case "revision":
-                        status = "needs_revision";
+                    case "reopen":
+                        status = "open";
                         break;
-                    case "hold":
-                        status = "on_hold";
-                        break;
-                    case "reject":
-                        status = "rejected";
-                        break;
-                    case "close":
-                        status = "closed";
+                    case "cancel":
+                        status = "cancelled";
                         break;
                 }
 
@@ -102,35 +94,27 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
                 <DecisionButton
-                    id="approve"
+                    id="resolve"
                     icon={CheckCircle2}
-                    label="Resolved"
-                    sublabel="Finalize request"
-                    isSelected={selectedDecision === "approve"}
+                    label="Resolve"
+                    sublabel="Mark as resolved"
+                    isSelected={selectedDecision === "resolve"}
                     onSelect={setSelectedDecision}
                 />
                 <DecisionButton
-                    id="revision"
+                    id="reopen"
                     icon={RotateCcw}
-                    label="Request Revision"
-                    sublabel="Send back to user"
-                    isSelected={selectedDecision === "revision"}
+                    label="Reopen"
+                    sublabel="Send back to open"
+                    isSelected={selectedDecision === "reopen"}
                     onSelect={setSelectedDecision}
                 />
                 <DecisionButton
-                    id="hold"
-                    icon={Archive}
-                    label="On Hold"
-                    sublabel="Pause processing"
-                    isSelected={selectedDecision === "hold"}
-                    onSelect={setSelectedDecision}
-                />
-                <DecisionButton
-                    id="reject"
+                    id="cancel"
                     icon={XCircle}
-                    label="Rejected"
-                    sublabel="Decline request"
-                    isSelected={selectedDecision === "reject"}
+                    label="Cancel"
+                    sublabel="Cancel this request"
+                    isSelected={selectedDecision === "cancel"}
                     onSelect={setSelectedDecision}
                 />
             </div>
@@ -145,13 +129,13 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             placeholder={
-                                selectedDecision === "approve"
+                                selectedDecision === "resolve"
                                     ? "Reason for resolution..."
-                                    : selectedDecision === "revision"
-                                    ? "Describe what needs to be revised..."
-                                    : "Additional note"
+                                    : selectedDecision === "reopen"
+                                        ? "Reason for reopening..."
+                                        : "Reason for cancellation..."
                             }
-                            className="w-full rounded-lg border-gray-200 text-base md:text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0"
+                            className="w-full rounded-lg border-gray-200 text-base md:text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0 text-gray-900"
                         />
                     </div>
 

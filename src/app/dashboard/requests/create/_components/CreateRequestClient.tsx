@@ -4,11 +4,12 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CATEGORIES, REQUIRED_PDFS, type CategoryMeta } from "@/db/schema";
+import { CATEGORIES, REQUIRED_PDFS, type CategoryMeta, type FormConfig } from "@/db/schema";
 import { createRequest, saveAttachments } from "@/actions/request";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { CategorySelect } from "./_components/CategorySelect";
-import { RequestForm } from "./_components/RequestForm";
+import { CategorySelect } from "./CategorySelect";
+import { RequestForm } from "./RequestForm";
+import { DocumentUpload } from "./DocumentUpload";
 import SuccessModal from "@/components/SuccessModal";
 
 const STEPS = [
@@ -17,7 +18,11 @@ const STEPS = [
   { label: "Submit", number: 3 },
 ];
 
-export default function CreateRequestPage() {
+export default function CreateRequestClient({
+  configs,
+}: {
+  configs: FormConfig[];
+}) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<CategoryMeta | null>(
@@ -26,8 +31,15 @@ export default function CreateRequestPage() {
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
+
+  // Filter Categories based on active config (if any)
+  const availableCategories = CATEGORIES.filter(c => {
+    const config = configs.find(cfg => cfg.category_key === c.key);
+    return config ? config.is_active : true;
+  });
 
   const handleCategorySelect = useCallback((category: CategoryMeta) => {
     setSelectedCategory(category);
@@ -47,6 +59,7 @@ export default function CreateRequestPage() {
   const handleSubmit = async (values: Record<string, unknown>, _asDraft: boolean) => {
     if (!selectedCategory) return;
     setIsSubmitting(true);
+    setError(null);
     setFormValues(values); // Save for potential back navigation
 
     try {
@@ -96,7 +109,7 @@ export default function CreateRequestPage() {
       setNewRequestId(result.id);
       setShowSuccessModal(true);
     } catch (err: unknown) {
-      console.error(err instanceof Error ? err.message : "Failed to create request");
+      setError(err instanceof Error ? err.message : "Failed to create request");
       setIsSubmitting(false);
     }
   };
@@ -113,6 +126,11 @@ export default function CreateRequestPage() {
       router.push("/dashboard/requests");
     }
   };
+
+  const categoryConfig = configs.find(c => c.category_key === selectedCategory?.key);
+  const requiredPdfs = categoryConfig?.required_pdfs?.length
+    ? categoryConfig.required_pdfs
+    : (selectedCategory ? (REQUIRED_PDFS[selectedCategory.key] ?? []) : []);
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -141,10 +159,10 @@ export default function CreateRequestPage() {
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors",
                   step === s.number
-                    ? "border-[#358334] bg-[#358334] text-white" // Current: Green solid, white text
+                    ? "border-[#358334] bg-[#358334] text-white"
                     : step > s.number
-                      ? "border-[#358334] bg-white text-[#358334]" // Past: Green border, green text
-                      : "border-gray-300 bg-white text-gray-300"   // Future: Gray border, gray text
+                      ? "border-[#358334] bg-white text-[#358334]"
+                      : "border-gray-300 bg-white text-gray-300"
                 )}
               >
                 {step === s.number ? (
@@ -177,7 +195,7 @@ export default function CreateRequestPage() {
       {/* Step Content */}
       {step === 1 && (
         <CategorySelect
-          categories={CATEGORIES}
+          categories={availableCategories}
           selected={selectedCategory}
           onSelect={handleCategorySelect}
           onNext={handleNext}
@@ -186,17 +204,25 @@ export default function CreateRequestPage() {
       )}
 
       {step === 2 && selectedCategory && (
-        <RequestForm
-          category={selectedCategory}
-          initialValues={formValues}
-          files={files}
-          onFilesChange={setFiles}
-          requiredPdfs={REQUIRED_PDFS[selectedCategory.key] ?? []}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          onBack={handleBack}
-          isSubmitting={isSubmitting}
-        />
+        <div className="space-y-4">
+          {categoryConfig?.instructions && (
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-sm text-blue-900 mb-6">
+              <p className="font-medium mb-1">Instructions:</p>
+              <p>{categoryConfig.instructions}</p>
+            </div>
+          )}
+          <RequestForm
+            category={selectedCategory}
+            initialValues={formValues}
+            files={files}
+            onFilesChange={setFiles}
+            requiredPdfs={requiredPdfs}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            onBack={handleBack}
+            isSubmitting={isSubmitting}
+          />
+        </div>
       )}
     </div>
   );

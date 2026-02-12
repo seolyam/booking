@@ -16,6 +16,19 @@ export function superadminNav(): NavSection[] {
         ],
       };
     }
+    if (section.title === "Administration") {
+      return {
+        ...section,
+        items: [
+          ...section.items,
+          {
+            key: "approvals",
+            label: "Approvals",
+            href: "/dashboard/admin/approvals",
+          },
+        ],
+      };
+    }
     return section;
   });
 

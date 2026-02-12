@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, XCircle, AlertCircle, Archive, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, CheckCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +22,16 @@ interface ApprovalActionsProps {
   requestId: string;
 }
 
+// Maps internal action types to the valid DB status they produce and UX labels.
+// "approve"  -> "pending"   (admin accepts the request; work begins)
+// "reject"   -> "cancelled" (admin denies the request; terminal state)
+// "resolve"  -> "resolved"  (admin marks work as complete)
+const ACTION_STATUS_MAP: Record<string, { status: string; pastTense: string }> = {
+  approve: { status: "pending", pastTense: "approved" },
+  reject: { status: "cancelled", pastTense: "cancelled" },
+  resolve: { status: "resolved", pastTense: "resolved" },
+};
+
 export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -36,30 +46,19 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
       return;
     }
 
+    const mapping = ACTION_STATUS_MAP[actionType];
+    if (!mapping) return;
+
     startTransition(async () => {
-      let result;
       try {
-        switch (actionType) {
-          case "approve":
-            result = await updateRequestStatus(requestId, "approved", comment);
-            break;
-          case "reject":
-            result = await updateRequestStatus(requestId, "rejected", comment);
-            break;
-          case "hold":
-            result = await updateRequestStatus(requestId, "on_hold", comment);
-            break;
-          case "close":
-            result = await updateRequestStatus(requestId, "closed", comment);
-            break;
-        }
+        const result = await updateRequestStatus(requestId, mapping.status, comment);
 
         if (result?.success) {
           setOpenDialog(null);
           setComment("");
           setSuccessMessage({
-            title: `Request ${actionType.charAt(0).toUpperCase() + actionType.slice(1)}!`,
-            message: `The request has been successfully ${actionType}.`,
+            title: `Request ${mapping.pastTense.charAt(0).toUpperCase() + mapping.pastTense.slice(1)}!`,
+            message: `The request has been successfully ${mapping.pastTense}.`,
           });
           setShowSuccessModal(true);
         } else {
@@ -91,7 +90,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
         message={successMessage.message}
       />
       <div className="flex flex-wrap gap-3">
-      {/* Approve Button */}
+      {/* Approve Button — transitions request from open → pending */}
       <Dialog open={openDialog === 'approve'} onOpenChange={(open) => !open && setOpenDialog(null)}>
         <DialogTrigger asChild>
           <Button
@@ -106,7 +105,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
           <DialogHeader>
             <DialogTitle>Approve Request</DialogTitle>
             <DialogDescription>
-              Are you sure you want to approve this request? You can add an optional comment.
+              Accept this request and move it to processing. You can add an optional comment.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-4">
@@ -132,7 +131,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Reject Button */}
+      {/* Reject Button — transitions request to cancelled (terminal) */}
       <Dialog open={openDialog === 'reject'} onOpenChange={(open) => !open && setOpenDialog(null)}>
         <DialogTrigger asChild>
           <Button
@@ -175,71 +174,29 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Hold Button */}
-      <Dialog open={openDialog === 'hold'} onOpenChange={(open) => !open && setOpenDialog(null)}>
+      {/* Resolve Button — transitions request from pending → resolved */}
+      <Dialog open={openDialog === 'resolve'} onOpenChange={(open) => !open && setOpenDialog(null)}>
         <DialogTrigger asChild>
           <Button
             variant="outline"
-            onClick={() => openActionDialog('hold')}
-            className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800 gap-2"
+            onClick={() => openActionDialog('resolve')}
+            className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 gap-2"
           >
-            <AlertCircle className="h-4 w-4" />
-            Hold
+            <CheckCheck className="h-4 w-4" />
+            Resolve
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Put Request On Hold</DialogTitle>
+            <DialogTitle>Resolve Request</DialogTitle>
             <DialogDescription>
-              Temporarily pause this request. Provide a reason so the requester knows why.
+              Mark this request as resolved. This indicates the work has been completed.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-4">
-            <Label htmlFor="hold-reason">Reason (Optional)</Label>
+            <Label htmlFor="resolve-comment">Comment (Optional)</Label>
             <Textarea
-              id="hold-reason"
-              placeholder="e.g., Waiting for budget allocation..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDialog(null)}>Cancel</Button>
-            <Button
-              onClick={() => handleAction('hold')}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-              disabled={isPending}
-            >
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirm Hold
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-       {/* Close Button - Maybe for superadmin only or special cases, adding for completeness */}
-       <Dialog open={openDialog === 'close'} onOpenChange={(open) => !open && setOpenDialog(null)}>
-        <DialogTrigger asChild>
-          <Button
-            variant="ghost"
-            onClick={() => openActionDialog('close')}
-            className="text-gray-500 hover:text-gray-900 gap-2"
-          >
-            <Archive className="h-4 w-4" />
-            Close
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Close Request</DialogTitle>
-            <DialogDescription>
-              Mark this request as closed. This is usually for requests that are no longer relevant or withdrawn.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 py-4">
-            <Label htmlFor="close-comment">Comment (Optional)</Label>
-            <Textarea
-              id="close-comment"
+              id="resolve-comment"
               placeholder="Closing remarks..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -248,12 +205,12 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(null)}>Cancel</Button>
             <Button
-              onClick={() => handleAction('close')}
-              className="bg-gray-800 hover:bg-gray-900 text-white"
+              onClick={() => handleAction('resolve')}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isPending}
             >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirm Close
+              Confirm Resolve
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -262,4 +219,3 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
     </>
   );
 }
-

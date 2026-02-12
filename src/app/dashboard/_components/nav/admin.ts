@@ -36,10 +36,11 @@ export function adminNav(): NavSection[] {
           label: "All Requests",
           href: "/dashboard/admin/requests",
         },
+
         {
-          key: "approvals",
-          label: "Approvals",
-          href: "/dashboard/admin/approvals",
+          key: "visitor_logs",
+          label: "Visitor Logs",
+          href: "/dashboard/admin/visitor-logs",
         },
         {
           key: "manage_forms",
