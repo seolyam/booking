@@ -167,7 +167,6 @@ export function RequestsListClient(props: {
           <h1 className="text-2xl font-bold text-gray-900">
             {props.showRequester ? "All Requests" : "My Requests"}
           </h1>
-          <RequestsFilter />
         </div>
         {props.canCreate !== false && (
           <Link
@@ -183,14 +182,17 @@ export function RequestsListClient(props: {
       <div className="hidden md:flex flex-col flex-1 w-full rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden h-full">
         <div className="p-5 md:p-6 border-b border-gray-100 shrink-0">
           <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search..."
-                className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
-              />
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="relative w-full md:w-96">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search..."
+                  className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                />
+              </div>
+              <RequestsFilter />
             </div>
           </div>
         </div>

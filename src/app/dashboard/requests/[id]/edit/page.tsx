@@ -29,19 +29,16 @@ export default async function EditRequestPage({ params }: { params: { id: string
     if (!request) notFound();
 
     const isRequester = appUser.role === "requester" && request.requester_id === appUser.id;
-    const isAdmin = appUser.role === "admin" || appUser.role === "superadmin";
-
-    if (!isRequester && !isAdmin) {
-        redirect("/dashboard/requests"); // Not authorized
+    if (!isRequester) {
+        redirect(`/dashboard/requests/${id}`); // Not authorized
     }
 
     // Requester validation: can only edit while still open
-    if (isRequester && request.status !== "open") {
+    if (request.status !== "open") {
         redirect(`/dashboard/requests/${id}`); // Cannot edit
     }
 
-    // Admin validation: admins can generally edit, but maybe restricted if closed?
-    // Let's allow editing unless closed for now, or just allow all as "Manage Form" implies fix power.
+    // Admin validation removed as they should not access this page
 
     const category = CATEGORY_MAP[request.category];
     if (!category) notFound(); // Should not happen
