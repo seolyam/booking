@@ -268,6 +268,20 @@ export const notifications = pgTable(
   ],
 );
 
+export const formConfigs = pgTable(
+  "form_configs",
+  {
+    category_key: text("category_key").primaryKey(),
+    is_active: boolean("is_active").default(true).notNull(),
+    required_pdfs: jsonb("required_pdfs").$type<string[]>().default([]).notNull(),
+    instructions: text("instructions"),
+    updated_at: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updated_by: uuid("updated_by").references(() => users.id),
+  }
+);
+
 // ============================================================================
 // Relations
 // ============================================================================
@@ -372,6 +386,8 @@ export type ActivityLog = typeof activityLogs.$inferSelect;
 export type NewActivityLog = typeof activityLogs.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
+export type FormConfig = typeof formConfigs.$inferSelect;
+export type NewFormConfig = typeof formConfigs.$inferInsert;
 
 // ============================================================================
 // Category metadata

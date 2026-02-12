@@ -353,7 +353,7 @@ export async function updateRequestStatus(
     on_hold: ["pending_review", "approved", "rejected", "needs_revision", "closed"],
     needs_revision: ["resubmitted"],
     resubmitted: ["pending_review"],
-    approved: ["closed"],
+    approved: ["closed", "pending_review"],
     rejected: ["closed"],
     closed: [],
   };
@@ -502,4 +502,79 @@ export async function saveAttachments(
 
   revalidatePath(`/dashboard/requests/${requestId}`);
   return { success: true };
+}
+
+export async function updateRequest(
+  requestId: string,
+  formData: {
+    title: string;
+    category: string;
+    priority: string;
+    branch_id: string;
+    form_data: Record<string, unknown>;
+  }
+) {
+  const appUser = await requireAppUser();
+
+  const existing = await db.query.requests.findFirst({
+    where: eq(requests.id, requestId),
+  });
+  if (!existing) throw new Error("Request not found");
+
+  const isAdmin = appUser.role === "admin" || appUser.role === "superadmin";
+  const isRequester = appUser.role === "requester" && existing.requester_id === appUser.id;
+
+  if (!isAdmin && !isRequester) {
+    throw new Error("Insufficient permissions");
+  }
+
+  // Requesters can only edit draft or needs_revision
+  if (isRequester && !["draft", "needs_revision"].includes(existing.status)) {
+    throw new Error("Cannot edit request in current status");
+  }
+
+  try {
+    const parsed = createRequestSchema.omit({ status: true }).parse(formData);
+
+    const categorySchema = CATEGORY_SCHEMAS[parsed.category];
+    let processedFormData = parsed.form_data;
+
+    if (categorySchema) {
+      processedFormData = categorySchema.parse(parsed.form_data) as Record<string, unknown>;
+    }
+
+    await db
+      .update(requests)
+      .set({
+        title: parsed.title,
+        priority: parsed.priority as Request["priority"],
+        branch_id: parsed.branch_id,
+        category: parsed.category as Request["category"],
+        form_data: processedFormData,
+        updated_at: new Date(),
+      })
+      .where(eq(requests.id, requestId));
+
+    await db.insert(activityLogs).values({
+      request_id: requestId,
+      actor_id: appUser.id,
+      action: "status_changed_to_updated", // Custom action key? Or just 'updated'
+      comment: "Request details updated",
+      // We don't have 'updated' action mapped in actionLabel helper yet, but it falls back to text replacement.
+    });
+
+    revalidatePath(`/dashboard/requests/${requestId}`);
+    revalidatePath("/dashboard/requests");
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const fieldErrors = error.issues.map((err) => {
+        const path = err.path.join(".");
+        return `${path}: ${err.message}`;
+      });
+      throw new Error(`Validation failed: ${fieldErrors.join(", ")}`);
+    }
+    throw error;
+  }
 }

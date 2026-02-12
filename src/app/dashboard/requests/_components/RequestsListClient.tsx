@@ -74,6 +74,7 @@ export function RequestsListClient(props: {
   rows: RequestsListRow[];
   initialQuery?: string;
   showRequester?: boolean;
+  canCreate?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -120,7 +121,7 @@ export function RequestsListClient(props: {
   });
 
   return (
-    <div className="-m-4 md:-m-8 p-4 md:p-8 w-full mx-auto flex flex-col min-h-[calc(100vh-theme(spacing.16))]">
+    <div className="-m-4 md:-m-8 p-4 md:p-8 flex flex-col min-h-[calc(100vh-theme(spacing.16))]">
       {/* Mobile Header */}
       <div className="md:hidden mb-4">
         <div className="flex items-center justify-between mb-3">
@@ -129,13 +130,15 @@ export function RequestsListClient(props: {
           </h1>
           <div className="flex gap-2">
             <RequestsFilter />
-            <Link
-              href="/dashboard/requests/create"
-              className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
-              aria-label="New Request"
-            >
-              <Plus className="h-5 w-5" />
-            </Link>
+            {props.canCreate !== false && (
+              <Link
+                href="/dashboard/requests/create"
+                className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
+                aria-label="New Request"
+              >
+                <Plus className="h-5 w-5" />
+              </Link>
+            )}
           </div>
         </div>
 
@@ -170,12 +173,14 @@ export function RequestsListClient(props: {
           </h1>
           <RequestsFilter />
         </div>
-        <Link
-          href="/dashboard/requests/create"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#358334] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm"
-        >
-          New Request +
-        </Link>
+        {props.canCreate !== false && (
+          <Link
+            href="/dashboard/requests/create"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#358334] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm"
+          >
+            New Request +
+          </Link>
+        )}
       </div>
 
       {/* Desktop Table View */}
