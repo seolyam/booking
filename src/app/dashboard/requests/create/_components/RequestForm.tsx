@@ -91,8 +91,8 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { name: "start_time", label: "Start Time", type: "time", required: true },
     { name: "end_time", label: "End Time", type: "time", required: true },
     { name: "number_of_attendees", label: "Number of Attendees", type: "number", required: true },
-    { name: "purpose", label: "Purpose", type: "textarea", required: true },
     { name: "equipment_needed", label: "Equipment Needed", type: "textarea", placeholder: "Projector, whiteboard, etc." },
+    { name: "purpose", label: "Purpose", type: "textarea", required: true },
   ],
   business_permits: [
     { name: "permit_type", label: "Permit Type", type: "text", required: true },
