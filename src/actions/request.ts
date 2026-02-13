@@ -232,11 +232,27 @@ export async function getRequestById(id: string) {
 }
 
 export async function getBranches() {
-  return db
+  const result = await db
     .select({ id: branches.id, name: branches.name, code: branches.code })
     .from(branches)
-    .where(eq(branches.is_active, true))
-    .orderBy(branches.name);
+    .where(eq(branches.is_active, true));
+
+  // Sort: Prime/MAIN first, Ignite/IGP last, others in specified order if possible.
+  // The user asked for "Prime Electric at the top" and "Ignite Power at the bottom".
+  // The previous list was: Prime Electric, Negros Power, MORE Power, Bohol Light, Ignite Power.
+
+  const sortOrder = ["MAIN", "NGP", "MOR", "BHL", "IGP"];
+
+  return result.sort((a, b) => {
+    const indexA = sortOrder.indexOf(a.code);
+    const indexB = sortOrder.indexOf(b.code);
+
+    // If not in the list, push to end, but before explicitly last items if any (none here since all are in list)
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+
+    return indexA - indexB;
+  });
 }
 
 // ============================================================================
@@ -337,7 +353,7 @@ export async function createRequest(formData: {
         requestTitle: parsed.title,
         category: categoryMeta?.label ?? parsed.category,
         requestId: inserted.id,
-      }).catch(() => {});
+      }).catch(() => { });
     });
 
     revalidatePath("/dashboard");
@@ -449,7 +465,7 @@ export async function updateRequestStatus(
           newStatus,
           comment,
           requestId,
-        }).catch(() => {});
+        }).catch(() => { });
 
         // Send rating request email when resolved
         if (newStatus === "resolved") {
@@ -458,7 +474,7 @@ export async function updateRequestStatus(
             requesterName: requester.full_name ?? requester.email,
             requestTitle: existing.title,
             requestId,
-          }).catch(() => {});
+          }).catch(() => { });
         }
       });
   }
