@@ -53,50 +53,65 @@ function InfoCard({ label, value, className }: { label: string; value: string | 
     );
 }
 
-function FlightDetails({ data }: { data: FlightFormData }) {
+// Helper to get value from multiple possible keys
+const getVal = (data: any, keys: string[]) => {
+    for (const key of keys) {
+        if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
+            return data[key];
+        }
+    }
+    return undefined;
+};
+
+function FlightDetails({ data }: { data: any }) {
     return (
         <div className="space-y-6">
             <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div>
-                    <div className="text-sm font-medium text-gray-900">{data.departure_from} → {data.destination}</div>
-                    <div className="text-xs text-gray-500 mt-1">{data.airline || "Any Airline"} • {data.travel_class}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                        {getVal(data, ["departure_from", "origin", "from"]) || "—"} → {getVal(data, ["destination", "to"]) || "—"}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                        {getVal(data, ["airline", "carrier"]) || "Any Airline"} • {getVal(data, ["travel_class", "class"])}
+                    </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-                <InfoCard label="Departure" value={data.departure_date} />
-                <InfoCard label="Return" value={data.return_date || "One-way"} />
-                <InfoCard label="Passengers" value={data.number_of_passengers} />
-                <InfoCard label="Passenger Name" value={data.passenger_name} />
+                <InfoCard label="Departure" value={getVal(data, ["departure_date", "departure"])} />
+                <InfoCard label="Return" value={getVal(data, ["return_date", "return"]) || "One-way"} />
+                <InfoCard label="Passengers" value={getVal(data, ["number_of_passengers", "passengers", "pax"])} />
+                <InfoCard label="Passenger Name" value={getVal(data, ["passenger_name", "passenger_names", "names"])} />
             </div>
 
             <div className="border-t border-gray-100 pt-6">
                 <span className="text-xs text-gray-500 block mb-2">Purpose of Travel</span>
-                <p className="text-sm text-gray-900">{data.purpose_of_travel}</p>
+                <p className="text-sm text-gray-900">{getVal(data, ["purpose_of_travel", "purpose", "reason"]) || "—"}</p>
             </div>
         </div>
     );
 }
 
-function HotelDetails({ data }: { data: HotelFormData }) {
+function HotelDetails({ data }: { data: any }) {
+    const guestNames = getVal(data, ["guest_names", "names", "guests_names"]);
     return (
         <div className="space-y-8">
             {/* Title & Location */}
             <div className="space-y-2">
-                <h3 className="text-lg font-bold text-gray-900">{data.hotel_name}</h3>
+                <h3 className="text-lg font-bold text-gray-900">{getVal(data, ["hotel_name", "hotel"]) || "—"}</h3>
                 <div className="flex items-start gap-2 text-gray-500">
                     <MapPin className="h-5 w-5 mt-0.5 shrink-0" />
-                    <p className="text-sm leading-snug">{data.hotel_address}</p>
+                    <p className="text-sm leading-snug">{getVal(data, ["hotel_address", "address", "location"]) || "—"}</p>
                 </div>
             </div>
 
             {/* Grid Specs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 py-6 md:py-8 border-y border-gray-100">
-                <InfoCard label="Check-in" value={data.check_in_date} />
-                <InfoCard label="Check-out" value={data.check_out_date} />
-                <InfoCard label="Guests" value={data.number_of_guests} />
-                <InfoCard label="Rooms" value={data.number_of_rooms} />
+                <InfoCard label="Check-in" value={getVal(data, ["check_in_date", "check_in"])} />
+                <InfoCard label="Check-out" value={getVal(data, ["check_out_date", "check_out"])} />
+                <InfoCard label="Guests" value={getVal(data, ["number_of_guests", "guests"])} />
+                <InfoCard label="Rooms" value={getVal(data, ["number_of_rooms", "rooms"])} />
             </div>
 
             {/* Bottom info */}
@@ -104,19 +119,19 @@ function HotelDetails({ data }: { data: HotelFormData }) {
                 <div>
                     <span className="text-sm text-gray-500 block mb-3">Name of guest(s)</span>
                     <div className="text-base font-medium text-gray-900 space-y-1">
-                        {String(data.guest_names).split('\n').map((name, i) => (
+                        {guestNames ? String(guestNames).split('\n').map((name, i) => (
                             <div key={i} className="flex gap-2">
                                 <span className="text-gray-400">•</span>
                                 <span>{name}</span>
                             </div>
-                        ))}
+                        )) : "—"}
                     </div>
                 </div>
                 <div>
                     <span className="text-sm text-gray-500 block mb-3">Purpose of stay</span>
                     <div className="flex gap-2 text-base font-medium text-gray-900">
                         <span className="text-gray-400">•</span>
-                        <p className="leading-snug max-w-md">{data.purpose_of_stay}</p>
+                        <p className="leading-snug max-w-md">{getVal(data, ["purpose_of_stay", "purpose", "reason"]) || "—"}</p>
                     </div>
                 </div>
             </div>
@@ -124,27 +139,27 @@ function HotelDetails({ data }: { data: HotelFormData }) {
     );
 }
 
-function MealsDetails({ data }: { data: MealsFormData }) {
+function MealsDetails({ data }: { data: any }) {
     return (
         <div className="space-y-6">
             <div className="flex items-start gap-3">
                 <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div>
-                    <div className="text-sm font-medium text-gray-900">{data.event_name}</div>
-                    <div className="text-xs text-gray-500 mt-1">{data.venue}</div>
+                    <div className="text-sm font-medium text-gray-900">{getVal(data, ["event_name", "event", "name"]) || "—"}</div>
+                    <div className="text-xs text-gray-500 mt-1">{getVal(data, ["venue", "location", "place"])}</div>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-                <InfoCard label="Date" value={data.meal_date} />
-                <InfoCard label="Time" value={data.meal_time} />
-                <InfoCard label="Pax" value={data.number_of_pax} />
-                <InfoCard label="Type" value={data.meal_type} />
+                <InfoCard label="Date" value={getVal(data, ["meal_date", "date"])} />
+                <InfoCard label="Time" value={getVal(data, ["meal_time", "time"])} />
+                <InfoCard label="Pax" value={getVal(data, ["number_of_pax", "pax", "attendees"])} />
+                <InfoCard label="Type" value={getVal(data, ["meal_type", "type", "meal"])} />
             </div>
 
             <div className="border-t border-gray-100 pt-6">
                 <span className="text-xs text-gray-500 block mb-2">Special Requests</span>
-                <p className="text-sm text-gray-900">{data.special_requests || "None"}</p>
+                <p className="text-sm text-gray-900">{getVal(data, ["special_requests", "requests", "notes"]) || "None"}</p>
             </div>
         </div>
     );
@@ -179,7 +194,18 @@ interface RequestInfoCardProps {
 
 export default function RequestInfoCard({ request, hideComments = false }: RequestInfoCardProps) {
     const formData = (request.form_data as Record<string, unknown>) ?? {};
-    const budget = (formData.allocated_budget ?? formData.budget ?? formData.total_budget) as string | number | null | undefined;
+
+    // Helper to get value from multiple possible keys
+    const getValue = (keys: string[]) => {
+        for (const key of keys) {
+            if (formData[key] !== undefined && formData[key] !== null && formData[key] !== "") {
+                return formData[key];
+            }
+        }
+        return undefined;
+    };
+
+    const budget = getValue(["allocated_budget", "budget", "total_budget", "estimated_budget", "cost", "total_cost"]) as string | number | null | undefined;
 
     return (
         <div id="request-printable-area" className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm ring-1 ring-gray-100 h-full">
@@ -211,11 +237,11 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
                 {/* Category Details (Dynamic) */}
                 <div className="px-1">
                     {request.category === "flight_booking" ? (
-                        <FlightDetails data={formData as FlightFormData} />
+                        <FlightDetails data={formData as any} />
                     ) : request.category === "hotel_accommodation" ? (
-                        <HotelDetails data={formData as HotelFormData} />
+                        <HotelDetails data={formData as any} />
                     ) : request.category === "meals" ? (
-                        <MealsDetails data={formData as MealsFormData} />
+                        <MealsDetails data={formData as any} />
                     ) : (
                         <DefaultDetails data={formData} />
                     )}
@@ -223,9 +249,9 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
 
                 {/* Footer Button */}
                 <div className="flex justify-end mt-8 md:mt-12 bg-transparent">
-                    <ExportButton 
-                        targetId="request-printable-area" 
-                        fileName={`REQ-${String(request.ticket_number).padStart(4, "0")}-Details`}
+                    <ExportButton
+                        targetId="request-printable-area"
+                        fileName={`TICKET-${String(request.ticket_number).padStart(4, "0")}-Details`}
                     />
                 </div>
             </div>

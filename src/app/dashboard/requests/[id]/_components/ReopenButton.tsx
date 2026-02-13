@@ -38,7 +38,7 @@ export default function ReopenButton({ requestId }: { requestId: string }) {
             <DialogTrigger asChild>
                 <button
                     disabled={isPending}
-                    className="bg-amber-100 text-color-black hover:bg-amber-200 text-amber-800 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center gap-2"
+                    className="bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center gap-2"
                 >
                     <RotateCcw className="h-4 w-4" />
                     {isPending ? "Reopening..." : "Reopen Request"}

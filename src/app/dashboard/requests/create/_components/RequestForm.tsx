@@ -80,6 +80,7 @@ export function RequestForm({
   existingAttachmentsCount,
   submitLabel,
   fields = [],
+  branches,
 }: {
   category: CategoryMeta;
   initialValues: Record<string, unknown>;
@@ -93,6 +94,7 @@ export function RequestForm({
   existingAttachmentsCount?: number;
   submitLabel?: string;
   fields?: FieldDef[];
+  branches: { id: string; name: string; code: string }[];
 }) {
   // fields prop is now the source of truth
 
@@ -119,12 +121,7 @@ export function RequestForm({
     return processed;
   });
 
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    getBranches().then(setBranches).catch(console.error);
-  }, []);
 
   const handleChange = (name: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [name]: value }));

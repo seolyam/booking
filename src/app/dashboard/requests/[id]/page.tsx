@@ -232,12 +232,12 @@ export default async function RequestDetailPage({
           </Link>
           <div className="min-w-0">
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-              {isReviewMode ? "Request Review" : "Request Tracking"}
+              {isReviewMode ? "Ticket Review" : "Ticket Tracking"}
             </h1>
             <p className="text-xs md:text-sm text-gray-500 mt-1 line-clamp-2">
               {isReviewMode
-                ? "Review and verify request details before approving"
-                : "Track the complete lifecycle and history of this booking request"}
+                ? "Review and verify ticket details before approving"
+                : "Track the complete lifecycle and history of this booking ticket"}
             </p>
           </div>
         </div>
@@ -253,7 +253,7 @@ export default async function RequestDetailPage({
                 href={`/dashboard/requests/${id}?mode=review`}
                 className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
               >
-                Manage Request
+                Manage Ticket
               </Link>
             )
           )}
@@ -287,7 +287,7 @@ export default async function RequestDetailPage({
 
         {/* Subtitle */}
         <div className="text-xs md:text-sm text-gray-500 mb-4 md:mb-8">
-          REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
+          TICKET-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
         </div>
       </div>
 

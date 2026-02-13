@@ -34,7 +34,7 @@ export default function RequesterDashboard({
             Dashboard
           </h1>
           <p className="text-gray-500 font-medium">
-            Overview of your booking requests
+            Overview of your booking tickets
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -42,7 +42,7 @@ export default function RequesterDashboard({
             href="/dashboard/requests/create"
             className="inline-flex items-center justify-center rounded-xl bg-[#358334] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#2F5E3D] hover:shadow-lg shadow-md hover:-translate-y-0.5"
           >
-            + Create Request
+            + Create Ticket
           </Link>
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function RequesterDashboard({
         <StatCard
           icon={<FileText className="h-6 w-6" />}
           value={stats.total}
-          label="Total Requests"
+          label="Total Tickets"
           href="/dashboard/requests"
           colorClass="bg-blue-50 text-blue-600"
         />
@@ -83,7 +83,7 @@ export default function RequesterDashboard({
       <div className="bg-white rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-sm border border-gray-100/50">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <h3 className="text-xl font-bold text-gray-900">Recent Requests</h3>
+            <h3 className="text-xl font-bold text-gray-900">Recent Tickets</h3>
             <RequestsFilter />
           </div>
           <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">

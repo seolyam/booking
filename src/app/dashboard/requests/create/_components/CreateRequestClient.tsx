@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CategoryMeta, FormConfig } from "@/db/schema";
-import { createRequest, saveAttachments } from "@/actions/request";
+import { createRequest, saveAttachments, getBranches } from "@/actions/request";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { CategorySelect } from "./CategorySelect";
 import { RequestForm, type FieldDef } from "./RequestForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import SuccessModal from "@/components/SuccessModal";
 
 const STEPS = [
@@ -33,7 +42,18 @@ export function CreateRequestClient({
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingData, setPendingData] = useState<{
+    values: Record<string, unknown>;
+    asDraft: boolean;
+  } | null>(null);
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
+  const [newTicketNumber, setNewTicketNumber] = useState<string | number | null>(null);
+  const [branches, setBranches] = useState<{ id: string; name: string; code: string }[]>([]);
+
+  useEffect(() => {
+    getBranches().then(setBranches).catch(console.error);
+  }, []);
 
   const handleCategorySelect = useCallback((category: CategoryMeta) => {
     setSelectedCategory(category);
@@ -49,10 +69,21 @@ export function CreateRequestClient({
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = async (values: Record<string, unknown>, asDraft: boolean) => {
-    if (!selectedCategory) return;
+  const handleFormSubmit = (values: Record<string, unknown>, asDraft: boolean) => {
+    setPendingData({ values, asDraft });
+    setShowConfirmation(true);
+  };
+
+  const executeSubmission = async () => {
+    if (!selectedCategory || !pendingData) return;
+
+    setShowConfirmation(false);
     setIsSubmitting(true);
+
+    const { values } = pendingData;
     setFormValues(values);
+
+    console.log("Submitting values:", values); // Debug log
 
     try {
       const result = await createRequest({
@@ -98,10 +129,11 @@ export function CreateRequestClient({
       }
 
       setNewRequestId(result.id);
+      setNewTicketNumber(result.ticket_number);
       setShowSuccessModal(true);
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : "Failed to create request");
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Only unset on error
     }
   };
 
@@ -129,9 +161,9 @@ export function CreateRequestClient({
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={handleModalClose}
-        title="Request Submitted!"
-        message="Your request has been successfully submitted for review."
-        buttonText="View Request"
+        title={newTicketNumber ? `Ticket #${String(newTicketNumber).padStart(4, "0")} Submitted!` : "Ticket Submitted!"}
+        message="Your ticket has been successfully submitted for review."
+        buttonText="View Ticket"
       />
 
       {/* Header */}
@@ -203,12 +235,77 @@ export function CreateRequestClient({
           onFilesChange={setFiles}
           requiredPdfs={requiredPdfs}
           fields={formFields}
-          onSubmit={handleSubmit}
+          onSubmit={handleFormSubmit}
           onCancel={handleCancel}
           onBack={handleBack}
           isSubmitting={isSubmitting}
+          branches={branches}
         />
       )}
+
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Ticket Submission</DialogTitle>
+            <DialogDescription>
+              Please review your ticket details before submitting.
+            </DialogDescription>
+          </DialogHeader>
+
+          {pendingData && (
+            <div className="py-4 text-sm space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-medium text-gray-500">Title:</span>
+                <span className="col-span-2 font-medium text-gray-900">{pendingData.values.title as string}</span>
+
+                <span className="font-medium text-gray-500">Category:</span>
+                <span className="col-span-2 text-gray-900">{selectedCategory?.label}</span>
+
+                <span className="font-medium text-gray-500">Priority:</span>
+                <span className="col-span-2 capitalize text-gray-900">{pendingData.values.priority as string}</span>
+
+                <span className="font-medium text-gray-500">Branch:</span>
+                <span className="col-span-2 text-gray-900">
+                  {branches.find(b => b.id === pendingData.values.branch_id)?.name || "Unknown Branch"}
+                </span>
+
+                {/* Dynamic Fields */}
+                {Object.entries(pendingData.values).map(([key, value]) => {
+                  if (["title", "priority", "branch_id", "category"].includes(key)) return null;
+                  // Find label from config if possible, else format key
+                  const fieldDef = formConfigs[selectedCategory?.key || ""]?.fields?.find((f: any) => f.name === key);
+                  const label = fieldDef?.label || key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+
+                  if (value === undefined || value === "" || value === null) return null;
+
+                  return (
+                    <div key={key} className="contents">
+                      <span className="font-medium text-gray-500">{label}:</span>
+                      <span className="col-span-2 text-gray-900 break-words">
+                        {String(value)}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                <span className="font-medium text-gray-500">Attachments:</span>
+                <span className="col-span-2 text-gray-900">
+                  {files.length > 0 ? `${files.length} file(s)` : "None"}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
+              Back to Edit
+            </Button>
+            <Button onClick={executeSubmission} className="bg-[#358334] hover:bg-[#2F5E3D]">
+              Confirm Submission
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
