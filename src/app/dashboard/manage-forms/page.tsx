@@ -7,6 +7,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Check, X, Plus } from "lucide-react";
 
+import DeleteCategoryButton from "./_components/DeleteCategoryButton";
+
 export default async function ManageFormsPage() {
     const user = await getAuthUser();
     if (!user) redirect("/login");
@@ -67,20 +69,29 @@ export default async function ManageFormsPage() {
                     const isActive = config?.is_active ?? true;
                     const displayCode = cat.code || displayLabel.substring(0, 3).toUpperCase();
 
+                    const isDefault = CATEGORIES.some(c => c.key === cat.key);
+
                     return (
                         <div key={cat.key} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden group">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="h-10 w-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-500 group-hover:text-blue-600 transition-colors">
                                     <span className="font-bold text-lg">{displayCode[0]}</span>
                                 </div>
-                                <div className={cn(
-                                    "px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border",
-                                    isActive
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                        : "bg-gray-50 text-gray-600 border-gray-200"
-                                )}>
-                                    {isActive ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                                    {isActive ? "Active" : "Inactive"}
+                                <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                        "px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border",
+                                        isActive
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                            : "bg-gray-50 text-gray-600 border-gray-200"
+                                    )}>
+                                        {isActive ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                                        {isActive ? "Active" : "Inactive"}
+                                    </div>
+                                    <DeleteCategoryButton
+                                        categoryKey={cat.key}
+                                        categoryLabel={displayLabel}
+                                        isDefault={isDefault}
+                                    />
                                 </div>
                             </div>
 

@@ -124,3 +124,17 @@ export async function createFormConfig(data: {
     revalidatePath("/dashboard/requests/create");
     return { success: true };
 }
+
+export async function deleteFormConfig(categoryKey: string) {
+    const admin = await requireAdmin();
+
+    const isDefault = CATEGORIES.some(c => c.key === categoryKey);
+
+    await db.delete(formConfigs).where(eq(formConfigs.category_key, categoryKey));
+
+    revalidatePath("/dashboard/manage-forms");
+    revalidatePath("/dashboard/requests/create");
+    revalidatePath(`/dashboard/manage-forms/${categoryKey}`);
+
+    return { success: true, isDefault };
+}
