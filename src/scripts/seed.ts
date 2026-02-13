@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
+import { sql, notInArray } from "drizzle-orm";
 import postgres from "postgres";
 import dotenv from "dotenv";
 import * as schema from "@/db/schema";
@@ -17,15 +18,31 @@ async function main() {
   const db = drizzle(client, { schema });
 
   const branchData = [
-    { name: "Main Office", code: "MAIN", address: "123 Corporate Blvd" },
-    { name: "North Branch", code: "NTH", address: "456 North St" },
-    { name: "South Branch", code: "STH", address: "789 South Ave" },
-    { name: "East Branch", code: "EST", address: "321 East Rd" },
-    { name: "West Branch", code: "WST", address: "654 West Ln" },
+    { name: "Prime Electric", code: "MAIN", address: "Philippines" },
+    { name: "Negros Power", code: "NGP", address: "Negros Occidental" },
+    { name: "MORE Power", code: "MOR", address: "Iloilo" },
+    { name: "Bohol Light", code: "BHL", address: "Bohol" },
+    { name: "Ignite Power", code: "IGP", address: "Mindanao" },
   ];
 
   console.log("Inserting branches...");
-  await db.insert(schema.branches).values(branchData).onConflictDoNothing();
+  await db
+    .insert(schema.branches)
+    .values(branchData)
+    .onConflictDoUpdate({
+      target: schema.branches.code,
+      set: {
+        name: sql.raw(`excluded.name`),
+        address: sql.raw(`excluded.address`),
+      },
+    });
+
+  console.log("Deactivating old branches...");
+  const validCodes = branchData.map(b => b.code);
+  await db
+    .update(schema.branches)
+    .set({ is_active: false })
+    .where(notInArray(schema.branches.code, validCodes));
 
   console.log("Seeding complete.");
   await client.end();

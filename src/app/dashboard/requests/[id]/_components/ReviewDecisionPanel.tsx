@@ -36,15 +36,24 @@ function DecisionButton({
         <button
             onClick={() => onSelect(id)}
             className={cn(
-                "flex flex-col items-start p-4 rounded-xl border transition-all text-left h-full w-full",
+                "flex items-center gap-4 p-4 rounded-xl border transition-all text-left w-full",
                 isSelected ? activeClass : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
             )}
         >
-            <div className="flex items-center gap-2 mb-2">
-                <Icon className={cn("h-5 w-5", isSelected ? "currentColor" : "text-gray-400")} />
-                <span className={cn("font-bold text-sm", isSelected ? "currentColor" : "text-gray-900")}>{label}</span>
+            <div className={cn(
+                "flex items-center justify-center h-10 w-10 rounded-full shrink-0 transition-colors",
+                isSelected ? "bg-white/20" : "bg-gray-100 text-gray-500"
+            )}>
+                <Icon className={cn("h-5 w-5", isSelected ? "text-current" : "text-gray-600")} />
             </div>
-            <span className={cn("text-xs", isSelected ? "currentColor" : "text-gray-500")}>{sublabel}</span>
+            <div className="flex flex-col">
+                <span className={cn("font-bold text-sm", isSelected ? "text-current" : "text-gray-900")}>
+                    {label}
+                </span>
+                <span className={cn("text-xs", isSelected ? "text-current opacity-80" : "text-gray-500")}>
+                    {sublabel}
+                </span>
+            </div>
         </button>
     );
 }
@@ -57,7 +66,8 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
 
     const handleSubmit = async () => {
         if (!selectedDecision) return;
-        if (selectedDecision !== "resolve" && !comment.trim()) {
+        // Comment is only required for "cancel", optional for "resolve" and "reopen"
+        if (selectedDecision === "cancel" && !comment.trim()) {
             alert("Please provide a comment for this decision.");
             return;
         }
@@ -92,7 +102,7 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
         <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm ring-1 ring-gray-100">
             <h3 className="font-bold text-gray-900 mb-4 md:mb-6">Make Decision</h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
+            <div className="flex flex-col gap-3">
                 <DecisionButton
                     id="resolve"
                     icon={CheckCircle2}
@@ -123,23 +133,26 @@ export default function ReviewDecisionPanel({ requestId }: { requestId: string; 
                 <>
                     <div className="space-y-3 mt-6">
                         <label className="text-sm font-bold text-gray-900 flex items-center gap-1">
-                            Comment <span className="text-red-500">*</span>
+                            Comment
+                            {selectedDecision === "cancel" ? (
+                                <span className="text-red-500">*</span>
+                            ) : (
+                                <span className="text-gray-400 font-normal text-xs ml-1">(Optional)</span>
+                            )}
                         </label>
                         <textarea
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             placeholder={
-                                selectedDecision === "resolve"
-                                    ? "Reason for resolution..."
-                                    : selectedDecision === "reopen"
-                                        ? "Reason for reopening..."
-                                        : "Reason for cancellation..."
+                                selectedDecision === "cancel"
+                                    ? "Reason for cancellation..."
+                                    : "Add an optional comment..."
                             }
                             className="w-full rounded-lg border-gray-200 text-base md:text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0 text-gray-900"
                         />
                     </div>
 
-                    <div className="mt-6 flex justify-end">
+                    <div className="mt-6 flex justify-center">
                         <button
                             onClick={handleSubmit}
                             disabled={isPending}

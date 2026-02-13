@@ -4,12 +4,11 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CATEGORIES, REQUIRED_PDFS, type CategoryMeta, type FormConfig } from "@/db/schema";
+import type { CategoryMeta, FormConfig } from "@/db/schema";
 import { createRequest, saveAttachments } from "@/actions/request";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { CategorySelect } from "./CategorySelect";
-import { RequestForm } from "./RequestForm";
-import { DocumentUpload } from "./DocumentUpload";
+import { RequestForm, type FieldDef } from "./RequestForm";
 import SuccessModal from "@/components/SuccessModal";
 
 const STEPS = [
@@ -18,10 +17,12 @@ const STEPS = [
   { label: "Submit", number: 3 },
 ];
 
-export default function CreateRequestClient({
-  configs,
+export function CreateRequestClient({
+  categories,
+  formConfigs
 }: {
-  configs: FormConfig[];
+  categories: CategoryMeta[];
+  formConfigs: Record<string, FormConfig>;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -31,15 +32,8 @@ export default function CreateRequestClient({
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
-
-  // Filter Categories based on active config (if any)
-  const availableCategories = CATEGORIES.filter(c => {
-    const config = configs.find(cfg => cfg.category_key === c.key);
-    return config ? config.is_active : true;
-  });
 
   const handleCategorySelect = useCallback((category: CategoryMeta) => {
     setSelectedCategory(category);
@@ -55,12 +49,10 @@ export default function CreateRequestClient({
     if (step > 1) setStep(step - 1);
   };
 
-  // No longer separate intermediate step handler.
-  const handleSubmit = async (values: Record<string, unknown>, _asDraft: boolean) => {
+  const handleSubmit = async (values: Record<string, unknown>, asDraft: boolean) => {
     if (!selectedCategory) return;
     setIsSubmitting(true);
-    setError(null);
-    setFormValues(values); // Save for potential back navigation
+    setFormValues(values);
 
     try {
       const result = await createRequest({
@@ -82,7 +74,6 @@ export default function CreateRequestClient({
         }[] = [];
 
         for (const file of files) {
-          // Sanitize filename to avoid issues
           const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
           const filePath = `${result.id}/${Date.now()}-${sanitizedName}`;
 
@@ -109,7 +100,7 @@ export default function CreateRequestClient({
       setNewRequestId(result.id);
       setShowSuccessModal(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create request");
+      console.error(err instanceof Error ? err.message : "Failed to create request");
       setIsSubmitting(false);
     }
   };
@@ -127,10 +118,11 @@ export default function CreateRequestClient({
     }
   };
 
-  const categoryConfig = configs.find(c => c.category_key === selectedCategory?.key);
-  const requiredPdfs = categoryConfig?.required_pdfs?.length
-    ? categoryConfig.required_pdfs
-    : (selectedCategory ? (REQUIRED_PDFS[selectedCategory.key] ?? []) : []);
+  // Get config for selected category
+  const activeConfig = selectedCategory ? formConfigs[selectedCategory.key] : null;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const formFields = (activeConfig?.fields as any as FieldDef[]) ?? [];
+  const requiredPdfs = activeConfig?.required_pdfs ?? [];
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -195,7 +187,7 @@ export default function CreateRequestClient({
       {/* Step Content */}
       {step === 1 && (
         <CategorySelect
-          categories={availableCategories}
+          categories={categories}
           selected={selectedCategory}
           onSelect={handleCategorySelect}
           onNext={handleNext}
@@ -204,25 +196,18 @@ export default function CreateRequestClient({
       )}
 
       {step === 2 && selectedCategory && (
-        <div className="space-y-4">
-          {categoryConfig?.instructions && (
-            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-sm text-blue-900 mb-6">
-              <p className="font-medium mb-1">Instructions:</p>
-              <p>{categoryConfig.instructions}</p>
-            </div>
-          )}
-          <RequestForm
-            category={selectedCategory}
-            initialValues={formValues}
-            files={files}
-            onFilesChange={setFiles}
-            requiredPdfs={requiredPdfs}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            onBack={handleBack}
-            isSubmitting={isSubmitting}
-          />
-        </div>
+        <RequestForm
+          category={selectedCategory}
+          initialValues={formValues}
+          files={files}
+          onFilesChange={setFiles}
+          requiredPdfs={requiredPdfs}
+          fields={formFields}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          onBack={handleBack}
+          isSubmitting={isSubmitting}
+        />
       )}
     </div>
   );

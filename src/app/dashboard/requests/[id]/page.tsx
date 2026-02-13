@@ -7,9 +7,6 @@ import {
   XCircle,
   Clock,
   FileText,
-  MapPin,
-  Building2,
-  Pencil,
 } from "lucide-react";
 import { getRequestById, updateRequestStatus } from "@/actions/request";
 import {
@@ -245,15 +242,7 @@ export default async function RequestDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
-          {/* Manage Form Button for Admins */}
-          {!isReviewMode && isAdmin && hasBranchAccess && (
-            <Link
-              href={`/dashboard/requests/${id}/edit`}
-              className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center gap-2"
-            >
-              <Pencil className="h-4 w-4" /> Manage Form
-            </Link>
-          )}
+
 
           {/* Manage Request or Reopen Button for Admins */}
           {!isReviewMode && isAdmin && hasBranchAccess && (
@@ -318,15 +307,15 @@ export default async function RequestDetailPage({
             <ResubmitPanel requestId={request.id} revisionReason={revisionReason} />
           )}
 
-          {/* Attachments */}
-          <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
-
           {/* Review Decision Panel (Only for Review Mode) */}
           {isReviewMode && (
-            <div className="mt-8">
+            <div className="mb-6">
               <ReviewDecisionPanel requestId={request.id} currentStatus={request.status} />
             </div>
           )}
+
+          {/* Attachments */}
+          <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
 
           {/* Approval Actions (Conditional - Old way, kept for backward compat if ReviewDecisionPanel isn't fully replacing yet, 
               but ReviewDecisionPanel is the new standard for Review Mode. 
@@ -337,10 +326,12 @@ export default async function RequestDetailPage({
 
           {/* Actions for Tracking Mode (Non-Review, but Admin might see something? No, Manage Request handles that) */}
 
-          {/* Comments Section */}
-          <div className="mt-6">
-            <RequestComments comments={request.comments} />
-          </div>
+          {/* Comments Section - Only in Tracking Mode */}
+          {!isReviewMode && (
+            <div className="mt-6">
+              <RequestComments comments={request.comments} />
+            </div>
+          )}
         </div>
       </div>
     </div >

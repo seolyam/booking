@@ -11,7 +11,7 @@ export default function RequestComments({ comments }: RequestCommentsProps) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
             <h3 className="font-bold text-gray-900 mb-2">Comments</h3>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
                 {comments.length === 0 ? (
                     <div className="text-sm text-gray-500 italic py-2">No comments yet.</div>
                 ) : (
