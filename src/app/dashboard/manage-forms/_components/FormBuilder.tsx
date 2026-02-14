@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { type FormConfig } from "@/db/schema";
+import { type FormConfig, type FieldSchema } from "@/db/schema";
 import { updateFormConfig, createFormConfig } from "@/actions/form-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,16 +54,16 @@ export function FormBuilder({
 
     // Initialize fields converting from DB format (name, options obj) to UI format (id, options string[])
     const [fields, setFields] = useState<FieldDefinition[]>(() => {
-        const rawFields = (initialData?.fields as any[]) ?? [];
-        return rawFields.map((f: any) => ({
-            id: f.name || f.id || `field_${Math.random().toString(36).substr(2, 9)}`,
+        const rawFields = (initialData?.fields ?? []) as FieldSchema[];
+        return rawFields.map((f) => ({
+            id: f.name || `field_${Math.random().toString(36).substr(2, 9)}`,
             label: f.label,
-            type: f.type,
-            required: f.required,
+            type: f.type as FieldDefinition["type"],
+            required: f.required ?? false,
             enabled: f.enabled !== false, // default true
-            options: Array.isArray(f.options) && typeof f.options[0] === 'object'
-                ? f.options.map((o: any) => o.value)
-                : (f.options ?? []),
+            options: Array.isArray(f.options) && f.options.length > 0 && typeof f.options[0] === 'object'
+                ? f.options.map((o) => o.value)
+                : [],
             placeholder: f.placeholder,
             description: f.description
         }));
@@ -146,8 +146,8 @@ export function FormBuilder({
                     await updateFormConfig(categoryKey, data);
                 }
 
-                router.refresh();
                 router.push("/dashboard/manage-forms");
+                router.refresh();
             } catch (error) {
                 console.error(error);
                 alert("Failed to save configuration");
@@ -243,7 +243,7 @@ export function FormBuilder({
                     <CardContent className="space-y-4">
                         {fields.length === 0 ? (
                             <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
-                                No fields added yet. Click "Add Field" to start.
+                                No fields added yet. Click &quot;Add Field&quot; to start.
                             </div>
                         ) : (
                             fields.map((field, index) => (
@@ -278,7 +278,7 @@ export function FormBuilder({
                                                     <Label className="text-xs text-gray-500">Type</Label>
                                                     <Select
                                                         value={field.type}
-                                                        onValueChange={(val: any) => handleUpdateField(index, { type: val })}
+                                                        onValueChange={(val: FieldDefinition["type"]) => handleUpdateField(index, { type: val })}
                                                     >
                                                         <SelectTrigger className="h-9 border-gray-300">
                                                             <SelectValue />

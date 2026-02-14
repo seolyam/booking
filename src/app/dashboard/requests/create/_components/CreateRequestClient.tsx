@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CategoryMeta, FormConfig } from "@/db/schema";
+import { REQUIRED_PDFS, type CategoryMeta, type FormConfig } from "@/db/schema";
 import { createRequest, saveAttachments } from "@/actions/request";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { CategorySelect } from "./CategorySelect";
@@ -121,8 +121,12 @@ export function CreateRequestClient({
   // Get config for selected category
   const activeConfig = selectedCategory ? formConfigs[selectedCategory.key] : null;
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const formFields = (activeConfig?.fields as any as FieldDef[]) ?? [];
-  const requiredPdfs = activeConfig?.required_pdfs ?? [];
+  const allFields = (activeConfig?.fields as any as (FieldDef & { enabled?: boolean })[]) ?? [];
+  // Filter out disabled fields so they don't appear in the request form
+  const formFields = allFields.filter(f => f.enabled !== false);
+  // Fall back to hardcoded REQUIRED_PDFS for categories without DB config
+  const requiredPdfs = activeConfig?.required_pdfs
+    ?? (selectedCategory ? REQUIRED_PDFS[selectedCategory.key] ?? [] : []);
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">

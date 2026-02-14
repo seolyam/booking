@@ -41,6 +41,7 @@ export default async function ManageFormCategoryPage({
         icon_key: hardcodedCategory?.icon || "FileText",
         is_active: true,
         required_pdfs: REQUIRED_PDFS[categoryKey] ?? [],
+        instructions: "",
         fields: [],
     };
 
