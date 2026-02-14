@@ -9,6 +9,18 @@ import {
   Radio,
   HardHat,
   Package,
+  FileText,
+  File,
+  Clock,
+  Briefcase,
+  Calendar,
+  Wrench,
+  Car,
+  Bus,
+  Zap,
+  Droplet,
+  Monitor,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,6 +35,18 @@ const iconMap: Record<string, React.ElementType> = {
   Radio,
   HardHat,
   Package,
+  FileText,
+  File,
+  Clock,
+  Briefcase,
+  Calendar,
+  Wrench,
+  Car,
+  Bus,
+  Zap,
+  Droplet,
+  Monitor,
+  Smartphone,
 };
 
 export function CategorySelect({
@@ -40,7 +64,7 @@ export function CategorySelect({
 }) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 max-h-[60vh] overflow-y-auto pr-2">
         {categories.map((cat) => {
           const Icon = iconMap[cat.icon] ?? Package;
           const isSelected = selected?.key === cat.key;

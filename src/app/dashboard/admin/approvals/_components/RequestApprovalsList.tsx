@@ -58,8 +58,8 @@ export default function RequestApprovalsList({
                             </h3>
                         </div>
                         <div className="flex items-center gap-3">
-                            <span className="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wide">
-                                Reviewed
+                            <span className="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wide">
+                                Pending Review
                             </span>
                         </div>
                     </div>
@@ -117,7 +117,7 @@ export default function RequestApprovalsList({
                         <form
                             action={async () => {
                                 "use server";
-                                await updateRequestStatus(r.id, "approved", "Approved by admin");
+                                await updateRequestStatus(r.id, "pending", "Approved by admin — moved to pending");
                             }}
                         >
                             <Button
@@ -132,8 +132,8 @@ export default function RequestApprovalsList({
                         <form
                             action={async () => {
                                 "use server";
-                                // For rejection, we might want a reason modal, but simple reject works for now or redirect
-                                await updateRequestStatus(r.id, "rejected", "Rejected by admin");
+                                // For rejection, we might want a reason modal, but simple cancel works for now
+                                await updateRequestStatus(r.id, "cancelled", "Rejected by admin");
                             }}
                         >
                             <Button

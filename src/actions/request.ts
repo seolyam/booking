@@ -146,8 +146,18 @@ export async function getRequests(filters?: {
 
   const conditions = [];
 
-  // Always filter to show only the user's own requests
-  conditions.push(eq(requests.requester_id, appUser.id));
+  // Filter by user role
+  if (appUser.role === "requester") {
+    conditions.push(eq(requests.requester_id, appUser.id));
+  } else {
+    // For admins/superadmins: show requests they created OR resolved
+    conditions.push(
+      or(
+        eq(requests.requester_id, appUser.id),
+        eq(requests.closed_by, appUser.id)
+      )
+    );
+  }
 
   if (filters?.status && filters.status !== "all") {
     const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
@@ -232,43 +242,68 @@ export async function getRequestById(id: string) {
 }
 
 export async function getBranches() {
-  return db
+  const result = await db
     .select({ id: branches.id, name: branches.name, code: branches.code })
     .from(branches)
-    .where(eq(branches.is_active, true))
-    .orderBy(branches.name);
+    .where(eq(branches.is_active, true));
+
+  // Sort: Prime/MAIN first, Ignite/IGP last, others in specified order if possible.
+  // The user asked for "Prime Electric at the top" and "Ignite Power at the bottom".
+  // The previous list was: Prime Electric, Negros Power, MORE Power, Bohol Light, Ignite Power.
+
+  const sortOrder = ["MAIN", "NGP", "MOR", "BHL", "IGP"];
+
+  return result.sort((a, b) => {
+    const indexA = sortOrder.indexOf(a.code);
+    const indexB = sortOrder.indexOf(b.code);
+
+    // If not in the list, push to end, but before explicitly last items if any (none here since all are in list)
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+
+    return indexA - indexB;
+  });
 }
 
 // ============================================================================
 // Mutations
 // ============================================================================
 
-const numeric = z.coerce.number();
-const positiveInt = numeric.int().positive();
+const optionalPositiveInt = z.preprocess(
+  (val) => {
+    if (val === "" || val === undefined || val === null) return undefined;
+    return Number(val);
+  },
+  z.number({ invalid_type_error: "Must be a number" }).int().positive("Must be greater than 0").optional()
+);
+
 const optionalNumber = z.preprocess(
-  (val) => (val === "" ? undefined : val),
-  z.coerce.number().min(0).optional()
+  (val) => {
+    if (val === "" || val === undefined || val === null) return undefined;
+    return Number(val);
+  },
+  z.number({ invalid_type_error: "Must be a number" }).min(0).optional()
 );
 
 const CATEGORY_SCHEMAS: Record<string, z.ZodSchema> = {
   flight_booking: z.object({
-    number_of_passengers: positiveInt,
+    number_of_passengers: optionalPositiveInt,
     allocated_budget: optionalNumber,
   }).passthrough(),
   hotel_accommodation: z.object({
-    number_of_rooms: positiveInt,
-    number_of_guests: positiveInt,
+    number_of_rooms: optionalPositiveInt,
+    number_of_guests: optionalPositiveInt,
     allocated_budget: optionalNumber,
   }).passthrough(),
   meals: z.object({
-    number_of_pax: positiveInt,
+    number_of_pax: optionalPositiveInt,
     allocated_budget: optionalNumber,
   }).passthrough(),
   room_reservation: z.object({
-    number_of_attendees: positiveInt,
+    number_of_attendees: optionalPositiveInt,
   }).passthrough(),
   equipments_assets: z.object({
-    quantity: positiveInt,
+    quantity: optionalPositiveInt,
     unit_cost: optionalNumber,
     total_budget: optionalNumber,
   }).passthrough(),
@@ -337,7 +372,7 @@ export async function createRequest(formData: {
         requestTitle: parsed.title,
         category: categoryMeta?.label ?? parsed.category,
         requestId: inserted.id,
-      }).catch(() => {});
+      }).catch(() => { });
     });
 
     revalidatePath("/dashboard");
@@ -449,7 +484,7 @@ export async function updateRequestStatus(
           newStatus,
           comment,
           requestId,
-        }).catch(() => {});
+        }).catch(() => { });
 
         // Send rating request email when resolved
         if (newStatus === "resolved") {
@@ -458,7 +493,7 @@ export async function updateRequestStatus(
             requesterName: requester.full_name ?? requester.email,
             requestTitle: existing.title,
             requestId,
-          }).catch(() => {});
+          }).catch(() => { });
         }
       });
   }

@@ -1,15 +1,23 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CATEGORIES, REQUIRED_PDFS, type CategoryMeta, type FormConfig } from "@/db/schema";
-import { createRequest, saveAttachments } from "@/actions/request";
+import type { CategoryMeta, FormConfig } from "@/db/schema";
+import { createRequest, saveAttachments, getBranches } from "@/actions/request";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { CategorySelect } from "./CategorySelect";
-import { RequestForm } from "./RequestForm";
-import { DocumentUpload } from "./DocumentUpload";
+import { RequestForm, type FieldDef } from "./RequestForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import SuccessModal from "@/components/SuccessModal";
 
 const STEPS = [
@@ -18,10 +26,12 @@ const STEPS = [
   { label: "Submit", number: 3 },
 ];
 
-export default function CreateRequestClient({
-  configs,
+export function CreateRequestClient({
+  categories,
+  formConfigs
 }: {
-  configs: FormConfig[];
+  categories: CategoryMeta[];
+  formConfigs: Record<string, FormConfig>;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -31,15 +41,19 @@ export default function CreateRequestClient({
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingData, setPendingData] = useState<{
+    values: Record<string, unknown>;
+    asDraft: boolean;
+  } | null>(null);
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
+  const [newTicketNumber, setNewTicketNumber] = useState<string | number | null>(null);
+  const [branches, setBranches] = useState<{ id: string; name: string; code: string }[]>([]);
 
-  // Filter Categories based on active config (if any)
-  const availableCategories = CATEGORIES.filter(c => {
-    const config = configs.find(cfg => cfg.category_key === c.key);
-    return config ? config.is_active : true;
-  });
+  useEffect(() => {
+    getBranches().then(setBranches).catch(console.error);
+  }, []);
 
   const handleCategorySelect = useCallback((category: CategoryMeta) => {
     setSelectedCategory(category);
@@ -55,12 +69,21 @@ export default function CreateRequestClient({
     if (step > 1) setStep(step - 1);
   };
 
-  // No longer separate intermediate step handler.
-  const handleSubmit = async (values: Record<string, unknown>, _asDraft: boolean) => {
-    if (!selectedCategory) return;
+  const handleFormSubmit = (values: Record<string, unknown>, asDraft: boolean) => {
+    setPendingData({ values, asDraft });
+    setShowConfirmation(true);
+  };
+
+  const executeSubmission = async () => {
+    if (!selectedCategory || !pendingData) return;
+
+    setShowConfirmation(false);
     setIsSubmitting(true);
-    setError(null);
-    setFormValues(values); // Save for potential back navigation
+
+    const { values } = pendingData;
+    setFormValues(values);
+
+    console.log("Submitting values:", values); // Debug log
 
     try {
       const result = await createRequest({
@@ -82,7 +105,6 @@ export default function CreateRequestClient({
         }[] = [];
 
         for (const file of files) {
-          // Sanitize filename to avoid issues
           const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
           const filePath = `${result.id}/${Date.now()}-${sanitizedName}`;
 
@@ -107,10 +129,11 @@ export default function CreateRequestClient({
       }
 
       setNewRequestId(result.id);
+      setNewTicketNumber(result.ticket_number);
       setShowSuccessModal(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create request");
-      setIsSubmitting(false);
+      console.error(err instanceof Error ? err.message : "Failed to create request");
+      setIsSubmitting(false); // Only unset on error
     }
   };
 
@@ -127,19 +150,20 @@ export default function CreateRequestClient({
     }
   };
 
-  const categoryConfig = configs.find(c => c.category_key === selectedCategory?.key);
-  const requiredPdfs = categoryConfig?.required_pdfs?.length
-    ? categoryConfig.required_pdfs
-    : (selectedCategory ? (REQUIRED_PDFS[selectedCategory.key] ?? []) : []);
+  // Get config for selected category
+  const activeConfig = selectedCategory ? formConfigs[selectedCategory.key] : null;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const formFields = (activeConfig?.fields as any as FieldDef[]) ?? [];
+  const requiredPdfs = activeConfig?.required_pdfs ?? [];
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={handleModalClose}
-        title="Request Submitted!"
-        message="Your request has been successfully submitted for review."
-        buttonText="View Request"
+        title={newTicketNumber ? `Ticket #${String(newTicketNumber).padStart(4, "0")} Submitted!` : "Ticket Submitted!"}
+        message="Your ticket has been successfully submitted for review."
+        buttonText="View Ticket"
       />
 
       {/* Header */}
@@ -195,7 +219,7 @@ export default function CreateRequestClient({
       {/* Step Content */}
       {step === 1 && (
         <CategorySelect
-          categories={availableCategories}
+          categories={categories}
           selected={selectedCategory}
           onSelect={handleCategorySelect}
           onNext={handleNext}
@@ -204,26 +228,84 @@ export default function CreateRequestClient({
       )}
 
       {step === 2 && selectedCategory && (
-        <div className="space-y-4">
-          {categoryConfig?.instructions && (
-            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-sm text-blue-900 mb-6">
-              <p className="font-medium mb-1">Instructions:</p>
-              <p>{categoryConfig.instructions}</p>
+        <RequestForm
+          category={selectedCategory}
+          initialValues={formValues}
+          files={files}
+          onFilesChange={setFiles}
+          requiredPdfs={requiredPdfs}
+          fields={formFields}
+          onSubmit={handleFormSubmit}
+          onCancel={handleCancel}
+          onBack={handleBack}
+          isSubmitting={isSubmitting}
+          branches={branches}
+        />
+      )}
+
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Ticket Submission</DialogTitle>
+            <DialogDescription>
+              Please review your ticket details before submitting.
+            </DialogDescription>
+          </DialogHeader>
+
+          {pendingData && (
+            <div className="py-4 text-sm space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-medium text-gray-500">Title:</span>
+                <span className="col-span-2 font-medium text-gray-900">{pendingData.values.title as string}</span>
+
+                <span className="font-medium text-gray-500">Category:</span>
+                <span className="col-span-2 text-gray-900">{selectedCategory?.label}</span>
+
+                <span className="font-medium text-gray-500">Priority:</span>
+                <span className="col-span-2 capitalize text-gray-900">{pendingData.values.priority as string}</span>
+
+                <span className="font-medium text-gray-500">Branch:</span>
+                <span className="col-span-2 text-gray-900">
+                  {branches.find(b => b.id === pendingData.values.branch_id)?.name || "Unknown Branch"}
+                </span>
+
+                {/* Dynamic Fields */}
+                {Object.entries(pendingData.values).map(([key, value]) => {
+                  if (["title", "priority", "branch_id", "category"].includes(key)) return null;
+                  // Find label from config if possible, else format key
+                  const fieldDef = formConfigs[selectedCategory?.key || ""]?.fields?.find((f: any) => f.name === key);
+                  const label = fieldDef?.label || key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+
+                  if (value === undefined || value === "" || value === null) return null;
+
+                  return (
+                    <div key={key} className="contents">
+                      <span className="font-medium text-gray-500">{label}:</span>
+                      <span className="col-span-2 text-gray-900 break-words">
+                        {String(value)}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                <span className="font-medium text-gray-500">Attachments:</span>
+                <span className="col-span-2 text-gray-900">
+                  {files.length > 0 ? `${files.length} file(s)` : "None"}
+                </span>
+              </div>
             </div>
           )}
-          <RequestForm
-            category={selectedCategory}
-            initialValues={formValues}
-            files={files}
-            onFilesChange={setFiles}
-            requiredPdfs={requiredPdfs}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            onBack={handleBack}
-            isSubmitting={isSubmitting}
-          />
-        </div>
-      )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
+              Back to Edit
+            </Button>
+            <Button onClick={executeSubmission} className="bg-[#358334] hover:bg-[#2F5E3D]">
+              Confirm Submission
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

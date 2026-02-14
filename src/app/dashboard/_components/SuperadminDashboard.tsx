@@ -42,7 +42,7 @@ export default function SuperadminDashboard({
               value="requests"
               className="h-full shrink-0 rounded-none border-b-2 border-transparent px-3 md:px-6 py-0 text-xs md:text-sm whitespace-nowrap data-[state=active]:border-[#358334] data-[state=active]:bg-white"
             >
-              All Requests
+              All Tickets
             </TabsTrigger>
             <TabsTrigger
               value="users"
@@ -60,7 +60,7 @@ export default function SuperadminDashboard({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-bold text-gray-900">Recent Requests</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Recent Tickets</h2>
                   <RequestsFilter />
                 </div>
                 <Link href="/dashboard/admin/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">

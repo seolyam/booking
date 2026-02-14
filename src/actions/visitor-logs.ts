@@ -6,7 +6,6 @@ import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { z, ZodError } from "zod";
 
 // ============================================================================
 // Helpers
@@ -25,17 +24,6 @@ async function requireAdmin() {
   }
   return appUser;
 }
-
-// ============================================================================
-// Schemas
-// ============================================================================
-
-const logVisitorSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
-  company: z.string().max(255).optional().nullable(),
-  contact_number: z.string().max(50).optional().nullable(),
-  purpose_of_visit: z.string().min(1, "Purpose of visit is required").max(1000),
-});
 
 // ============================================================================
 // Queries
@@ -67,44 +55,6 @@ export async function getVisitorLogs(filters?: {
 // ============================================================================
 // Mutations
 // ============================================================================
-
-export async function logVisitor(formData: {
-  name: string;
-  company?: string | null;
-  contact_number?: string | null;
-  purpose_of_visit: string;
-}): Promise<{ id: string } | { error: string }> {
-  await requireAdmin();
-
-  try {
-    const parsed = logVisitorSchema.parse(formData);
-
-    const [inserted] = await db
-      .insert(visitorLogs)
-      .values({
-        name: parsed.name,
-        company: parsed.company ?? null,
-        contact_number: parsed.contact_number ?? null,
-        purpose_of_visit: parsed.purpose_of_visit,
-      })
-      .returning({ id: visitorLogs.id });
-
-    if (!inserted) throw new Error("Failed to log visitor");
-
-    revalidatePath("/dashboard/admin/visitor-logs");
-
-    return { id: inserted.id };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      const fieldErrors = error.issues.map((err) => {
-        const path = err.path.join(".");
-        return `${path}: ${err.message}`;
-      });
-      return { error: `Validation failed: ${fieldErrors.join(", ")}` };
-    }
-    throw error;
-  }
-}
 
 export async function clockOutVisitor(
   visitorId: string,

@@ -143,7 +143,7 @@ export const requests = pgTable(
     branch_id: uuid("branch_id")
       .references(() => branches.id)
       .notNull(),
-    category: requestCategoryEnum("category").notNull(),
+    category: text("category").notNull(),
     status: requestStatusEnum("status").default("open").notNull(),
     priority: requestPriorityEnum("priority").default("medium").notNull(),
     form_data: jsonb("form_data").notNull().default({}),
@@ -262,13 +262,28 @@ export const notifications = pgTable(
   ],
 );
 
+export type FieldSchema = {
+  name: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  enabled?: boolean;
+  options?: { label: string; value: string }[];
+  placeholder?: string;
+  description?: string;
+};
+
 export const formConfigs = pgTable(
   "form_configs",
   {
     category_key: text("category_key").primaryKey(),
+    category_label: text("category_label"),
+    description: text("description"),
+    icon_key: text("icon_key"),
     is_active: boolean("is_active").default(true).notNull(),
     required_pdfs: jsonb("required_pdfs").$type<string[]>().default([]).notNull(),
     instructions: text("instructions"),
+    fields: jsonb("fields").$type<FieldSchema[]>().default([]),
     updated_at: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

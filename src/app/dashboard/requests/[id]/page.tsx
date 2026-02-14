@@ -6,12 +6,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  AlertCircle,
   FileText,
-  Archive,
-  MapPin,
-  Building2,
-  Pencil,
 } from "lucide-react";
 import { getRequestById, updateRequestStatus } from "@/actions/request";
 import {
@@ -83,12 +78,12 @@ function actionLabel(action: string) {
     status_changed: "Status Updated",
     comment_added: "Comment Added",
     file_uploaded: "File Uploaded",
-    approved: "Resolved",
-    rejected: "Rejected",
-    closed: "Closed",
+    approved: "Approved",
+    rejected: "Cancelled",
     reopened: "Reopened",
-    reviewed: "Reviewed",
-    needs_revision: "Revision Requested",
+    resolved: "Resolved",
+    cancelled: "Cancelled",
+    pending: "Moved to Pending",
   };
   // Handle dynamic status change labels
   if (action.startsWith("status_changed_to_")) {
@@ -237,25 +232,17 @@ export default async function RequestDetailPage({
           </Link>
           <div className="min-w-0">
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-              {isReviewMode ? "Request Review" : "Request Tracking"}
+              {isReviewMode ? "Ticket Review" : "Ticket Tracking"}
             </h1>
             <p className="text-xs md:text-sm text-gray-500 mt-1 line-clamp-2">
               {isReviewMode
-                ? "Review and verify request details before approving"
-                : "Track the complete lifecycle and history of this booking request"}
+                ? "Review and verify ticket details before approving"
+                : "Track the complete lifecycle and history of this booking ticket"}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
-          {/* Manage Form Button for Admins */}
-          {!isReviewMode && isAdmin && hasBranchAccess && (
-            <Link
-              href={`/dashboard/requests/${id}/edit`}
-              className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center gap-2"
-            >
-              <Pencil className="h-4 w-4" /> Manage Form
-            </Link>
-          )}
+
 
           {/* Manage Request or Reopen Button for Admins */}
           {!isReviewMode && isAdmin && hasBranchAccess && (
@@ -266,7 +253,7 @@ export default async function RequestDetailPage({
                 href={`/dashboard/requests/${id}?mode=review`}
                 className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
               >
-                Manage Request
+                Manage Ticket
               </Link>
             )
           )}
@@ -300,7 +287,7 @@ export default async function RequestDetailPage({
 
         {/* Subtitle */}
         <div className="text-xs md:text-sm text-gray-500 mb-4 md:mb-8">
-          REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
+          TICKET-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
         </div>
       </div>
 
@@ -320,15 +307,15 @@ export default async function RequestDetailPage({
             <ResubmitPanel requestId={request.id} revisionReason={revisionReason} />
           )}
 
-          {/* Attachments */}
-          <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
-
           {/* Review Decision Panel (Only for Review Mode) */}
           {isReviewMode && (
-            <div className="mt-8">
+            <div className="mb-6">
               <ReviewDecisionPanel requestId={request.id} currentStatus={request.status} />
             </div>
           )}
+
+          {/* Attachments */}
+          <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
 
           {/* Approval Actions (Conditional - Old way, kept for backward compat if ReviewDecisionPanel isn't fully replacing yet, 
               but ReviewDecisionPanel is the new standard for Review Mode. 
@@ -339,10 +326,12 @@ export default async function RequestDetailPage({
 
           {/* Actions for Tracking Mode (Non-Review, but Admin might see something? No, Manage Request handles that) */}
 
-          {/* Comments Section */}
-          <div className="mt-6">
-            <RequestComments comments={request.comments} />
-          </div>
+          {/* Comments Section - Only in Tracking Mode */}
+          {!isReviewMode && (
+            <div className="mt-6">
+              <RequestComments comments={request.comments} />
+            </div>
+          )}
         </div>
       </div>
     </div >
