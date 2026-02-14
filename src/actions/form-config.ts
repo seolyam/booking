@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { formConfigs, CATEGORIES, type CategoryMeta } from "@/db/schema";
+import { formConfigs, CATEGORIES, type FieldSchema } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { eq } from "drizzle-orm";
@@ -40,10 +40,10 @@ export async function updateFormConfig(
         category_label?: string;
         description?: string;
         icon_key?: string;
-        is_active: boolean;
-        required_pdfs: string[];
+        is_active?: boolean;
+        required_pdfs?: string[];
         instructions?: string;
-        fields?: any[];
+        fields?: FieldSchema[];
     }
 ) {
     const admin = await requireAdmin();
@@ -52,29 +52,32 @@ export async function updateFormConfig(
         where: eq(formConfigs.category_key, categoryKey),
     });
 
+    // Build update payload only from defined values to avoid wiping unrelated columns
+    const updatePayload: Record<string, unknown> = {
+        updated_at: new Date(),
+        updated_by: admin.id,
+    };
+    if (data.category_label !== undefined) updatePayload.category_label = data.category_label;
+    if (data.description !== undefined) updatePayload.description = data.description;
+    if (data.icon_key !== undefined) updatePayload.icon_key = data.icon_key;
+    if (data.is_active !== undefined) updatePayload.is_active = data.is_active;
+    if (data.required_pdfs !== undefined) updatePayload.required_pdfs = data.required_pdfs;
+    if (data.instructions !== undefined) updatePayload.instructions = data.instructions;
+    if (data.fields !== undefined) updatePayload.fields = data.fields;
+
     if (existing) {
         await db
             .update(formConfigs)
-            .set({
-                category_label: data.category_label,
-                description: data.description,
-                icon_key: data.icon_key,
-                is_active: data.is_active,
-                required_pdfs: data.required_pdfs,
-                instructions: data.instructions,
-                fields: data.fields ?? [],
-                updated_at: new Date(),
-                updated_by: admin.id,
-            })
+            .set(updatePayload)
             .where(eq(formConfigs.category_key, categoryKey));
     } else {
         await db.insert(formConfigs).values({
             category_key: categoryKey,
-            category_label: data.category_label,
-            description: data.description,
-            icon_key: data.icon_key,
-            is_active: data.is_active,
-            required_pdfs: data.required_pdfs,
+            category_label: data.category_label ?? categoryKey,
+            description: data.description ?? "",
+            icon_key: data.icon_key ?? "FileText",
+            is_active: data.is_active ?? true,
+            required_pdfs: data.required_pdfs ?? [],
             instructions: data.instructions,
             fields: data.fields ?? [],
             updated_by: admin.id,
@@ -95,7 +98,7 @@ export async function createFormConfig(data: {
     is_active: boolean;
     required_pdfs: string[];
     instructions?: string;
-    fields: any[];
+    fields: FieldSchema[];
 }) {
     const admin = await requireAdmin();
 
@@ -126,7 +129,7 @@ export async function createFormConfig(data: {
 }
 
 export async function deleteFormConfig(categoryKey: string) {
-    const admin = await requireAdmin();
+    await requireAdmin();
 
     const isDefault = CATEGORIES.some(c => c.key === categoryKey);
 
