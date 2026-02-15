@@ -91,42 +91,44 @@ export default function WorkflowProgress({
         <div className="absolute left-4 right-4 top-[15px] h-[2px] -z-0">
           {/* Background Gray Line */}
           <div className="absolute inset-0 bg-gray-100" />
-          
+
           {/* Active Green Line */}
-          <div 
+          <div
             className="absolute left-0 top-0 bottom-0 bg-green-600 transition-all duration-500 ease-in-out"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
-        
+
         {/* Steps Container */}
         <div className="flex justify-between relative z-10 w-full">
           {steps.map((s) => {
             const isDone = s.state === "done";
             const isCurrent = s.state === "current";
             const isCancelled = isCurrent && s.statusType === "cancelled";
-            
+            const isResolved = isCurrent && s.statusType === "resolved";
+
             return (
               <div key={s.key} className="w-8 flex flex-col items-center relative group">
                 <div
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors duration-200",
-                    isDone
+                    isDone || isResolved
                       ? "bg-green-600 border-green-600"
-                      : isCurrent && isCancelled
+                      : isCancelled
                         ? "bg-red-500 border-red-500"
                         : isCurrent
                           ? "bg-blue-600 border-blue-600"
                           : "bg-white border-gray-200"
                   )}
                 >
-                  {isDone && <Check className="h-4 w-4 text-white" strokeWidth={3} />}
-                  {isCurrent && (
+                  {(isDone || isResolved) && <Check className="h-4 w-4 text-white" strokeWidth={3} />}
+                  {isCurrent && !isResolved && !isCancelled && (
                     <div className={cn(
                       "h-2.5 w-2.5 rounded-full",
                       "bg-white"
                     )} />
                   )}
+                  {isCurrent && isCancelled && <div className="h-0.5 w-4 bg-white rotate-45" />}
                 </div>
                 {/* Absolute positioned label to prevent flex layout distortion */}
                 <div className="absolute top-10 left-1/2 -translate-x-1/2 w-max max-w-[100px] text-center">
@@ -141,7 +143,7 @@ export default function WorkflowProgress({
             );
           })}
         </div>
-        
+
         {/* Spacer for the absolute labels */}
         <div className="h-8" aria-hidden="true" />
       </div>
@@ -167,7 +169,7 @@ export default function WorkflowProgress({
                 </svg>
               </button>
             </div>
-            
+
             <div className="overflow-y-auto p-4 md:p-6">
               {events.length === 0 ? (
                 <div className="text-sm text-gray-500 text-center py-8">No activity recorded yet.</div>
@@ -175,12 +177,12 @@ export default function WorkflowProgress({
                 <div className="relative ml-3">
                   {/* Vertical line */}
                   <div className="absolute left-2.5 top-2 bottom-2 w-1 bg-gray-200" />
-                  
+
                   {events.map((e) => (
                     <div key={e.id} className="relative flex items-start gap-5 pb-8">
                       {/* Dot */}
                       <div className={cn("relative z-10 h-5 w-5 rounded-full ring-4 ring-white", statusToActionColor(e.action))} />
-                      
+
                       {/* Content */}
                       <div className="flex-1">
                         <div className="flex items-center justify-between">

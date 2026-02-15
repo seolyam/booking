@@ -43,7 +43,11 @@ function DynamicDetails({
             .map((field) => {
                 const value = data[field.name];
                 renderedKeys.add(field.name);
-                return { label: field.label, value, key: field.name };
+                let displayValue = value;
+                if (field.type === "number" && field.currencySymbol && value != null && value !== "") {
+                    displayValue = `${field.currencySymbol} ${value}`;
+                }
+                return { label: field.label, value: displayValue, key: field.name };
             });
 
         // Also render any data keys that aren't in the config (in case data has extra fields)
