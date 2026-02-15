@@ -12,7 +12,11 @@ import { z, ZodError } from "zod";
 
 const submitRatingSchema = z.object({
   request_id: z.string().uuid("Invalid request ID"),
-  rating: z.number().int().min(1, "Rating must be 1-5").max(5, "Rating must be 1-5"),
+  rating: z.coerce
+    .number({ message: "Rating is required" })
+    .int("Rating must be a whole number")
+    .min(1, "Rating must be 1-5")
+    .max(5, "Rating must be 1-5"),
   comments: z.string().max(2000).optional().nullable(),
 });
 

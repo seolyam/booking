@@ -1,46 +1,12 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { MapPin, Building2, Ban, MessageSquare } from "lucide-react";
+import { Ban, MessageSquare } from "lucide-react";
 import dynamic from "next/dynamic";
-import type { Request, Comment } from "@/db/schema";
+import type { Request, Comment, FieldSchema } from "@/db/schema";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
 
 const ExportButton = dynamic(() => import("./ExportButton"), { ssr: false });
-
-// Form Data Types
-interface FlightFormData {
-    departure_from?: string;
-    destination?: string;
-    airline?: string;
-    travel_class?: string;
-    departure_date?: string;
-    return_date?: string;
-    number_of_passengers?: number;
-    passenger_name?: string;
-    purpose_of_travel?: string;
-}
-
-interface HotelFormData {
-    hotel_name?: string;
-    hotel_address?: string;
-    check_in_date?: string;
-    check_out_date?: string;
-    number_of_guests?: number;
-    number_of_rooms?: number;
-    guest_names?: string;
-    purpose_of_stay?: string;
-}
-
-interface MealsFormData {
-    event_name?: string;
-    venue?: string;
-    meal_date?: string;
-    meal_time?: string;
-    number_of_pax?: number;
-    meal_type?: string;
-    special_requests?: string;
-}
 
 // Form Data Helpers
 function InfoCard({ label, value, className }: { label: string; value: string | number | null | undefined; className?: string }) {
@@ -53,113 +19,69 @@ function InfoCard({ label, value, className }: { label: string; value: string | 
     );
 }
 
-function FlightDetails({ data }: { data: FlightFormData }) {
+/**
+ * Dynamic detail renderer that uses form config fields to decode
+ * dynamic field IDs (e.g. "field_177...") back to human-readable labels.
+ * Falls back to key-based rendering when no config is available.
+ */
+function DynamicDetails({
+    data,
+    configFields,
+}: {
+    data: Record<string, unknown>;
+    configFields?: FieldSchema[];
+}) {
+    // Keys to exclude from rendering (already shown elsewhere in the card)
+    const excludeKeys = new Set(["title", "branch_id", "priority", "status"]);
+
+    if (configFields && configFields.length > 0) {
+        // Config-driven: iterate over config fields and look up values by field name/ID
+        const renderedKeys = new Set<string>();
+
+        const configEntries = configFields
+            .filter((f) => f.enabled !== false)
+            .map((field) => {
+                const value = data[field.name];
+                renderedKeys.add(field.name);
+                return { label: field.label, value, key: field.name };
+            });
+
+        // Also render any data keys that aren't in the config (in case data has extra fields)
+        const extraEntries = Object.entries(data)
+            .filter(([key]) => !renderedKeys.has(key) && !excludeKeys.has(key))
+            .map(([key, value]) => ({
+                label: key.replace(/_/g, " "),
+                value,
+                key,
+            }));
+
+        const allEntries = [...configEntries, ...extraEntries];
+
+        return (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                {allEntries.map((entry) => (
+                    <InfoCard
+                        key={entry.key}
+                        label={entry.label}
+                        value={entry.value as string | number | null | undefined}
+                    />
+                ))}
+            </div>
+        );
+    }
+
+    // Fallback: no config available, render all keys with prettified labels
     return (
-        <div className="space-y-6">
-            <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-                <div>
-                    <div className="text-sm font-medium text-gray-900">{data.departure_from} → {data.destination}</div>
-                    <div className="text-xs text-gray-500 mt-1">{data.airline || "Any Airline"} • {data.travel_class}</div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-                <InfoCard label="Departure" value={data.departure_date} />
-                <InfoCard label="Return" value={data.return_date || "One-way"} />
-                <InfoCard label="Passengers" value={data.number_of_passengers} />
-                <InfoCard label="Passenger Name" value={data.passenger_name} />
-            </div>
-
-            <div className="border-t border-gray-100 pt-6">
-                <span className="text-xs text-gray-500 block mb-2">Purpose of Travel</span>
-                <p className="text-sm text-gray-900">{data.purpose_of_travel}</p>
-            </div>
-        </div>
-    );
-}
-
-function HotelDetails({ data }: { data: HotelFormData }) {
-    return (
-        <div className="space-y-8">
-            {/* Title & Location */}
-            <div className="space-y-2">
-                <h3 className="text-lg font-bold text-gray-900">{data.hotel_name}</h3>
-                <div className="flex items-start gap-2 text-gray-500">
-                    <MapPin className="h-5 w-5 mt-0.5 shrink-0" />
-                    <p className="text-sm leading-snug">{data.hotel_address}</p>
-                </div>
-            </div>
-
-            {/* Grid Specs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 py-6 md:py-8 border-y border-gray-100">
-                <InfoCard label="Check-in" value={data.check_in_date} />
-                <InfoCard label="Check-out" value={data.check_out_date} />
-                <InfoCard label="Guests" value={data.number_of_guests} />
-                <InfoCard label="Rooms" value={data.number_of_rooms} />
-            </div>
-
-            {/* Bottom info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                <div>
-                    <span className="text-sm text-gray-500 block mb-3">Name of guest(s)</span>
-                    <div className="text-base font-medium text-gray-900 space-y-1">
-                        {String(data.guest_names).split('\n').map((name, i) => (
-                            <div key={i} className="flex gap-2">
-                                <span className="text-gray-400">•</span>
-                                <span>{name}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div>
-                    <span className="text-sm text-gray-500 block mb-3">Purpose of stay</span>
-                    <div className="flex gap-2 text-base font-medium text-gray-900">
-                        <span className="text-gray-400">•</span>
-                        <p className="leading-snug max-w-md">{data.purpose_of_stay}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function MealsDetails({ data }: { data: MealsFormData }) {
-    return (
-        <div className="space-y-6">
-            <div className="flex items-start gap-3">
-                <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
-                <div>
-                    <div className="text-sm font-medium text-gray-900">{data.event_name}</div>
-                    <div className="text-xs text-gray-500 mt-1">{data.venue}</div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-gray-100 pt-6">
-                <InfoCard label="Date" value={data.meal_date} />
-                <InfoCard label="Time" value={data.meal_time} />
-                <InfoCard label="Pax" value={data.number_of_pax} />
-                <InfoCard label="Type" value={data.meal_type} />
-            </div>
-
-            <div className="border-t border-gray-100 pt-6">
-                <span className="text-xs text-gray-500 block mb-2">Special Requests</span>
-                <p className="text-sm text-gray-900">{data.special_requests || "None"}</p>
-            </div>
-        </div>
-    );
-}
-
-function DefaultDetails({ data }: { data: Record<string, unknown> }) {
-    return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {Object.entries(data).map(([key, value]) => (
-                <InfoCard
-                    key={key}
-                    label={key.replace(/_/g, " ")}
-                    value={value as string | number | null | undefined}
-                />
-            ))}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            {Object.entries(data)
+                .filter(([key]) => !excludeKeys.has(key))
+                .map(([key, value]) => (
+                    <InfoCard
+                        key={key}
+                        label={key.replace(/_/g, " ")}
+                        value={value as string | number | null | undefined}
+                    />
+                ))}
         </div>
     );
 }
@@ -175,9 +97,10 @@ function formatDateShort(input: Date | string) {
 interface RequestInfoCardProps {
     request: Request & { requester: { full_name: string | null; email: string }; branch: { name: string } | null; comments: (Comment & { user: { full_name: string | null; email: string } | null })[] };
     hideComments?: boolean;
+    configFields?: FieldSchema[];
 }
 
-export default function RequestInfoCard({ request, hideComments = false }: RequestInfoCardProps) {
+export default function RequestInfoCard({ request, hideComments = false, configFields }: RequestInfoCardProps) {
     const formData = (request.form_data as Record<string, unknown>) ?? {};
     const budget = (formData.allocated_budget ?? formData.budget ?? formData.total_budget) as string | number | null | undefined;
 
@@ -210,15 +133,7 @@ export default function RequestInfoCard({ request, hideComments = false }: Reque
 
                 {/* Category Details (Dynamic) */}
                 <div className="px-1">
-                    {request.category === "flight_booking" ? (
-                        <FlightDetails data={formData as FlightFormData} />
-                    ) : request.category === "hotel_accommodation" ? (
-                        <HotelDetails data={formData as HotelFormData} />
-                    ) : request.category === "meals" ? (
-                        <MealsDetails data={formData as MealsFormData} />
-                    ) : (
-                        <DefaultDetails data={formData} />
-                    )}
+                    <DynamicDetails data={formData} configFields={configFields} />
                 </div>
 
                 {/* Footer Button */}

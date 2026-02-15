@@ -259,43 +259,47 @@ export async function getBranches() {
 // Mutations
 // ============================================================================
 
-const numeric = z.coerce.number();
-const positiveInt = numeric.int().positive();
-const optionalNumber = z.preprocess(
-  (val) => (val === "" ? undefined : val),
-  z.coerce.number().min(0).optional()
-);
+// ── Smart Sanitizer ──────────────────────────────────────────────────────────
+// The Frontend Form Builder sends data with Dynamic IDs (e.g. `field_177...`),
+// so we cannot validate specific key names. Instead, we accept any keys and
+// auto-convert string values that look like numbers into real numbers.
 
-const CATEGORY_SCHEMAS: Record<string, z.ZodSchema> = {
-  flight_booking: z.object({
-    number_of_passengers: positiveInt,
-    allocated_budget: optionalNumber,
-  }).passthrough(),
-  hotel_accommodation: z.object({
-    number_of_rooms: positiveInt,
-    number_of_guests: positiveInt,
-    allocated_budget: optionalNumber,
-  }).passthrough(),
-  meals: z.object({
-    number_of_pax: positiveInt,
-    allocated_budget: optionalNumber,
-  }).passthrough(),
-  room_reservation: z.object({
-    number_of_attendees: positiveInt,
-  }).passthrough(),
-  equipments_assets: z.object({
-    quantity: positiveInt,
-    unit_cost: optionalNumber,
-    total_budget: optionalNumber,
-  }).passthrough(),
-};
+/**
+ * Recursively walks an object and:
+ * - Converts string-encoded numbers ("500") to real numbers (500)
+ * - Converts empty strings to undefined
+ * - Leaves everything else untouched
+ */
+function smartSanitize(obj: unknown): unknown {
+  if (typeof obj !== "object" || obj === null) {
+    if (typeof obj === "string") {
+      if (obj.trim() === "") return undefined;
+      // Only convert pure numeric strings (prevents "123 Main St" -> NaN)
+      if (/^-?\d+(\.\d+)?$/.test(obj)) {
+        const num = Number(obj);
+        return isNaN(num) ? obj : num;
+      }
+    }
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(smartSanitize);
+  }
+
+  const cleaned: Record<string, unknown> = {};
+  for (const key in obj as Record<string, unknown>) {
+    cleaned[key] = smartSanitize((obj as Record<string, unknown>)[key]);
+  }
+  return cleaned;
+}
 
 const createRequestSchema = z.object({
   title: z.string().min(1, "Project title is required"),
   category: z.string().min(1, "Category is required"),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   branch_id: z.string().uuid("Branch is required"),
-  form_data: z.record(z.string(), z.unknown()),
+  form_data: z.record(z.string(), z.any()),
   status: z.enum(["open"]).default("open"),
 });
 
@@ -306,20 +310,16 @@ export async function createRequest(formData: {
   branch_id: string;
   form_data: Record<string, unknown>;
   status?: "open";
-}) {
-  const appUser = await requireAppUser();
-
+}): Promise<{ id: string; ticket_number: number } | { error: string }> {
   try {
+    const appUser = await requireAppUser();
+
+    console.log("[createRequest] Received payload:", JSON.stringify(formData, null, 2));
+
     const parsed = createRequestSchema.parse(formData);
 
-    // Additional validation/coercion for form_data based on category
-    const categorySchema = CATEGORY_SCHEMAS[parsed.category];
-    let processedFormData = parsed.form_data;
-
-    if (categorySchema) {
-      // This will coerce strings to numbers where defined, and pass through other fields
-      processedFormData = categorySchema.parse(parsed.form_data) as Record<string, unknown>;
-    }
+    // Sanitize form_data: auto-convert string numbers to real numbers
+    const processedFormData = smartSanitize(parsed.form_data) as Record<string, unknown>;
 
     const [inserted] = await db
       .insert(requests)
@@ -330,18 +330,20 @@ export async function createRequest(formData: {
         branch_id: parsed.branch_id,
         requester_id: appUser.id,
         form_data: processedFormData,
-        status: parsed.status ?? "open",
+        status: "open",
       })
       .returning({ id: requests.id, ticket_number: requests.ticket_number });
 
-    if (!inserted) throw new Error("Failed to create request");
+    if (!inserted) {
+      return { error: "Failed to create request. Please try again." };
+    }
 
     // Log activity
     await db.insert(activityLogs).values({
       request_id: inserted.id,
       actor_id: appUser.id,
       action: "created",
-      new_status: parsed.status ?? "open",
+      new_status: "open",
     });
 
     // Notify all admins via email (fire-and-forget)
@@ -366,9 +368,10 @@ export async function createRequest(formData: {
         const path = err.path.join(".");
         return `${path}: ${err.message}`;
       });
-      throw new Error(`Validation failed: ${fieldErrors.join(", ")}`);
+      return { error: `Validation failed: ${fieldErrors.join(", ")}` };
     }
-    throw error;
+    const message = error instanceof Error ? error.message : "An unexpected error occurred";
+    return { error: `Failed to create request: ${message}` };
   }
 }
 
@@ -606,12 +609,8 @@ export async function updateRequest(
   try {
     const parsed = createRequestSchema.omit({ status: true }).parse(formData);
 
-    const categorySchema = CATEGORY_SCHEMAS[parsed.category];
-    let processedFormData = parsed.form_data;
-
-    if (categorySchema) {
-      processedFormData = categorySchema.parse(parsed.form_data) as Record<string, unknown>;
-    }
+    // Sanitize form_data: auto-convert string numbers to real numbers
+    const processedFormData = smartSanitize(parsed.form_data) as Record<string, unknown>;
 
     await db
       .update(requests)

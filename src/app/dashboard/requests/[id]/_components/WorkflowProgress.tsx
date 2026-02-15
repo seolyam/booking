@@ -102,23 +102,38 @@ export default function WorkflowProgress({
         {/* Steps Container */}
         <div className="flex justify-between relative z-10 w-full">
           {steps.map((s) => {
-            const isCompleted = s.state === "done" || s.state === "current";
+            const isDone = s.state === "done";
+            const isCurrent = s.state === "current";
+            const isCancelled = isCurrent && s.statusType === "cancelled";
             
             return (
               <div key={s.key} className="w-8 flex flex-col items-center relative group">
                 <div
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors duration-200 bg-white",
-                    isCompleted
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors duration-200",
+                    isDone
                       ? "bg-green-600 border-green-600"
-                      : "border-gray-200"
+                      : isCurrent && isCancelled
+                        ? "bg-red-500 border-red-500"
+                        : isCurrent
+                          ? "bg-blue-600 border-blue-600"
+                          : "bg-white border-gray-200"
                   )}
                 >
-                  {isCompleted && <Check className="h-4 w-4 text-white" strokeWidth={3} />}
+                  {isDone && <Check className="h-4 w-4 text-white" strokeWidth={3} />}
+                  {isCurrent && (
+                    <div className={cn(
+                      "h-2.5 w-2.5 rounded-full",
+                      "bg-white"
+                    )} />
+                  )}
                 </div>
                 {/* Absolute positioned label to prevent flex layout distortion */}
                 <div className="absolute top-10 left-1/2 -translate-x-1/2 w-max max-w-[100px] text-center">
-                  <span className="text-[10px] md:text-xs font-medium text-gray-500 block leading-tight">
+                  <span className={cn(
+                    "text-[10px] md:text-xs font-medium block leading-tight",
+                    isCurrent ? "text-gray-900 font-semibold" : "text-gray-500"
+                  )}>
                     {s.label}
                   </span>
                 </div>
