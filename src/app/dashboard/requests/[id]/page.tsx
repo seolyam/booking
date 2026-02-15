@@ -9,6 +9,7 @@ import {
   FileText,
 } from "lucide-react";
 import { getRequestById, updateRequestStatus } from "@/actions/request";
+import { getFormConfig } from "@/actions/form-config";
 import {
   CATEGORY_MAP,
 } from "@/db/schema";
@@ -153,6 +154,10 @@ export default async function RequestDetailPage({
 
   if (!request) notFound();
 
+  // Fetch form config for this category to decode dynamic field IDs
+  const formConfig = await getFormConfig(request.category);
+  const configFields = (formConfig?.fields ?? []) as import("@/db/schema").FieldSchema[];
+
   // Permissions Check & Auto-Transition
   let hasBranchAccess = false;
   let canApprove = false;
@@ -294,7 +299,7 @@ export default async function RequestDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* Left Column: Request Info */}
         <div className="lg:col-span-8">
-          <RequestInfoCard request={request} hideComments={true} />
+          <RequestInfoCard request={request} hideComments={true} configFields={configFields} />
         </div>
 
         {/* Right Column: Widgets */}

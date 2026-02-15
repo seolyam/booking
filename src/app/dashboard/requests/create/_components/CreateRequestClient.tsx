@@ -34,6 +34,7 @@ export function CreateRequestClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleCategorySelect = useCallback((category: CategoryMeta) => {
     setSelectedCategory(category);
@@ -49,9 +50,10 @@ export function CreateRequestClient({
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = async (values: Record<string, unknown>, asDraft: boolean) => {
+  const handleSubmit = async (values: Record<string, unknown>, _asDraft: boolean) => {
     if (!selectedCategory) return;
     setIsSubmitting(true);
+    setSubmitError(null);
     setFormValues(values);
 
     try {
@@ -63,6 +65,12 @@ export function CreateRequestClient({
         form_data: values,
         status: "open",
       });
+
+      if ("error" in result) {
+        setSubmitError(result.error);
+        setIsSubmitting(false);
+        return;
+      }
 
       if (files.length > 0) {
         const supabase = createSupabaseBrowserClient();
@@ -100,7 +108,8 @@ export function CreateRequestClient({
       setNewRequestId(result.id);
       setShowSuccessModal(true);
     } catch (err: unknown) {
-      console.error(err instanceof Error ? err.message : "Failed to create request");
+      const message = err instanceof Error ? err.message : "Failed to create request";
+      setSubmitError(message);
       setIsSubmitting(false);
     }
   };
@@ -137,6 +146,28 @@ export function CreateRequestClient({
         message="Your request has been successfully submitted for review."
         buttonText="View Request"
       />
+
+      {/* Server-side error alert */}
+      {submitError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-800">
+                Failed to submit request
+              </p>
+              <p className="mt-1 text-sm text-red-700">{submitError}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSubmitError(null)}
+              className="text-red-500 hover:text-red-700 text-lg leading-none"
+              aria-label="Dismiss error"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div>
