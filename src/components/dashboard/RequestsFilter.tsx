@@ -99,8 +99,46 @@ export function RequestsFilter() {
         // Date
         if (dateFilter && dateFilter !== "all") {
             params.set("datePreset", dateFilter);
+
+            const now = new Date();
+            // Start of today in local time
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            let from: Date | undefined;
+            let to: Date | undefined;
+
+            if (dateFilter === "yesterday") {
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                from = yesterday; // 00:00:00
+
+                const yEnd = new Date(yesterday);
+                yEnd.setHours(23, 59, 59, 999);
+                to = yEnd;
+            } else if (dateFilter === "daily") { // Daily = Today
+                from = today; // 00:00:00
+
+                const tEnd = new Date(today);
+                tEnd.setHours(23, 59, 59, 999);
+                to = tEnd;
+            } else if (dateFilter === "weekly") {
+                const lastWeek = new Date(today);
+                lastWeek.setDate(lastWeek.getDate() - 7);
+                from = lastWeek;
+                to = now; // up to now
+            } else if (dateFilter === "monthly") {
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                from = startOfMonth;
+                to = now; // up to now
+            }
+
+            if (from) params.set("from", from.toISOString());
+            if (to) params.set("to", to.toISOString());
+
         } else {
             params.delete("datePreset");
+            params.delete("from");
+            params.delete("to");
         }
 
         // Status
@@ -139,7 +177,7 @@ export function RequestsFilter() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] bg-white gap-6">
                 <DialogHeader>
-                    <DialogTitle>Filter Requests</DialogTitle>
+                    <DialogTitle>Filter Tickets</DialogTitle>
                 </DialogHeader>
 
                 {/* Date Section */}
@@ -151,7 +189,7 @@ export function RequestsFilter() {
                                 key={preset.value}
                                 onClick={() => setDateFilter(preset.value)}
                                 className={cn(
-                                    "px-4 py-1.5 rounded-full text-sm border transition-colors",
+                                    "px-4 py-1.5 rounded-lg text-sm border transition-colors",
                                     dateFilter === preset.value
                                         ? "bg-green-100 text-green-700 border-green-200 font-medium"
                                         : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
@@ -174,7 +212,7 @@ export function RequestsFilter() {
                                     key={opt.value}
                                     onClick={() => handleStatusToggle(opt.value)}
                                     className={cn(
-                                        "px-4 py-1.5 rounded-full text-sm border transition-colors",
+                                        "px-4 py-1.5 rounded-lg text-sm border transition-colors",
                                         isActive
                                             ? "bg-green-100 text-green-700 border-green-200 font-medium"
                                             : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
@@ -194,7 +232,7 @@ export function RequestsFilter() {
                         <button
                             onClick={() => handleCategoryToggle("all")}
                             className={cn(
-                                "px-4 py-1.5 rounded-md text-sm border transition-colors min-w-[3rem]",
+                                "px-4 py-1.5 rounded-lg text-sm border transition-colors min-w-[3rem]",
                                 selectedCategories.includes("all")
                                     ? "bg-green-100 text-green-700 border-green-200 font-medium"
                                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
@@ -209,7 +247,7 @@ export function RequestsFilter() {
                                     key={cat.key}
                                     onClick={() => handleCategoryToggle(cat.key)}
                                     className={cn(
-                                        "px-3 py-1.5 rounded-md text-sm border transition-colors",
+                                        "px-3 py-1.5 rounded-lg text-sm border transition-colors",
                                         isActive
                                             ? "bg-blue-50 text-blue-700 border-blue-200 font-medium"
                                             : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"

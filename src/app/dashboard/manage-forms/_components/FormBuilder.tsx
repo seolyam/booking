@@ -29,6 +29,7 @@ export type FieldDefinition = {
     options?: string[]; // comma separated for simple editing
     placeholder?: string;
     description?: string;
+    currencySymbol?: string;
 };
 
 export function FormBuilder({
@@ -65,7 +66,8 @@ export function FormBuilder({
                 ? f.options.map((o) => o.value)
                 : [],
             placeholder: f.placeholder,
-            description: f.description
+            description: f.description,
+            currencySymbol: f.currencySymbol
         }));
     });
 
@@ -123,6 +125,7 @@ export function FormBuilder({
                 enabled: f.enabled,
                 placeholder: f.placeholder,
                 description: f.description,
+                currencySymbol: f.type === "number" ? f.currencySymbol : undefined,
                 options: f.options ? f.options.map(o => ({ label: o, value: o })) : undefined
             }));
 
@@ -295,6 +298,19 @@ export function FormBuilder({
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
+
+                                                {/* Currency Symbol for Number */}
+                                                {field.type === "number" && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs text-gray-500">Currency Symbol</Label>
+                                                        <Input
+                                                            value={field.currencySymbol || ""}
+                                                            onChange={(e) => handleUpdateField(index, { currencySymbol: e.target.value })}
+                                                            placeholder="e.g. $, ₱, €"
+                                                            className="h-9 border-gray-300"
+                                                        />
+                                                    </div>
+                                                )}
 
                                                 {/* Options for Select */}
                                                 {field.type === "select" && (

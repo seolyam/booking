@@ -182,7 +182,7 @@ export default async function RequestDetailPage({
     if (hasBranchAccess) {
       // Auto-transition: If status is 'Open', change to 'Pending' when admin views
       if (request.status === "open") {
-        const msg = "Request viewed by admin - status updated to Pending";
+        const msg = "Ticket viewed by admin - status updated to Pending";
         await updateRequestStatus(request.id, "pending", msg, true);
         redirect(`/dashboard/requests/${request.id}`); // Reload to reflect change
       }
@@ -230,26 +230,26 @@ export default async function RequestDetailPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 md:gap-4">
           <Link
-            href="/dashboard/requests"
+            href={isReviewMode ? `/dashboard/requests/${id}` : "/dashboard/requests"}
             className="rounded-full p-2 text-gray-400 hover:bg-white hover:text-gray-900 transition-colors hover:shadow-sm shrink-0"
           >
             <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
           </Link>
           <div className="min-w-0">
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-              {isReviewMode ? "Request Review" : "Request Tracking"}
+              {isReviewMode ? "Ticket Review" : "Ticket Tracking"}
             </h1>
             <p className="text-xs md:text-sm text-gray-500 mt-1 line-clamp-2">
               {isReviewMode
-                ? "Review and verify request details before approving"
-                : "Track the complete lifecycle and history of this booking request"}
+                ? "Review and verify ticket details before approving"
+                : "Track the complete lifecycle and history of this booking ticket"}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
 
 
-          {/* Manage Request or Reopen Button for Admins */}
+          {/* Manage Ticket or Reopen Button for Admins */}
           {!isReviewMode && isAdmin && hasBranchAccess && (
             request.status === "resolved" ? (
               <ReopenButton requestId={id} />
@@ -258,7 +258,7 @@ export default async function RequestDetailPage({
                 href={`/dashboard/requests/${id}?mode=review`}
                 className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
               >
-                Manage Request
+                Manage Ticket
               </Link>
             )
           )}
@@ -271,7 +271,7 @@ export default async function RequestDetailPage({
           <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 break-words">{request.title}</h2>
             <span className="bg-cyan-100 text-cyan-700 text-xs font-bold px-2 py-1 rounded uppercase shrink-0">
-              {CATEGORY_MAP[request.category]?.code || "REQ"}
+              {CATEGORY_MAP[request.category]?.code || "FIL"}
             </span>
           </div>
           {/* Status Badge (Only show here for Tracking View, Review View might implement it differently or doesn't show it in header) 
@@ -292,22 +292,22 @@ export default async function RequestDetailPage({
 
         {/* Subtitle */}
         <div className="text-xs md:text-sm text-gray-500 mb-4 md:mb-8">
-          REQ-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
+          TICKET-{String(request.ticket_number).padStart(4, "0")} - {CATEGORY_MAP[request.category]?.label}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-        {/* Left Column: Request Info */}
+        {/* Left Column: Ticket Info */}
         <div className="lg:col-span-8">
           <RequestInfoCard request={request} hideComments={true} configFields={configFields} />
         </div>
 
         {/* Right Column: Widgets */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Timeline (Only for Tracking, unless Review also needs it? Review usually focuses on decision) */}
+          {/* Timeline (Only for Tracking) */}
           {!isReviewMode && <WorkflowProgress steps={steps} events={events} />}
 
-          {/* Resubmit Panel (Requester sees this when status is needs_revision) */}
+          {/* Resubmit Panel */}
           {canResubmit && (
             <ResubmitPanel requestId={request.id} revisionReason={revisionReason} />
           )}
@@ -321,15 +321,6 @@ export default async function RequestDetailPage({
 
           {/* Attachments */}
           <AttachmentHandler attachments={request.attachments} requestTicketNumber={request.ticket_number} />
-
-          {/* Approval Actions (Conditional - Old way, kept for backward compat if ReviewDecisionPanel isn't fully replacing yet, 
-              but ReviewDecisionPanel is the new standard for Review Mode. 
-              The 'canApprove' logic handled this earlier. 
-              If canApprove is true, we are in Review Mode. 
-              So we use ReviewDecisionPanel.
-          */}
-
-          {/* Actions for Tracking Mode (Non-Review, but Admin might see something? No, Manage Request handles that) */}
 
           {/* Comments Section - Only in Tracking Mode */}
           {!isReviewMode && (
