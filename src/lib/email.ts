@@ -1,26 +1,40 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 // ============================================================================
-// Client
+// Transporter (Gmail SMTP)
 // ============================================================================
 
-let resendClient: Resend | null = null;
+let transporter: nodemailer.Transporter | null = null;
 
-function getResend(): Resend | null {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  if (!resendClient) {
-    resendClient = new Resend(apiKey);
+function getTransporter(): nodemailer.Transporter | null {
+  const host = process.env.EMAIL_HOST;
+  const port = Number(process.env.EMAIL_PORT);
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+
+  if (!host || !user || !pass) return null;
+
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host,
+      port: port || 465,
+      secure: (port || 465) === 465,
+      auth: { user, pass },
+    });
   }
-  return resendClient;
+
+  return transporter;
 }
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
-const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL ?? "Booking System <noreply@resend.dev>";
 const APP_NAME = "Booking System";
+
+function fromAddress(): string {
+  return process.env.EMAIL_USER ?? "noreply@example.com";
+}
 
 function appUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -40,25 +54,21 @@ export async function sendEmail({
   subject: string;
   html: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const resend = getResend();
-  if (!resend) {
-    // Silently skip if Resend is not configured
-    console.log(`[email] Resend not configured — skipping email to ${Array.isArray(to) ? to.join(", ") : to}: ${subject}`);
+  const mailer = getTransporter();
+  if (!mailer) {
+    console.log(
+      `[email] SMTP not configured — skipping email to ${Array.isArray(to) ? to.join(", ") : to}: ${subject}`,
+    );
     return { success: true };
   }
 
   try {
-    const { error } = await resend.emails.send({
-      from: FROM_ADDRESS,
-      to: Array.isArray(to) ? to : [to],
+    await mailer.sendMail({
+      from: `${APP_NAME} <${fromAddress()}>`,
+      to: Array.isArray(to) ? to.join(", ") : to,
       subject,
       html,
     });
-
-    if (error) {
-      console.error("[email] Resend error:", error);
-      return { success: false, error: error.message };
-    }
 
     return { success: true };
   } catch (err) {
