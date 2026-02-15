@@ -24,30 +24,38 @@ export default async function RequestsPage({
 
   // Handle Date Presets
   let dateRange: { from?: Date; to?: Date } | undefined;
-  const datePreset = typeof params.datePreset === 'string' ? params.datePreset : undefined;
 
-  if (datePreset && datePreset !== "all") {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (params.from || params.to) {
+    dateRange = {
+      from: params.from ? new Date(params.from as string) : undefined,
+      to: params.to ? new Date(params.to as string) : undefined
+    };
+  } else {
+    const datePreset = typeof params.datePreset === 'string' ? params.datePreset : undefined;
 
-    if (datePreset === "yesterday") {
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      // Simply: [yesterday 00:00, today 00:00]
-      const yEnd = new Date(yesterday);
-      yEnd.setHours(23, 59, 59, 999);
-      dateRange = { from: yesterday, to: yEnd };
-    } else if (datePreset === "daily") { // Today
-      const tEnd = new Date(today);
-      tEnd.setHours(23, 59, 59, 999);
-      dateRange = { from: today, to: tEnd };
-    } else if (datePreset === "weekly") {
-      const lastWeek = new Date(today);
-      lastWeek.setDate(lastWeek.getDate() - 7);
-      dateRange = { from: lastWeek, to: new Date() };
-    } else if (datePreset === "monthly") {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      dateRange = { from: startOfMonth, to: new Date() };
+    if (datePreset && datePreset !== "all") {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      if (datePreset === "yesterday") {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        // Simply: [yesterday 00:00, today 00:00]
+        const yEnd = new Date(yesterday);
+        yEnd.setHours(23, 59, 59, 999);
+        dateRange = { from: yesterday, to: yEnd };
+      } else if (datePreset === "daily") { // Today
+        const tEnd = new Date(today);
+        tEnd.setHours(23, 59, 59, 999);
+        dateRange = { from: today, to: tEnd };
+      } else if (datePreset === "weekly") {
+        const lastWeek = new Date(today);
+        lastWeek.setDate(lastWeek.getDate() - 7);
+        dateRange = { from: lastWeek, to: new Date() };
+      } else if (datePreset === "monthly") {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateRange = { from: startOfMonth, to: new Date() };
+      }
     }
   }
 

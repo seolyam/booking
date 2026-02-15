@@ -14,12 +14,12 @@ export function adminNav(): NavSection[] {
       ],
     },
     {
-      title: "Requests",
+      title: "Tickets",
       items: [
 
         {
           key: "requests",
-          label: "Your Requests",
+          label: "Your Tickets",
           href: "/dashboard/requests",
           activeMatch: (p) =>
             p === "/dashboard/requests" ||
@@ -33,7 +33,7 @@ export function adminNav(): NavSection[] {
       items: [
         {
           key: "all_requests",
-          label: "All Requests",
+          label: "All Tickets",
           href: "/dashboard/admin/requests",
         },
 

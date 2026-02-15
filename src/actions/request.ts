@@ -14,7 +14,7 @@ import {
 } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
-import { eq, desc, and, count, inArray, gte, lte, or } from "drizzle-orm";
+import { eq, desc, and, count, inArray, gte, lte, or, ilike, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z, ZodError } from "zod";
 import {
@@ -173,6 +173,82 @@ export async function getRequests(filters?: {
     if (filters.dateRange.to) {
       conditions.push(lte(requests.created_at, filters.dateRange.to));
     }
+  }
+
+  const rows = await db
+    .select({
+      id: requests.id,
+      ticket_number: requests.ticket_number,
+      title: requests.title,
+      category: requests.category,
+      status: requests.status,
+      priority: requests.priority,
+      created_at: requests.created_at,
+      updated_at: requests.updated_at,
+      requester_id: requests.requester_id,
+      branch_name: branches.name,
+      requester_name: users.full_name,
+      requester_email: users.email,
+    })
+    .from(requests)
+    .leftJoin(branches, eq(requests.branch_id, branches.id))
+    .leftJoin(users, eq(requests.requester_id, users.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(requests.created_at));
+
+  return rows;
+}
+
+export async function getAllRequests(filters?: {
+  status?: string | string[];
+  category?: string | string[];
+  search?: string;
+  dateRange?: { from?: Date; to?: Date };
+}) {
+  const appUser = await requireAppUser();
+
+  if (appUser.role !== "admin" && appUser.role !== "superadmin") {
+    throw new Error("Unauthorized");
+  }
+
+  const conditions = [];
+
+  if (filters?.status && filters.status !== "all") {
+    const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
+    const cleanStatuses = statuses.filter(s => s !== "all");
+    if (cleanStatuses.length > 0) {
+      conditions.push(inArray(requests.status, cleanStatuses as Request["status"][]));
+    }
+  }
+
+  if (filters?.category && filters.category !== "all") {
+    const categories = Array.isArray(filters.category) ? filters.category : [filters.category];
+    const cleanCategories = categories.filter(c => c !== "all");
+    if (cleanCategories.length > 0) {
+      conditions.push(inArray(requests.category, cleanCategories as Request["category"][]));
+    }
+  }
+
+  if (filters?.dateRange) {
+    if (filters.dateRange.from) {
+      conditions.push(gte(requests.created_at, filters.dateRange.from));
+    }
+    if (filters.dateRange.to) {
+      conditions.push(lte(requests.created_at, filters.dateRange.to));
+    }
+  }
+
+  if (filters?.search) {
+    const search = `%${filters.search}%`;
+    conditions.push(or(
+      ilike(requests.title, search),
+      ilike(users.email, search),
+      ilike(users.full_name, search),
+      // Search by ticket number (cast to text or just robust check)
+      // Since ticket_number is INT, we need to cast or just ignore for strict ilike if not using pg cast.
+      // Drizzle `sql` helper is useful here: sql`CAST(${requests.ticket_number} AS TEXT) ILIKE ${search}`
+      sql`CAST(${requests.ticket_number} AS TEXT) ILIKE ${search}`
+    ));
   }
 
   const rows = await db

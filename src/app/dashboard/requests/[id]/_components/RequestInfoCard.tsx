@@ -126,7 +126,6 @@ export default function RequestInfoCard({ request, hideComments = false, configF
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         <InfoCard label="Requester" value={request.requester.full_name || request.requester.email} className="items-center md:items-start text-center md:text-left" />
                         <InfoCard label="Branch" value={request.branch?.name || "Main Branch"} className="items-center md:items-start text-center md:text-left" />
-                        <InfoCard label="Budget" value={formatCurrency(budget)} className="items-center md:items-start text-center md:text-left" />
                         <InfoCard label="Created" value={formatDateShort(request.created_at)} className="items-center md:items-start text-center md:text-left" />
                     </div>
                 </div>
@@ -138,8 +137,8 @@ export default function RequestInfoCard({ request, hideComments = false, configF
 
                 {/* Footer Button */}
                 <div className="flex justify-end mt-8 md:mt-12 bg-transparent">
-                    <ExportButton 
-                        targetId="request-printable-area" 
+                    <ExportButton
+                        targetId="request-printable-area"
                         fileName={`REQ-${String(request.ticket_number).padStart(4, "0")}-Details`}
                     />
                 </div>
