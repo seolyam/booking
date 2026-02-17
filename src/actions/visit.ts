@@ -27,19 +27,7 @@ const ExtendSchema = z.object({
 // Duration options (minutes)
 // ============================================================================
 
-export const DURATION_OPTIONS = [
-  { label: "5 minutes", value: 5 },
-  { label: "15 minutes", value: 15 },
-  { label: "30 minutes", value: 30 },
-  { label: "1 hour", value: 60 },
-  { label: "2 hours", value: 120 },
-  { label: "4 hours", value: 240 },
-] as const;
-
-export const EXTEND_OPTIONS = [
-  { label: "+30 minutes", value: 30 },
-  { label: "+1 hour", value: 60 },
-] as const;
+// Duration/extend options are now shared for client/server (import in client/server files as needed)
 
 // ============================================================================
 // Types
@@ -200,9 +188,10 @@ export async function logOutVisitor(
 // Extend Visit
 // ============================================================================
 
-export async function extendVisit(
-  data: { visitId: string; additionalMinutes: number },
-): Promise<{ newEndTime: string } | { error: string }> {
+export async function extendVisit(data: {
+  visitId: string;
+  additionalMinutes: number;
+}): Promise<{ newEndTime: string } | { error: string }> {
   const parsed = ExtendSchema.safeParse(data);
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
@@ -223,8 +212,7 @@ export async function extendVisit(
   const base = currentEnd > now ? currentEnd : now;
   const newEndTime = new Date(base.getTime() + additionalMinutes * 60_000);
 
-  const newDuration =
-    (visit.expected_duration ?? 0) + additionalMinutes;
+  const newDuration = (visit.expected_duration ?? 0) + additionalMinutes;
 
   await db
     .update(visitorLogs)
@@ -243,7 +231,9 @@ export async function extendVisit(
 // Bulk Auto-Close (used by cron route)
 // ============================================================================
 
-export async function autoCloseExpiredVisits(): Promise<{ closedCount: number }> {
+export async function autoCloseExpiredVisits(): Promise<{
+  closedCount: number;
+}> {
   const now = new Date();
 
   const result = await db

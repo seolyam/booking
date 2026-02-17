@@ -18,9 +18,8 @@ import {
   checkInVisitor,
   logOutVisitor,
   extendVisit,
-  DURATION_OPTIONS,
-  EXTEND_OPTIONS,
 } from "@/actions/visit";
+import { DURATION_OPTIONS, EXTEND_OPTIONS } from "@/lib/visitOptions";
 import type { VisitState } from "@/actions/visit";
 
 // ============================================================================
@@ -92,9 +91,18 @@ function CheckInForm({
     e.preventDefault();
     setError(null);
 
-    if (!name.trim()) { setError("Name is required"); return; }
-    if (!purpose.trim()) { setError("Purpose of visit is required"); return; }
-    if (!duration) { setError("Please select estimated visit length"); return; }
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+    if (!purpose.trim()) {
+      setError("Purpose of visit is required");
+      return;
+    }
+    if (!duration) {
+      setError("Please select estimated visit length");
+      return;
+    }
 
     startTransition(async () => {
       const result = await checkInVisitor({
@@ -200,7 +208,9 @@ function CheckInForm({
         </label>
         <select
           value={duration}
-          onChange={(e) => setDuration(e.target.value ? Number(e.target.value) : "")}
+          onChange={(e) =>
+            setDuration(e.target.value ? Number(e.target.value) : "")
+          }
           required
           className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white"
         >
@@ -295,7 +305,9 @@ function ManageVisitScreen({
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
           <CheckCircle className="h-7 w-7 text-green-600" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">You&apos;re Checked In</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          You&apos;re Checked In
+        </h2>
         <p className="mt-1 text-sm text-gray-500">Welcome, {visit.name}</p>
       </div>
 
@@ -374,11 +386,7 @@ function ManageVisitScreen({
 // Success Screen (after check-in)
 // ============================================================================
 
-function SuccessScreen({
-  onNewVisit,
-}: {
-  onNewVisit: () => void;
-}) {
+function SuccessScreen({ onNewVisit }: { onNewVisit: () => void }) {
   return (
     <div className="space-y-6 text-center">
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
@@ -408,7 +416,10 @@ export default function VisitPage() {
   const [state, setState] = useState<
     | { view: "loading" }
     | { view: "check-in" }
-    | { view: "manage"; visit: Extract<VisitState, { type: "ACTIVE" }>["visit"] }
+    | {
+        view: "manage";
+        visit: Extract<VisitState, { type: "ACTIVE" }>["visit"];
+      }
     | { view: "success" }
   >({ view: "loading" });
 
@@ -442,7 +453,9 @@ export default function VisitPage() {
 
     initialize();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (state.view === "loading") {
@@ -488,9 +501,7 @@ export default function VisitPage() {
         )}
 
         {state.view === "success" && (
-          <SuccessScreen
-            onNewVisit={() => setState({ view: "check-in" })}
-          />
+          <SuccessScreen onNewVisit={() => setState({ view: "check-in" })} />
         )}
       </div>
     </div>
