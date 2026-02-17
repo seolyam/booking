@@ -60,6 +60,12 @@ export const requestPriorityEnum = pgEnum("request_priority", [
   "urgent",
 ]);
 
+export const visitStatusEnum = pgEnum("visit_status", [
+  "ACTIVE",
+  "COMPLETED",
+  "AUTO_CLOSED",
+]);
+
 // ============================================================================
 // Tables
 // ============================================================================
@@ -300,6 +306,10 @@ export const visitorLogs = pgTable(
     company: text("company"),
     contact_number: text("contact_number"),
     purpose_of_visit: text("purpose_of_visit").notNull(),
+    expected_duration: integer("expected_duration"),
+    expected_end_time: timestamp("expected_end_time", { withTimezone: true }),
+    status: visitStatusEnum("status").default("ACTIVE").notNull(),
+    auto_closed: boolean("auto_closed").default(false).notNull(),
     time_in: timestamp("time_in", { withTimezone: true }).defaultNow().notNull(),
     time_out: timestamp("time_out", { withTimezone: true }),
     created_at: timestamp("created_at", { withTimezone: true })
@@ -308,6 +318,7 @@ export const visitorLogs = pgTable(
   },
   (table) => [
     index("idx_visitor_logs_time_in").on(table.time_in),
+    index("idx_visitor_logs_status_end").on(table.status, table.expected_end_time),
   ],
 );
 
