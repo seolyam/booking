@@ -1,14 +1,24 @@
 import { getAuthUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { users, visitorLogs } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import Link from "next/link";
+import { getVisitorLogs } from "@/actions/visitor-logs";
 import { VisitorLogsClient } from "./_components/VisitorLogsClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function VisitorLogsPage() {
+export default async function VisitorLogsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    status?: string;
+  }>;
+}) {
   const user = await getAuthUser();
 
   if (!user) {
@@ -23,10 +33,15 @@ export default async function VisitorLogsPage() {
     redirect("/dashboard");
   }
 
-  const logs = await db
-    .select()
-    .from(visitorLogs)
-    .orderBy(desc(visitorLogs.time_in));
+  const params = await searchParams;
+
+  const logs = await getVisitorLogs({
+    search: params.search || undefined,
+    dateFrom: params.dateFrom || undefined,
+    dateTo: params.dateTo || undefined,
+    status:
+      (params.status as "ACTIVE" | "COMPLETED" | "AUTO_CLOSED") || undefined,
+  });
 
   return (
     <div className="space-y-8">
@@ -41,7 +56,17 @@ export default async function VisitorLogsPage() {
         </Link>
       </div>
 
-      <VisitorLogsClient logs={logs} />
+      <VisitorLogsClient
+        logs={logs}
+        initialFilters={{
+          search: params.search ?? "",
+          dateFrom: params.dateFrom ?? "",
+          dateTo: params.dateTo ?? "",
+          status:
+            (params.status as "" | "ACTIVE" | "COMPLETED" | "AUTO_CLOSED") ??
+            "",
+        }}
+      />
     </div>
   );
 }

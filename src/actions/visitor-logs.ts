@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { visitorLogs } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { eq, desc, and, gte, lte, ilike, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // ============================================================================
@@ -29,18 +29,40 @@ async function requireAdmin() {
 // Queries
 // ============================================================================
 
-export async function getVisitorLogs(filters?: {
-  dateRange?: { from?: Date; to?: Date };
-}) {
+export type VisitorLogFilters = {
+  search?: string;
+  dateFrom?: string; // ISO date string
+  dateTo?: string; // ISO date string
+  status?: "ACTIVE" | "COMPLETED" | "AUTO_CLOSED" | "";
+};
+
+export async function getVisitorLogs(filters?: VisitorLogFilters) {
   await requireAdmin();
 
   const conditions = [];
 
-  if (filters?.dateRange?.from) {
-    conditions.push(gte(visitorLogs.time_in, filters.dateRange.from));
+  // Text search: name or company
+  if (filters?.search?.trim()) {
+    const term = `%${filters.search.trim()}%`;
+    conditions.push(
+      or(ilike(visitorLogs.name, term), ilike(visitorLogs.company, term)),
+    );
   }
-  if (filters?.dateRange?.to) {
-    conditions.push(lte(visitorLogs.time_in, filters.dateRange.to));
+
+  // Date range
+  if (filters?.dateFrom) {
+    conditions.push(gte(visitorLogs.time_in, new Date(filters.dateFrom)));
+  }
+  if (filters?.dateTo) {
+    // Include the entire "to" day
+    const toDate = new Date(filters.dateTo);
+    toDate.setHours(23, 59, 59, 999);
+    conditions.push(lte(visitorLogs.time_in, toDate));
+  }
+
+  // Status filter
+  if (filters?.status) {
+    conditions.push(eq(visitorLogs.status, filters.status));
   }
 
   const rows = await db
@@ -75,7 +97,7 @@ export async function clockOutVisitor(
 
   await db
     .update(visitorLogs)
-    .set({ time_out: new Date() })
+    .set({ time_out: new Date(), status: "COMPLETED" })
     .where(eq(visitorLogs.id, visitorId));
 
   revalidatePath("/dashboard/admin/visitor-logs");
