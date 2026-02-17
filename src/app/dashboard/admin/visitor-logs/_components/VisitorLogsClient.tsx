@@ -123,7 +123,9 @@ export function VisitorLogsClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showFilters, setShowFilters] = useState(
-    Boolean(initialFilters.dateFrom || initialFilters.dateTo || initialFilters.status),
+    Boolean(
+      initialFilters.dateFrom || initialFilters.dateTo || initialFilters.status,
+    ),
   );
 
   const [search, setSearch] = useState(initialFilters.search);
@@ -234,7 +236,9 @@ export function VisitorLogsClient({
           <div className="mb-3 space-y-3 rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">From</label>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">
+                  From
+                </label>
                 <input
                   type="date"
                   value={dateFrom}
@@ -243,7 +247,9 @@ export function VisitorLogsClient({
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">To</label>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">
+                  To
+                </label>
                 <input
                   type="date"
                   value={dateTo}
@@ -253,7 +259,9 @@ export function VisitorLogsClient({
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Status</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">
+                Status
+              </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as "" | VisitStatus)}
@@ -299,7 +307,9 @@ export function VisitorLogsClient({
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{log.name}</p>
+                  <p className="font-semibold text-gray-900 truncate">
+                    {log.name}
+                  </p>
                   {log.company && (
                     <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                       <Building2 className="h-3 w-3" />
@@ -310,7 +320,9 @@ export function VisitorLogsClient({
                 {statusBadge(log.status as VisitStatus, log.time_out)}
               </div>
 
-              <p className="text-sm text-gray-600 mb-2">{log.purpose_of_visit}</p>
+              <p className="text-sm text-gray-600 mb-2">
+                {log.purpose_of_visit}
+              </p>
 
               <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 mb-3">
                 {log.contact_number && log.contact_number !== "N/A" && (
@@ -449,7 +461,9 @@ export function VisitorLogsClient({
                   </label>
                   <select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as "" | VisitStatus)}
+                    onChange={(e) =>
+                      setStatus(e.target.value as "" | VisitStatus)
+                    }
                     className="h-10 rounded-md border border-gray-300 px-3 text-sm bg-white pr-8 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
                   >
                     <option value="">All Statuses</option>
@@ -482,13 +496,18 @@ export function VisitorLogsClient({
                 <th className="py-6 px-4 font-semibold w-[140px]">Time Out</th>
                 <th className="py-6 px-4 font-semibold w-[80px]">Duration</th>
                 <th className="py-6 px-4 font-semibold w-[120px]">Status</th>
-                <th className="py-6 px-4 pr-8 font-semibold text-right w-[140px]">Actions</th>
+                <th className="py-6 px-4 pr-8 font-semibold text-right w-[140px]">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-sm text-gray-500">
+                  <td
+                    colSpan={9}
+                    className="py-16 text-center text-sm text-gray-500"
+                  >
                     {search.trim() || hasActiveFilters
                       ? "No logs match your filters."
                       : "No visitor logs yet. Logs are created automatically when users sign in."}
@@ -501,25 +520,39 @@ export function VisitorLogsClient({
                     className={`group hover:bg-gray-50/50 transition-colors ${log.status !== "ACTIVE" ? "opacity-60" : ""}`}
                   >
                     <td className="py-5 pl-8 pr-4">
-                      <span className="font-medium text-gray-900 text-sm">{log.name}</span>
+                      <span className="font-medium text-gray-900 text-sm">
+                        {log.name}
+                      </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">{log.company ?? "\u2014"}</span>
+                      <span className="text-sm text-gray-600">
+                        {log.company ?? "\u2014"}
+                      </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">{log.contact_number ?? "\u2014"}</span>
+                      <span className="text-sm text-gray-600">
+                        {log.contact_number ?? "\u2014"}
+                      </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600 line-clamp-2">{log.purpose_of_visit}</span>
+                      <span className="text-sm text-gray-600 line-clamp-2">
+                        {log.purpose_of_visit}
+                      </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">{formatDateTime(log.time_in)}</span>
+                      <span className="text-sm text-gray-600">
+                        {formatDateTime(log.time_in)}
+                      </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">{formatDateTime(log.time_out)}</span>
+                      <span className="text-sm text-gray-600">
+                        {formatDateTime(log.time_out)}
+                      </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">{formatDuration(log.expected_duration)}</span>
+                      <span className="text-sm text-gray-600">
+                        {formatDuration(log.expected_duration)}
+                      </span>
                     </td>
                     <td className="py-5 px-4">
                       {statusBadge(log.status as VisitStatus, log.time_out)}

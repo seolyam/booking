@@ -39,7 +39,8 @@ export default async function VisitorLogsPage({
     search: params.search || undefined,
     dateFrom: params.dateFrom || undefined,
     dateTo: params.dateTo || undefined,
-    status: (params.status as "ACTIVE" | "COMPLETED" | "AUTO_CLOSED") || undefined,
+    status:
+      (params.status as "ACTIVE" | "COMPLETED" | "AUTO_CLOSED") || undefined,
   });
 
   return (
@@ -61,7 +62,9 @@ export default async function VisitorLogsPage({
           search: params.search ?? "",
           dateFrom: params.dateFrom ?? "",
           dateTo: params.dateTo ?? "",
-          status: (params.status as "" | "ACTIVE" | "COMPLETED" | "AUTO_CLOSED") ?? "",
+          status:
+            (params.status as "" | "ACTIVE" | "COMPLETED" | "AUTO_CLOSED") ??
+            "",
         }}
       />
     </div>

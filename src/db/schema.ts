@@ -17,7 +17,9 @@ import { sql, relations } from "drizzle-orm";
 // Sequences
 // ============================================================================
 
-export const ticketNumberSeq = pgSequence("ticket_number_seq", { startWith: 1 });
+export const ticketNumberSeq = pgSequence("ticket_number_seq", {
+  startWith: 1,
+});
 
 // ============================================================================
 // Enums
@@ -213,9 +215,7 @@ export const comments = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [
-    index("idx_comments_request").on(table.request_id),
-  ],
+  (table) => [index("idx_comments_request").on(table.request_id)],
 );
 
 export const activityLogs = pgTable(
@@ -280,23 +280,20 @@ export type FieldSchema = {
   currencySymbol?: string;
 };
 
-export const formConfigs = pgTable(
-  "form_configs",
-  {
-    category_key: text("category_key").primaryKey(),
-    category_label: text("category_label"),
-    description: text("description"),
-    icon_key: text("icon_key"),
-    is_active: boolean("is_active").default(true).notNull(),
-    required_pdfs: jsonb("required_pdfs").$type<string[]>().default([]).notNull(),
-    instructions: text("instructions"),
-    fields: jsonb("fields").$type<FieldSchema[]>().default([]),
-    updated_at: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updated_by: uuid("updated_by").references(() => users.id),
-  }
-);
+export const formConfigs = pgTable("form_configs", {
+  category_key: text("category_key").primaryKey(),
+  category_label: text("category_label"),
+  description: text("description"),
+  icon_key: text("icon_key"),
+  is_active: boolean("is_active").default(true).notNull(),
+  required_pdfs: jsonb("required_pdfs").$type<string[]>().default([]).notNull(),
+  instructions: text("instructions"),
+  fields: jsonb("fields").$type<FieldSchema[]>().default([]),
+  updated_at: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updated_by: uuid("updated_by").references(() => users.id),
+});
 
 export const visitorLogs = pgTable(
   "visitor_logs",
@@ -310,7 +307,9 @@ export const visitorLogs = pgTable(
     expected_end_time: timestamp("expected_end_time", { withTimezone: true }),
     status: visitStatusEnum("status").default("ACTIVE").notNull(),
     auto_closed: boolean("auto_closed").default(false).notNull(),
-    time_in: timestamp("time_in", { withTimezone: true }).defaultNow().notNull(),
+    time_in: timestamp("time_in", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     time_out: timestamp("time_out", { withTimezone: true }),
     created_at: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -318,7 +317,10 @@ export const visitorLogs = pgTable(
   },
   (table) => [
     index("idx_visitor_logs_time_in").on(table.time_in),
-    index("idx_visitor_logs_status_end").on(table.status, table.expected_end_time),
+    index("idx_visitor_logs_status_end").on(
+      table.status,
+      table.expected_end_time,
+    ),
   ],
 );
 
@@ -335,9 +337,7 @@ export const requestRatings = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [
-    index("idx_request_ratings_request").on(table.request_id),
-  ],
+  (table) => [index("idx_request_ratings_request").on(table.request_id)],
 );
 
 // ============================================================================
@@ -531,25 +531,38 @@ export const CATEGORIES: CategoryMeta[] = [
 ];
 
 export const CATEGORY_MAP = Object.fromEntries(
-  CATEGORIES.map((c) => [c.key, c])
+  CATEGORIES.map((c) => [c.key, c]),
 );
 
 // Required PDF labels per category
 export const REQUIRED_PDFS: Record<string, string[]> = {
   flight_booking: ["Travel authority", "Supporting memo"],
-  hotel_accommodation: ["Travel approval", "Event or meeting details", "Hotel booking confirmation"],
+  hotel_accommodation: [
+    "Travel approval",
+    "Event or meeting details",
+    "Hotel booking confirmation",
+  ],
   meals: ["Receipt or invoice", "Approval memo"],
   room_reservation: ["Meeting agenda", "Authorization form"],
   business_permits: ["Application form", "Supporting documents"],
   radio_licenses: ["License application", "Technical specifications"],
   work_permit: ["Employment contract", "Authorization letter"],
-  equipments_assets: ["Quotation", "Manager approval", "Delivery note", "Invoice", "Receipt"],
+  equipments_assets: [
+    "Quotation",
+    "Manager approval",
+    "Delivery note",
+    "Invoice",
+    "Receipt",
+  ],
 };
 
 // Status display labels and variants
 export const STATUS_CONFIG: Record<
   string,
-  { label: string; variant: "success" | "warning" | "error" | "info" | "default" }
+  {
+    label: string;
+    variant: "success" | "warning" | "error" | "info" | "default";
+  }
 > = {
   open: { label: "Open", variant: "info" },
   pending: { label: "Pending", variant: "warning" },
@@ -558,9 +571,4 @@ export const STATUS_CONFIG: Record<
 };
 
 // Workflow steps for progress display
-export const WORKFLOW_STEPS = [
-  "Created",
-  "Open",
-  "Pending",
-  "Resolved",
-];
+export const WORKFLOW_STEPS = ["Created", "Open", "Pending", "Resolved"];

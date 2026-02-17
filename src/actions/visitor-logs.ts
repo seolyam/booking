@@ -32,7 +32,7 @@ async function requireAdmin() {
 export type VisitorLogFilters = {
   search?: string;
   dateFrom?: string; // ISO date string
-  dateTo?: string;   // ISO date string
+  dateTo?: string; // ISO date string
   status?: "ACTIVE" | "COMPLETED" | "AUTO_CLOSED" | "";
 };
 
@@ -45,10 +45,7 @@ export async function getVisitorLogs(filters?: VisitorLogFilters) {
   if (filters?.search?.trim()) {
     const term = `%${filters.search.trim()}%`;
     conditions.push(
-      or(
-        ilike(visitorLogs.name, term),
-        ilike(visitorLogs.company, term),
-      ),
+      or(ilike(visitorLogs.name, term), ilike(visitorLogs.company, term)),
     );
   }
 
