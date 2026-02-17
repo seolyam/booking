@@ -83,12 +83,24 @@ export default async function RequestsPage({
     };
   });
 
+  /* 
+    Adjust title logic:
+    - If admin, we want "My Tickets" because getRequests returns (created by me OR resolved by me).
+    - If requester, it defaults to "My Tickets" anyway.
+    - If superadmin, maybe stick to "All Tickets" or also "My Tickets" if they use this view?
+      Assuming superadmin sees everything via getRequests if not filtered? 
+      Actually getRequests enforces requester_id check for everyone except admin block I added.
+      Let's stick to "My Tickets" for Admin since that's the specific request.
+  */
+  const pageTitle = appUser?.role === "admin" ? "My Tickets" : undefined;
+
   return (
     <RequestsListClient
       rows={rows}
       initialQuery={typeof params.search === 'string' ? params.search : undefined}
       showRequester={showRequester}
       canCreate={appUser?.role === "requester" || appUser?.role === "superadmin"}
+      title={pageTitle}
     />
   );
 }

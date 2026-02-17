@@ -21,6 +21,7 @@ import {
 } from "@/actions/visit";
 import { DURATION_OPTIONS, EXTEND_OPTIONS } from "@/lib/visitOptions";
 import type { VisitState } from "@/actions/visit";
+import { cn } from "@/lib/utils";
 
 // ============================================================================
 // Local storage helpers
@@ -150,7 +151,7 @@ function CheckInForm({
           onChange={(e) => setName(e.target.value)}
           placeholder="Juan Dela Cruz"
           required
-          className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+          className="h-11 w-full rounded-lg border border-gray-300 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder:text-gray-500"
         />
       </div>
 
@@ -165,7 +166,7 @@ function CheckInForm({
           value={company}
           onChange={(e) => setCompany(e.target.value)}
           placeholder="Optional"
-          className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+          className="h-11 w-full rounded-lg border border-gray-300 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder:text-gray-500"
         />
       </div>
 
@@ -180,7 +181,7 @@ function CheckInForm({
           value={contactNumber}
           onChange={(e) => setContactNumber(e.target.value)}
           placeholder="Optional"
-          className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+          className="h-11 w-full rounded-lg border border-gray-300 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder:text-gray-500"
         />
       </div>
 
@@ -196,7 +197,7 @@ function CheckInForm({
           placeholder="Meeting with HR, document pickup, etc."
           required
           rows={3}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all resize-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all resize-none placeholder:text-gray-500"
         />
       </div>
 
@@ -212,7 +213,10 @@ function CheckInForm({
             setDuration(e.target.value ? Number(e.target.value) : "")
           }
           required
-          className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white"
+          className={cn(
+            "h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white",
+            duration === "" ? "text-gray-500" : "text-gray-900"
+          )}
         >
           <option value="">Select duration...</option>
           {DURATION_OPTIONS.map((opt) => (
@@ -354,16 +358,7 @@ function ManageVisitScreen({
       </div>
 
       {/* Actions */}
-      <div className="space-y-3">
-        <button
-          onClick={handleLogOut}
-          disabled={isPending}
-          className="w-full h-12 rounded-lg bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <LogOut className="h-4 w-4" />
-          Log Out Now
-        </button>
-
+      <div className="space-y-6">
         <div className="flex gap-2">
           {EXTEND_OPTIONS.map((opt) => (
             <button
@@ -377,6 +372,14 @@ function ManageVisitScreen({
             </button>
           ))}
         </div>
+        <button
+          onClick={handleLogOut}
+          disabled={isPending}
+          className="w-full h-12 rounded-lg bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Log Out Now
+        </button>
       </div>
     </div>
   );
@@ -417,9 +420,9 @@ export default function VisitPage() {
     | { view: "loading" }
     | { view: "check-in" }
     | {
-        view: "manage";
-        visit: Extract<VisitState, { type: "ACTIVE" }>["visit"];
-      }
+      view: "manage";
+      visit: Extract<VisitState, { type: "ACTIVE" }>["visit"];
+    }
     | { view: "success" }
   >({ view: "loading" });
 

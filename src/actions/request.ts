@@ -146,8 +146,19 @@ export async function getRequests(filters?: {
 
   const conditions = [];
 
-  // Always filter to show only the user's own requests
-  conditions.push(eq(requests.requester_id, appUser.id));
+  // Filter based on role
+  if (appUser.role === "admin") {
+    // Admins see their own requests OR requests they resolved/closed
+    conditions.push(
+      or(
+        eq(requests.requester_id, appUser.id),
+        eq(requests.closed_by, appUser.id)
+      )
+    );
+  } else {
+    // Requesters only see their own
+    conditions.push(eq(requests.requester_id, appUser.id));
+  }
 
   if (filters?.status && filters.status !== "all") {
     const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
@@ -371,7 +382,7 @@ function smartSanitize(obj: unknown): unknown {
 }
 
 const createRequestSchema = z.object({
-  title: z.string().min(1, "Project title is required"),
+  title: z.string().optional(),
   category: z.string().min(1, "Category is required"),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   branch_id: z.string().uuid("Branch is required"),
@@ -380,7 +391,7 @@ const createRequestSchema = z.object({
 });
 
 export async function createRequest(formData: {
-  title: string;
+  title?: string;
   category: string;
   priority: string;
   branch_id: string;
@@ -397,10 +408,14 @@ export async function createRequest(formData: {
     // Sanitize form_data: auto-convert string numbers to real numbers
     const processedFormData = smartSanitize(parsed.form_data) as Record<string, unknown>;
 
+    const categoryMeta = CATEGORY_MAP[parsed.category];
+    const categoryLabel = categoryMeta?.label ?? parsed.category;
+    const finalTitle = parsed.title?.trim() ? parsed.title : `${categoryLabel} Request`;
+
     const [inserted] = await db
       .insert(requests)
       .values({
-        title: parsed.title,
+        title: finalTitle,
         category: parsed.category as Request["category"],
         priority: parsed.priority as Request["priority"],
         branch_id: parsed.branch_id,
@@ -423,13 +438,12 @@ export async function createRequest(formData: {
     });
 
     // Notify all admins via email (fire-and-forget)
-    const categoryMeta = CATEGORY_MAP[parsed.category];
     getAdminEmails().then((adminEmails) => {
       sendNewRequestNotification({
         adminEmails,
         requesterName: appUser.fullName ?? appUser.email,
-        requestTitle: parsed.title,
-        category: categoryMeta?.label ?? parsed.category,
+        requestTitle: finalTitle,
+        category: categoryLabel,
         requestId: inserted.id,
       }).catch(() => { });
     });
@@ -499,7 +513,8 @@ export async function updateRequestStatus(
       ...(newStatus === "cancelled" && comment
         ? { rejection_reason: comment }
         : {}),
-      ...(newStatus === "resolved"
+      // Set closed_by/closed_at for both resolved and cancelled
+      ...((newStatus === "resolved" || newStatus === "cancelled")
         ? { closed_at: new Date(), closed_by: appUser.id }
         : {}),
     })
