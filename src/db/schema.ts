@@ -271,6 +271,7 @@ export type FieldSchema = {
   options?: { label: string; value: string }[];
   placeholder?: string;
   description?: string;
+  currencySymbol?: string;
 };
 
 export const formConfigs = pgTable(

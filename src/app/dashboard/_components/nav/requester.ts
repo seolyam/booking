@@ -12,12 +12,12 @@ export function requesterNav(): NavSection[] {
         },
         {
           key: "create",
-          label: "Create Request",
+          label: "Create Ticket",
           href: "/dashboard/requests/create",
         },
         {
           key: "requests",
-          label: "Your Requests",
+          label: "Your Tickets",
           href: "/dashboard/requests",
           activeMatch: (p) =>
             p === "/dashboard/requests" ||

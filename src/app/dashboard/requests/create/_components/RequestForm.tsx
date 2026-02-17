@@ -28,6 +28,7 @@ export type FieldDef = {
   type: "text" | "date" | "number" | "textarea" | "select" | "time" | "email" | "checkbox";
   placeholder?: string;
   required?: boolean;
+  currencySymbol?: string;
   options?: { label: string; value: string }[];
 };
 
@@ -335,65 +336,104 @@ export function RequestForm({
                       </SelectContent>
                     </Select>
                   ) : (
-                    <Input
-                      id={field.name}
-                      type={field.type}
-                      value={(values[field.name] as string) ?? ""}
-                      onKeyDown={(e) => {
-                        if (field.type === "number") {
-                          // Block invalid chars: e, E, +, -
-                          if (["e", "E", "+", "-"].includes(e.key)) {
-                            e.preventDefault();
-                          }
-                          // Block decimal point for integer fields
-                          // Integer fields: NOT budget, cost, price, amount
-                          const isCurrency =
-                            field.name.includes("budget") ||
-                            field.name.includes("cost") ||
-                            field.name.includes("price") ||
-                            field.name.includes("amount");
-
-                          if (!isCurrency && e.key === ".") {
-                            e.preventDefault();
-                          }
-                        }
-                      }}
-                      onChange={(e) => {
-                        let val = e.target.value;
-                        if (field.type === "number") {
-                          if (val === "") {
-                            handleChange(field.name, val);
-                            return;
-                          }
-
-                          const isCurrency =
-                            field.name.includes("budget") ||
-                            field.name.includes("cost") ||
-                            field.name.includes("price") ||
-                            field.name.includes("amount");
-
-                          if (isCurrency) {
-                            val = val.replace(/[^0-9.]/g, "");
-                            const parts = val.split(".");
-                            if (parts.length > 2) {
-                              val = parts[0] + "." + parts.slice(1).join("");
-                            }
-                          } else {
-                            val = val.replace(/[^0-9]/g, "");
-                          }
-                        }
-                        handleChange(field.name, val);
-                      }}
-                      placeholder={
-                        field.placeholder ?? `Enter ${field.label.toLowerCase()}`
-                      }
-                      className={cn(
-                        "h-11",
-                        field.type === "time"
-                          ? "[&::-webkit-calendar-picker-indicator]:cursor-pointer text-gray-900"
-                          : "text-gray-900"
+                    <div className="relative">
+                      {field.type === "number" && field.currencySymbol && (
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                          {field.currencySymbol}
+                        </span>
                       )}
-                    />
+                      <Input
+                        id={field.name}
+                        type={field.type}
+                        step={
+                          (field.type === "number" && (
+                            field.name.includes("budget") ||
+                            field.name.includes("cost") ||
+                            field.name.includes("price") ||
+                            field.name.includes("amount") ||
+                            !!field.currencySymbol
+                          )) ? "0.01" : "1"
+                        }
+                        min="0"
+                        value={(values[field.name] as string) ?? ""}
+                        onKeyDown={(e) => {
+                          if (field.type === "number") {
+                            // Block invalid chars: e, E, +, -
+                            if (["e", "E", "+", "-"].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                            // Block decimal point for integer fields
+                            // Integer fields: NOT budget, cost, price, amount
+                            const isCurrency =
+                              field.name.includes("budget") ||
+                              field.name.includes("cost") ||
+                              field.name.includes("price") ||
+                              field.name.includes("amount") ||
+                              !!field.currencySymbol;
+
+                            if (!isCurrency && e.key === ".") {
+                              e.preventDefault();
+                            }
+                          }
+                        }}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (field.type === "number") {
+                            if (val === "") {
+                              handleChange(field.name, val);
+                              return;
+                            }
+
+                            const isCurrency =
+                              field.name.includes("budget") ||
+                              field.name.includes("cost") ||
+                              field.name.includes("price") ||
+                              field.name.includes("amount") ||
+                              !!field.currencySymbol;
+
+                            if (isCurrency) {
+                              // Allow decimals
+                              // Regex allows numbers and ONE dot
+                              // If user is typing, we shouldn't be too aggressive with replace, 
+                              // but we want to prevent multiple dots or non-numeric chars
+                              const valid = /^\d*\.?\d*$/.test(val);
+                              if (!valid) {
+                                return; // Ignore invalid input
+                              }
+                            } else {
+                              // Integers only
+                              val = val.replace(/[^0-9]/g, "");
+                            }
+                          }
+                          handleChange(field.name, val);
+                        }}
+                        onBlur={(e) => {
+                          const isCurrency =
+                            field.name.includes("budget") ||
+                            field.name.includes("cost") ||
+                            field.name.includes("price") ||
+                            field.name.includes("amount") ||
+                            !!field.currencySymbol;
+
+                          if (isCurrency && field.type === "number" && e.target.value) {
+                            const num = parseFloat(e.target.value);
+                            if (!isNaN(num)) {
+                              handleChange(field.name, num.toFixed(2));
+                            }
+                          }
+                        }}
+                        placeholder={
+                          field.placeholder ?? `Enter ${field.label.toLowerCase()}`
+                        }
+                        className={cn(
+                          "h-11",
+                          field.type === "time"
+                            ? "[&::-webkit-calendar-picker-indicator]:cursor-pointer text-gray-900"
+                            : "text-gray-900",
+                          field.type === "number" && field.currencySymbol ? "pl-8" : ""
+                        )}
+                      />
+                    </div>
                   )}
 
                   {errors[field.name] && (

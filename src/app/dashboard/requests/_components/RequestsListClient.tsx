@@ -122,7 +122,7 @@ export function RequestsListClient(props: {
       <div className="md:hidden mb-4">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-bold text-gray-900">
-            {props.showRequester ? "All Requests" : "My Requests"}
+            {props.showRequester ? "All Tickets" : "My Tickets"}
           </h1>
           <div className="flex gap-2">
             <RequestsFilter />
@@ -130,7 +130,7 @@ export function RequestsListClient(props: {
               <Link
                 href="/dashboard/requests/create"
                 className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
-                aria-label="New Request"
+                aria-label="New Ticket"
               >
                 <Plus className="h-5 w-5" />
               </Link>
@@ -144,7 +144,7 @@ export function RequestsListClient(props: {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search requests..."
+            placeholder="Search tickets..."
             className="h-12 w-full rounded-xl bg-gray-100 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-[#358334]/20 focus:bg-white transition-all"
           />
         </div>
@@ -155,7 +155,7 @@ export function RequestsListClient(props: {
         <MobileCardList
           items={mobileCards}
           emptyMessage={
-            hasFilters ? "No requests match your search." : "No requests yet."
+            hasFilters ? "No tickets match your search." : "No tickets yet."
           }
           showAmount={false}
         />
@@ -165,7 +165,7 @@ export function RequestsListClient(props: {
       <div className="hidden md:flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            {props.showRequester ? "All Requests" : "My Requests"}
+            {props.showRequester ? "All Tickets" : "My Tickets"}
           </h1>
         </div>
         {props.canCreate !== false && (
@@ -173,7 +173,7 @@ export function RequestsListClient(props: {
             href="/dashboard/requests/create"
             className="inline-flex items-center gap-2 rounded-lg bg-[#358334] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm"
           >
-            New Request +
+            New Ticket +
           </Link>
         )}
       </div>
@@ -229,8 +229,8 @@ export function RequestsListClient(props: {
                     className="py-16 text-center text-sm text-gray-500"
                   >
                     {hasFilters
-                      ? "No requests match your search."
-                      : "No requests yet."}
+                      ? "No tickets match your search."
+                      : "No tickets yet."}
                   </td>
                 </tr>
               ) : (

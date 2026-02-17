@@ -3,13 +3,13 @@ import { adminNav } from "./admin";
 
 export function superadminNav(): NavSection[] {
   const adminSections = adminNav().map((section) => {
-    if (section.title === "Requests") {
+    if (section.title === "Tickets") {
       return {
         ...section,
         items: [
           {
             key: "create_request",
-            label: "Create Request",
+            label: "Create Ticket",
             href: "/dashboard/requests/create",
           },
           ...section.items,
