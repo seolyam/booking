@@ -11,7 +11,7 @@ import { z, ZodError } from "zod";
 // ============================================================================
 
 const submitRatingSchema = z.object({
-  request_id: z.string().uuid("Invalid request ID"),
+  request_id: z.string().uuid("Invalid ticket ID"),
   rating: z.coerce
     .number({ message: "Rating is required" })
     .int("Rating must be a whole number")

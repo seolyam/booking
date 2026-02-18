@@ -83,7 +83,7 @@ export default function RequesterDashboard({
       <div className="bg-white rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-sm border border-gray-100/50">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <h3 className="text-xl font-bold text-gray-900">Recent Requests</h3>
+            <h3 className="text-xl font-bold text-gray-900">Recent Tickets</h3>
             <RequestsFilter />
           </div>
           <Link href="/dashboard/requests" className="text-sm font-bold text-gray-500 hover:text-gray-900 underline underline-offset-4 hidden md:block">

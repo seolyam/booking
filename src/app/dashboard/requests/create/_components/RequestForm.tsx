@@ -139,9 +139,6 @@ export function RequestForm({
   const validate = (asDraft: boolean): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!values.title || !(values.title as string).trim()) {
-      newErrors.title = "Ticket name is required";
-    }
     if (!values.branch_id) {
       newErrors.branch_id = "Branch is required";
     }
@@ -197,23 +194,7 @@ export function RequestForm({
         </CardHeader>
         <CardContent className="space-y-6 md:space-y-8 p-4 md:p-8">
           {/* Common fields (Row 1) */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="title" className="text-gray-900 font-medium">
-                Ticket Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="title"
-                value={(values.title as string) ?? ""}
-                onChange={(e) => handleChange("title", e.target.value)}
-                placeholder="Enter ticket name"
-                className="mt-1.5 h-11"
-              />
-              {errors.title && (
-                <p className="text-xs text-red-500 mt-1">{errors.title}</p>
-              )}
-            </div>
-
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-1">
             <div>
               <Label htmlFor="ticket_id" className="text-gray-900 text-gray-400 font-medium">
                 Ticket ID

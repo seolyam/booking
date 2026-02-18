@@ -71,6 +71,7 @@ export function RequestsListClient(props: {
   initialQuery?: string;
   showRequester?: boolean;
   canCreate?: boolean;
+  title?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -122,7 +123,7 @@ export function RequestsListClient(props: {
       <div className="md:hidden mb-4">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-bold text-gray-900">
-            {props.showRequester ? "All Tickets" : "My Tickets"}
+            {props.title ?? (props.showRequester ? "All Tickets" : "My Tickets")}
           </h1>
           <div className="flex gap-2">
             <RequestsFilter />
@@ -165,7 +166,7 @@ export function RequestsListClient(props: {
       <div className="hidden md:flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-gray-900">
-            {props.showRequester ? "All Tickets" : "My Tickets"}
+            {props.title ?? (props.showRequester ? "All Tickets" : "My Tickets")}
           </h1>
         </div>
         {props.canCreate !== false && (

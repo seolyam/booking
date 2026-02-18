@@ -15,6 +15,15 @@ import {
 } from "lucide-react";
 import type { VisitorLog } from "@/db/schema";
 import { clockOutVisitor, deleteVisitorLog } from "@/actions/visitor-logs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 // ---------------------------------------------------------------------------
 // Date/time formatting
@@ -132,6 +141,9 @@ export function VisitorLogsClient({
   const [dateFrom, setDateFrom] = useState(initialFilters.dateFrom);
   const [dateTo, setDateTo] = useState(initialFilters.dateTo);
   const [status, setStatus] = useState<"" | VisitStatus>(initialFilters.status);
+  const [clockOutVisitorData, setClockOutVisitorData] = useState<{ id: string; name: string } | null>(null);
+
+  const [deleteVisitorData, setDeleteVisitorData] = useState<{ id: string; name: string } | null>(null);
 
   const activeCount = logs.filter((l) => l.status === "ACTIVE").length;
 
@@ -162,37 +174,43 @@ export function VisitorLogsClient({
   }
 
   function handleClockOut(visitorId: string, visitorName: string) {
-    const confirmed = window.confirm(`Clock out ${visitorName}?`);
-    if (!confirmed) return;
+    setClockOutVisitorData({ id: visitorId, name: visitorName });
+  }
+
+  function confirmClockOut() {
+    if (!clockOutVisitorData) return;
 
     startTransition(async () => {
-      const result = await clockOutVisitor(visitorId);
+      const result = await clockOutVisitor(clockOutVisitorData.id);
       if ("error" in result) {
         alert(result.error);
       }
+      setClockOutVisitorData(null);
     });
   }
 
   function handleDelete(visitorId: string, visitorName: string) {
-    const confirmed = window.confirm(
-      `Delete visitor log for "${visitorName}"? This cannot be undone.`,
-    );
-    if (!confirmed) return;
+    setDeleteVisitorData({ id: visitorId, name: visitorName });
+  }
+
+  function confirmDelete() {
+    if (!deleteVisitorData) return;
 
     startTransition(async () => {
-      const result = await deleteVisitorLog(visitorId);
+      const result = await deleteVisitorLog(deleteVisitorData.id);
       if ("error" in result) {
         alert(result.error);
       }
+      setDeleteVisitorData(null);
     });
   }
 
   const hasActiveFilters = Boolean(dateFrom || dateTo || status);
 
   return (
-    <div className="-m-4 md:-m-8 p-4 md:p-8 w-full mx-auto flex flex-col min-h-[calc(100vh-theme(spacing.16))]">
+    <div className="space-y-6">
       {/* Mobile Header */}
-      <div className="md:hidden mb-4">
+      <div className="md:hidden">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900">User Activity</h2>
@@ -202,11 +220,10 @@ export function VisitorLogsClient({
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              hasActiveFilters
-                ? "bg-green-50 text-green-700 ring-1 ring-green-200"
-                : "bg-gray-100 text-gray-600"
-            }`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${hasActiveFilters
+              ? "bg-green-50 text-green-700 ring-1 ring-green-200"
+              : "bg-gray-100 text-gray-600"
+              }`}
           >
             <Filter className="h-3.5 w-3.5" />
             Filters
@@ -404,11 +421,10 @@ export function VisitorLogsClient({
 
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 h-10 text-sm font-medium transition-colors ${
-                  hasActiveFilters
-                    ? "bg-green-50 text-green-700 ring-1 ring-green-200"
-                    : "bg-gray-50 text-gray-600 ring-1 ring-gray-200 hover:bg-gray-100"
-                }`}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 h-10 text-sm font-medium transition-colors ${hasActiveFilters
+                  ? "bg-green-50 text-green-700 ring-1 ring-green-200"
+                  : "bg-gray-50 text-gray-600 ring-1 ring-gray-200 hover:bg-gray-100"
+                  }`}
               >
                 <Filter className="h-4 w-4" />
                 Filters
@@ -485,18 +501,18 @@ export function VisitorLogsClient({
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px] text-left border-collapse">
+          <table className="w-full min-w-[1200px] text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-100 text-[11px] uppercase tracking-wider text-gray-400">
                 <th className="py-6 pl-8 pr-4 font-semibold w-[180px]">Name</th>
                 <th className="py-6 px-4 font-semibold w-[130px]">Company</th>
                 <th className="py-6 px-4 font-semibold w-[110px]">Contact</th>
                 <th className="py-6 px-4 font-semibold">Purpose</th>
-                <th className="py-6 px-4 font-semibold w-[140px]">Time In</th>
-                <th className="py-6 px-4 font-semibold w-[140px]">Time Out</th>
+                <th className="py-6 px-4 font-semibold w-[180px]">Time In</th>
+                <th className="py-6 px-4 font-semibold w-[180px]">Time Out</th>
                 <th className="py-6 px-4 font-semibold w-[80px]">Duration</th>
                 <th className="py-6 px-4 font-semibold w-[120px]">Status</th>
-                <th className="py-6 px-4 pr-8 font-semibold text-right w-[140px]">
+                <th className="py-6 px-4 pr-8 font-semibold text-right w-[160px]">
                   Actions
                 </th>
               </tr>
@@ -587,6 +603,77 @@ export function VisitorLogsClient({
           </table>
         </div>
       </div>
+      <Dialog
+        open={!!clockOutVisitorData}
+        onOpenChange={(open) => !open && setClockOutVisitorData(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Clock out visitor?</DialogTitle>
+            <DialogDescription className="pt-2">
+              Are you sure you want to clock out{" "}
+              <span className="font-medium text-gray-900">
+                {clockOutVisitorData?.name}
+              </span>
+              ?
+              <br className="mb-2" />
+              This will mark their visit as completed with the current time.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setClockOutVisitorData(null)}
+              className="border-gray-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmClockOut}
+              disabled={isPending}
+              className="bg-amber-600 hover:bg-amber-700 text-white border-transparent"
+            >
+              {isPending ? "Clocking out..." : "Clock Out"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!deleteVisitorData}
+        onOpenChange={(open) => !open && setDeleteVisitorData(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete visitor log?</DialogTitle>
+            <DialogDescription className="pt-2">
+              Are you sure you want to delete the visitor log for{" "}
+              <span className="font-medium text-gray-900">
+                {deleteVisitorData?.name}
+              </span>
+              ?
+              <br className="mb-2" />
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteVisitorData(null)}
+              className="border-gray-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              disabled={isPending}
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700 text-white border-transparent"
+            >
+              {isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
