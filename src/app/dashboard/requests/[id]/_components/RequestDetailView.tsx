@@ -106,10 +106,10 @@ function WorkflowStepper({
                 i < currentStep
                   ? "border-[#2F5E3D] bg-[#2F5E3D] text-white"
                   : i === currentStep && isRejected
-                  ? "border-red-500 bg-red-500 text-white"
-                  : i === currentStep
-                  ? "border-[#2F5E3D] bg-[#2F5E3D]/10 text-[#2F5E3D]"
-                  : "border-gray-300 bg-white text-gray-400"
+                    ? "border-red-500 bg-red-500 text-white"
+                    : i === currentStep
+                      ? "border-[#2F5E3D] bg-[#2F5E3D]/10 text-[#2F5E3D]"
+                      : "border-gray-300 bg-white text-gray-400"
               )}
             >
               {i < currentStep ? (
@@ -336,7 +336,7 @@ export function RequestDetailView({
                 </dl>
               )}
 
-              {request.rejection_reason && (
+              {request.rejection_reason && request.status !== "resolved" && (
                 <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4">
                   <p className="text-xs font-medium text-red-700 mb-1">
                     Rejection Reason
