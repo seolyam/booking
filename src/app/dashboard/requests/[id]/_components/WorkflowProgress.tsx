@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type WorkflowStep = {
@@ -128,7 +128,7 @@ export default function WorkflowProgress({
                       "bg-white"
                     )} />
                   )}
-                  {isCurrent && isCancelled && <div className="h-0.5 w-4 bg-white rotate-45" />}
+                  {isCurrent && isCancelled && <X className="h-4 w-4 text-white" strokeWidth={3} />}
                 </div>
                 {/* Absolute positioned label to prevent flex layout distortion */}
                 <div className="absolute top-10 left-1/2 -translate-x-1/2 w-max max-w-[100px] text-center">
