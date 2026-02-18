@@ -491,9 +491,9 @@ export async function updateRequestStatus(
   // Transition validation
   const VALID_TRANSITIONS: Record<string, string[]> = {
     open: ["pending", "cancelled"],
-    pending: ["open", "resolved", "cancelled"],
+    pending: ["resolved", "cancelled"],
     resolved: ["pending"],  // reopen
-    cancelled: [],           // terminal
+    cancelled: ["open", "resolved"],           // allows reopening and resolving
   };
 
   const allowedNextStatuses = VALID_TRANSITIONS[existing.status];
