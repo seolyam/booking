@@ -168,7 +168,7 @@ export default function RequestInfoCard({ request, hideComments = false, configF
                     <p className="text-gray-900 bg-gray-50 p-4 rounded-xl text-sm leading-relaxed">{request.remarks}</p>
                 </div>
             )}
-            {request.rejection_reason && (
+            {request.rejection_reason && request.status !== "resolved" && (
                 <div className="mt-8 bg-red-50 border border-red-100 rounded-xl p-4">
                     <h4 className="text-sm font-bold text-red-900 mb-1 flex items-center gap-2">
                         <Ban className="h-4 w-4" /> Rejection Reason

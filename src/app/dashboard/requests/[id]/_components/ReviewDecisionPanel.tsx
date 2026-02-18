@@ -150,7 +150,7 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
         pending: ["resolve", "cancel"],
         cancelled: ["resolve", "reopen"],
         open: ["resolve", "cancel"],
-        resolved: [], // No actions
+        resolved: ["reopen"], // Allow reopening resolved tickets
     };
     const allowedDecisions = DECISION_OPTIONS[currentStatus ?? "open"];
 
@@ -217,7 +217,9 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
 
     const handleSuccessClose = () => {
         setShowSuccessModal(false);
-        if (selectedDecision === "resolve") {
+        if (selectedDecision === "cancel") {
+            router.push("/dashboard/requests");
+        } else if (selectedDecision === "resolve") {
             router.push(`/dashboard/requests/${requestId}`);
         } else {
             router.refresh();
@@ -260,37 +262,37 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
                 <h3 className="font-bold text-gray-900 mb-4 md:mb-6">Decision on Ticket</h3>
 
                 <div className="flex flex-col gap-3">
-    {allowedDecisions.includes("resolve") && (
-        <DecisionButton
-            id="resolve"
-            icon={CheckCircle2}
-            label="Resolve"
-            sublabel="Mark as resolved"
-            isSelected={selectedDecision === "resolve"}
-            onSelect={setSelectedDecision}
-        />
-    )}
-    {allowedDecisions.includes("reopen") && (
-        <DecisionButton
-            id="reopen"
-            icon={RotateCcw}
-            label="Reopen"
-            sublabel="Send back to open"
-            isSelected={selectedDecision === "reopen"}
-            onSelect={setSelectedDecision}
-        />
-    )}
-    {allowedDecisions.includes("cancel") && (
-        <DecisionButton
-            id="cancel"
-            icon={XCircle}
-            label="Cancel"
-            sublabel="Cancel this ticket"
-            isSelected={selectedDecision === "cancel"}
-            onSelect={setSelectedDecision}
-        />
-    )}
-</div>
+                    {allowedDecisions.includes("resolve") && (
+                        <DecisionButton
+                            id="resolve"
+                            icon={CheckCircle2}
+                            label="Resolve"
+                            sublabel="Mark as resolved"
+                            isSelected={selectedDecision === "resolve"}
+                            onSelect={setSelectedDecision}
+                        />
+                    )}
+                    {allowedDecisions.includes("reopen") && (
+                        <DecisionButton
+                            id="reopen"
+                            icon={RotateCcw}
+                            label="Reopen"
+                            sublabel="Send back to open"
+                            isSelected={selectedDecision === "reopen"}
+                            onSelect={setSelectedDecision}
+                        />
+                    )}
+                    {allowedDecisions.includes("cancel") && (
+                        <DecisionButton
+                            id="cancel"
+                            icon={XCircle}
+                            label="Cancel"
+                            sublabel="Cancel this ticket"
+                            isSelected={selectedDecision === "cancel"}
+                            onSelect={setSelectedDecision}
+                        />
+                    )}
+                </div>
 
                 {selectedDecision && (
                     <>

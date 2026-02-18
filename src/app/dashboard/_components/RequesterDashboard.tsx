@@ -42,7 +42,7 @@ export default function RequesterDashboard({
             href="/dashboard/requests/create"
             className="inline-flex items-center justify-center rounded-xl bg-[#358334] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#2F5E3D] hover:shadow-lg shadow-md hover:-translate-y-0.5"
           >
-            + Create Request
+            + Create Ticket
           </Link>
         </div>
       </div>
