@@ -72,6 +72,16 @@ export const visitStatusEnum = pgEnum("visit_status", [
 // Tables
 // ============================================================================
 
+// Audit logs table for system login and action tracking
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userEmail: text("user_email").notNull(),
+  action: text("action").notNull(),
+  details: jsonb("details"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+
 export const branches = pgTable("branches", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull().unique(),

@@ -2,7 +2,7 @@
 
 import { createSupabaseServerClient, getAuthUser } from "@/lib/supabase/server";
 import { db } from "@/db";
-import { users, branches, visitorLogs } from "@/db/schema";
+import { users, branches, visitorLogs, auditLogs } from "@/db/schema";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -99,32 +99,25 @@ export async function signIn(email: string, password: string) {
     return { error: error.message };
   }
 
-  // Auto-insert visitor log on successful login
+  // Log system login to audit_logs instead of visitorLogs
   try {
     const userId = authData.user?.id;
     if (userId) {
       const appUser = await db.query.users.findFirst({
         where: eq(users.id, userId),
       });
-
-      let branchName: string | null = null;
-      if (appUser?.branch_id) {
-        const branch = await db.query.branches.findFirst({
-          where: eq(branches.id, appUser.branch_id),
-          columns: { name: true },
-        });
-        branchName = branch?.name ?? null;
-      }
-
-      await db.insert(visitorLogs).values({
-        name: appUser?.full_name || validated.data.email,
-        company: branchName || appUser?.department || null,
-        contact_number: "N/A",
-        purpose_of_visit: "System Access",
+      await db.insert(auditLogs).values({
+        userEmail: appUser?.email || validated.data.email,
+        action: "LOGIN",
+        details: {
+          note: "System Access",
+          provider: "password"
+        },
       });
     }
-  } catch {
-    // Don't block login if visitor log insertion fails
+  } catch (error) {
+    console.error("Audit Log Error:", error);
+    // Don't block login if audit log insertion fails
   }
 
   redirect("/dashboard");
