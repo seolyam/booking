@@ -139,6 +139,39 @@ function SuccessModal({
     );
 }
 
+function ErrorModal({
+    isOpen,
+    onClose,
+    title,
+    message,
+    buttonText = "Understood",
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    message: string;
+    buttonText?: string;
+}) {
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
+                        <XCircle className="h-6 w-6 text-red-600" />
+                    </div>
+                    <DialogTitle className="text-center">{title}</DialogTitle>
+                    <DialogDescription className="text-center">{message}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="sm:justify-center">
+                    <Button onClick={onClose} variant="destructive" className="w-full sm:w-auto min-w-[120px]">
+                        {buttonText}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function ReviewDecisionPanel({ requestId, currentStatus }: { requestId: string; currentStatus?: string }) {
     const [selectedDecision, setSelectedDecision] = useState<DecisionId | null>(null);
     const [comment, setComment] = useState("");
@@ -156,13 +189,14 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
 
     // Modal States
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [showErrorModal, setShowErrorModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successData, setSuccessData] = useState({ title: "", message: "" });
 
     const handleInitialSubmit = () => {
         if (!selectedDecision) return;
         if (selectedDecision === "cancel" && !comment.trim()) {
-            alert("Please provide a comment for this decision.");
+            setShowErrorModal(true);
             return;
         }
         setShowConfirmModal(true);
@@ -198,11 +232,6 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
                 if (status) {
                     await updateRequestStatus(requestId, status, comment);
 
-                    if (selectedDecision === "reopen") {
-                        router.push("/dashboard/requests");
-                        return;
-                    }
-
                     setSuccessData({ title: successTitle, message: successMessage });
                     setShowConfirmModal(false);
                     setShowSuccessModal(true);
@@ -217,9 +246,7 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
 
     const handleSuccessClose = () => {
         setShowSuccessModal(false);
-        if (selectedDecision === "cancel") {
-            router.push("/dashboard/requests");
-        } else if (selectedDecision === "resolve") {
+        if (selectedDecision === "cancel" || selectedDecision === "reopen" || selectedDecision === "resolve") {
             router.push(`/dashboard/requests/${requestId}`);
         } else {
             router.refresh();
@@ -350,6 +377,13 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
                 title={successData.title}
                 message={successData.message}
                 buttonText="Okay"
+            />
+
+            <ErrorModal
+                isOpen={showErrorModal}
+                onClose={() => setShowErrorModal(false)}
+                title="Comment Required"
+                message="Please provide a reason or comment before cancelling this ticket."
             />
         </>
     );
