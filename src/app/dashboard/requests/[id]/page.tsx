@@ -180,12 +180,7 @@ export default async function RequestDetailPage({
     }
 
     if (hasBranchAccess) {
-      // Auto-transition: If status is 'Open', change to 'Pending' when admin views
-      if (request.status === "open") {
-        const msg = "Ticket viewed by admin - status updated to Pending";
-        await updateRequestStatus(request.id, "pending", msg, true);
-        redirect(`/dashboard/requests/${request.id}`); // Reload to reflect change
-      }
+
 
       if (actionableStatuses.includes(request.status)) {
         canApprove = true;
@@ -254,12 +249,26 @@ export default async function RequestDetailPage({
             request.status === "resolved" ? (
               <ReopenButton requestId={id} />
             ) : (
-              <Link
-                href={`/dashboard/requests/${id}?mode=review`}
-                className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
-              >
-                Manage Ticket
-              </Link>
+                  request.status === "open" ? (
+  <form action={async () => {
+    'use server';
+    const { pickUpTicket } = (await import("@/actions/request"));
+    await pickUpTicket(request.id);
+  }}>
+    <button type="submit"
+      className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
+    >
+      Pick up Ticket
+    </button>
+  </form>
+) : (
+  <Link
+    href={`/dashboard/requests/${id}?mode=review`}
+    className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
+  >
+    Manage Ticket
+  </Link>
+)
             )
           )}
         </div>

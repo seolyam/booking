@@ -465,6 +465,31 @@ export async function createRequest(formData: {
   }
 }
 
+export async function pickUpTicket(requestId: string) {
+  // Only admins/superadmins can pick up
+  const appUser = await requireAppUser();
+  const existing = await db.query.requests.findFirst({ where: eq(requests.id, requestId) });
+  if (!existing) throw new Error("Request not found");
+  if (!(appUser.role === "admin" || appUser.role === "superadmin")) {
+    throw new Error("Insufficient permissions");
+  }
+  if (existing.status !== "open") {
+    throw new Error("Can only pick up an open ticket");
+  }
+  await db.update(requests).set({ status: "pending", updated_at: new Date() }).where(eq(requests.id, requestId));
+  await db.insert(activityLogs).values({
+    request_id: requestId,
+    actor_id: appUser.id,
+    action: "PICKED_UP_TICKET",
+    previous_status: "open",
+    new_status: "pending",
+    comment: "Picked up ticket manually",
+  });
+  revalidatePath(`/dashboard/requests/${requestId}`);
+  revalidatePath("/dashboard/requests");
+  return { success: true };
+}
+
 export async function updateRequestStatus(
   requestId: string,
   newStatus: string,
