@@ -117,10 +117,3 @@ src/
 
 ---
 
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-> Built for modern offices, smart visitor experiences, and robust admin operations.
