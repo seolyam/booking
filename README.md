@@ -4,7 +4,7 @@ A modern full-stack solution for seamless booking, visitor management, and inter
 
 ---
 
-## ✨ Features
+##  Features
 
 - **Visitor Management:** QR code check-in for guests, capturing purpose and host.
 - **Admin Dashboard:** Secure area for superadmins/admins to manage all operations.
@@ -14,7 +14,7 @@ A modern full-stack solution for seamless booking, visitor management, and inter
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 - **Framework:** Next.js (App Router)
 - **Language:** TypeScript
@@ -27,7 +27,7 @@ A modern full-stack solution for seamless booking, visitor management, and inter
 
 ---
 
-## ⚡ Prerequisites
+##  Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18+ recommended)
 - [pnpm](https://pnpm.io/)
@@ -35,7 +35,7 @@ A modern full-stack solution for seamless booking, visitor management, and inter
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### 1. Clone the repository
 
@@ -104,7 +104,7 @@ pnpm dev
 
 ---
 
-## 📁 Folder Structure
+##  Folder Structure
 
 ```
 src/
