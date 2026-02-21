@@ -40,7 +40,7 @@ A modern full-stack solution for seamless booking, visitor management, and inter
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git
+git clone https://github.com/seolyam/booking.git
 cd YOUR-REPO
 ```
 
