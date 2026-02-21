@@ -1,4 +1,4 @@
-# Booking & Visitor Management System 🚀🏢🛂
+# Booking & Visitor Management System
 
 A modern full-stack solution for seamless booking, visitor management, and internal request handling—leveraging QR code check-ins, real-time dashboards, and robust audit logs. Designed to streamline office operations, enhance security, and automate notifications.
 
