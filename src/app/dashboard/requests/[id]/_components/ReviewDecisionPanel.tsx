@@ -217,11 +217,7 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
 
     const handleSuccessClose = () => {
         setShowSuccessModal(false);
-        if (selectedDecision === "resolve") {
-            router.push(`/dashboard/requests/${requestId}`);
-        } else {
-            router.refresh();
-        }
+        router.push(`/dashboard/requests/${requestId}`);
     };
 
     const getConfirmConfig = () => {
