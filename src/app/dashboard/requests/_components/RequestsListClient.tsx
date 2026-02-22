@@ -20,6 +20,7 @@ export type RequestsListRow = {
   statusLabel: string;
   branchName: string;
   requesterName?: string;
+  handlerName?: string;
   created_at_iso: string;
 };
 
@@ -72,6 +73,8 @@ export function RequestsListClient(props: {
   showRequester?: boolean;
   canCreate?: boolean;
   title?: string;
+  role?: string;
+  currentRoleView?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -121,22 +124,42 @@ export function RequestsListClient(props: {
     <div className="-m-4 md:-m-8 p-4 md:p-8 flex flex-col min-h-[calc(100vh-theme(spacing.16))]">
       {/* Mobile Header */}
       <div className="md:hidden mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-bold text-gray-900">
-            {props.title ?? (props.showRequester ? "All Tickets" : "My Tickets")}
-          </h1>
-          <div className="flex gap-2">
-            <RequestsFilter />
-            {props.canCreate !== false && (
-              <Link
-                href="/dashboard/requests/create"
-                className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
-                aria-label="New Ticket"
-              >
-                <Plus className="h-5 w-5" />
-              </Link>
-            )}
+        <div className="flex flex-col gap-3 mb-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">
+              {props.title ?? (props.showRequester ? "All Tickets" : "My Tickets")}
+            </h1>
+            <div className="flex gap-2">
+              <RequestsFilter />
+              {props.canCreate !== false && (
+                <Link
+                  href="/dashboard/requests/create"
+                  className="h-10 w-10 rounded-full bg-[#358334] text-white flex items-center justify-center shadow-lg"
+                  aria-label="New Ticket"
+                >
+                  <Plus className="h-5 w-5" />
+                </Link>
+              )}
+            </div>
           </div>
+          {(props.role === "admin" || props.role === "superadmin") && (
+            <div className="flex space-x-1 rounded-lg bg-gray-100 p-1 w-fit">
+              <button onClick={() => {
+                const params = new URLSearchParams(searchParams);
+                params.set("roleView", "requested");
+                router.push(`${pathname}?${params.toString()}`);
+              }} className={`px-3 py-1.5 text-sm font-medium rounded-md ${props.currentRoleView === "requested" ? "bg-white text-gray-900 shadow" : "text-gray-500 hover:text-gray-900"}`}>
+                Requested
+              </button>
+              <button onClick={() => {
+                const params = new URLSearchParams(searchParams);
+                params.set("roleView", "managed");
+                router.push(`${pathname}?${params.toString()}`);
+              }} className={`px-3 py-1.5 text-sm font-medium rounded-md ${props.currentRoleView === "managed" ? "bg-white text-gray-900 shadow" : "text-gray-500 hover:text-gray-900"}`}>
+                Managed
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Search */}
@@ -163,20 +186,40 @@ export function RequestsListClient(props: {
       </div>
 
       {/* Desktop Header */}
-      <div className="hidden md:flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {props.title ?? (props.showRequester ? "All Tickets" : "My Tickets")}
-          </h1>
+      <div className="hidden md:flex flex-col gap-4 mb-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {props.title ?? (props.showRequester ? "All Tickets" : "My Tickets")}
+            </h1>
+            {(props.role === "admin" || props.role === "superadmin") && (
+              <div className="flex space-x-1 rounded-lg bg-gray-100 p-1">
+                <button onClick={() => {
+                  const params = new URLSearchParams(searchParams);
+                  params.set("roleView", "requested");
+                  router.push(`${pathname}?${params.toString()}`);
+                }} className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${props.currentRoleView === "requested" ? "bg-white text-gray-900 shadow" : "text-gray-500 hover:text-gray-900"}`}>
+                  Requested
+                </button>
+                <button onClick={() => {
+                  const params = new URLSearchParams(searchParams);
+                  params.set("roleView", "managed");
+                  router.push(`${pathname}?${params.toString()}`);
+                }} className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${props.currentRoleView === "managed" ? "bg-white text-gray-900 shadow" : "text-gray-500 hover:text-gray-900"}`}>
+                  Managed
+                </button>
+              </div>
+            )}
+          </div>
+          {props.canCreate !== false && (
+            <Link
+              href="/dashboard/requests/create"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#358334] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm"
+            >
+              New Ticket +
+            </Link>
+          )}
         </div>
-        {props.canCreate !== false && (
-          <Link
-            href="/dashboard/requests/create"
-            className="inline-flex items-center gap-2 rounded-lg bg-[#358334] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2F5E3D] transition-colors shadow-sm"
-          >
-            New Ticket +
-          </Link>
-        )}
       </div>
 
       {/* Desktop Table View */}
@@ -214,6 +257,9 @@ export function RequestsListClient(props: {
                     Requester
                   </th>
                 )}
+                <th className="py-6 px-4 font-semibold w-[150px]">
+                  Handler
+                </th>
                 <th className="py-6 px-4 font-semibold w-[100px]">Priority</th>
                 <th className="py-6 px-4 font-semibold w-[120px]">Status</th>
                 <th className="py-6 px-4 font-semibold w-[120px]">Date</th>
@@ -264,6 +310,17 @@ export function RequestsListClient(props: {
                           </div>
                         </td>
                       )}
+                      <td className="py-5 px-4">
+                        <div className="text-sm text-gray-700">
+                          {r.handlerName ? (
+                            <span className="inline-flex items-center gap-1.5 rounded bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
+                              {r.handlerName}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Unassigned</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-5 px-4">
                         <span className={priorityPill(r.priority)}>
                           {r.priority.toUpperCase()}

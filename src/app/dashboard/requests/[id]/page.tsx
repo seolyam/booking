@@ -29,6 +29,7 @@ import ReviewDecisionPanel from "./_components/ReviewDecisionPanel";
 import ResubmitPanel from "./_components/ResubmitPanel";
 import ExportButton from "./_components/ExportButton";
 import ReopenButton from "./_components/ReopenButton";
+import OpenTicketButton from "./_components/OpenTicketButton";
 
 export const dynamic = "force-dynamic";
 
@@ -166,17 +167,9 @@ export default async function RequestDetailPage({
   if (isAdmin) {
     const actionableStatuses = ["open", "pending"];
 
-    // Check branch assignment
-    if (appUser.role === "superadmin") {
+    // All admins and superadmins can view & manage branch requests
+    if (appUser.role === "superadmin" || appUser.role === "admin") {
       hasBranchAccess = true;
-    } else {
-      const assignments = await db.query.adminBranches.findMany({
-        where: eq(adminBranches.admin_id, appUser.id),
-      });
-      const branchIds = assignments.map((a) => a.branch_id);
-      if (branchIds.includes(request.branch_id)) {
-        hasBranchAccess = true;
-      }
     }
 
     if (hasBranchAccess) {
@@ -249,27 +242,32 @@ export default async function RequestDetailPage({
             request.status === "resolved" ? (
               <ReopenButton requestId={id} />
             ) : (
-                  request.status === "open" ? (
-  <form action={async () => {
-    'use server';
-    const { pickUpTicket } = (await import("@/actions/request"));
-    await pickUpTicket(request.id);
-  }}>
-    <button type="submit"
-      className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
-    >
-      Pick up Ticket
-    </button>
-  </form>
-) : (
-  <Link
-    href={`/dashboard/requests/${id}?mode=review`}
-    className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
-  >
-    Manage Ticket
-  </Link>
-)
+              request.status === "open" ? (
+                <form action={async () => {
+                  'use server';
+                  const { pickUpTicket } = (await import("@/actions/request"));
+                  await pickUpTicket(request.id);
+                }}>
+                  <button type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
+                  >
+                    Pick up Ticket
+                  </button>
+                </form>
+              ) : request.status === "pending" && (appUser.id === request.handled_by || appUser.role === "superadmin") ? (
+                <Link
+                  href={`/dashboard/requests/${id}?mode=review`}
+                  className="bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
+                >
+                  Manage Ticket
+                </Link>
+              ) : null
             )
+          )}
+
+          {/* Open Ticket Button for Ticket Review View */}
+          {isReviewMode && isAdmin && hasBranchAccess && request.status === "pending" && (
+            <OpenTicketButton requestId={request.id} />
           )}
         </div>
       </div>

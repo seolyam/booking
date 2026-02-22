@@ -1,9 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { updateRequestStatus } from "@/actions/request";
-import { useRouter } from "next/navigation";
-import { RotateCcw } from "lucide-react";
+import { reissueTicket } from "@/actions/request";
 import {
     Dialog,
     DialogContent,
@@ -15,20 +13,18 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-export default function ReopenButton({ requestId }: { requestId: string }) {
+export default function OpenTicketButton({ requestId }: { requestId: string }) {
     const [isPending, startTransition] = useTransition();
     const [isOpen, setIsOpen] = useState(false);
-    const router = useRouter();
 
-    const handleReopen = () => {
+    const handleReissue = () => {
         startTransition(async () => {
             try {
-                await updateRequestStatus(requestId, "pending", "Request reopened by admin");
+                await reissueTicket(requestId);
                 setIsOpen(false);
-                router.refresh();
             } catch (error) {
-                console.error("Failed to reopen request:", error);
-                alert("An error occurred while reopening the request.");
+                console.error("Failed to open ticket:", error);
+                alert("An error occurred while opening the ticket.");
             }
         });
     };
@@ -38,25 +34,24 @@ export default function ReopenButton({ requestId }: { requestId: string }) {
             <DialogTrigger asChild>
                 <button
                     disabled={isPending}
-                    className="bg-amber-100 text-color-black hover:bg-amber-200 text-amber-800 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center gap-2"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center"
                 >
-                    <RotateCcw className="h-4 w-4" />
-                    {isPending ? "Reopening..." : "Reopen Request"}
+                    {isPending ? "Opening..." : "Open Ticket"}
                 </button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Reopen Request</DialogTitle>
+                    <DialogTitle>Open Ticket</DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to reopen this request? It will be set back to &apos;Pending&apos; status.
+                        Are you sure you want to open this ticket? It will remove your assignment and re-issue the ticket to the dashboard where another admin can pick it up.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>
                         Cancel
                     </Button>
-                    <Button onClick={handleReopen} disabled={isPending}>
-                        {isPending ? "Reopening..." : "Confirm Reopen"}
+                    <Button onClick={handleReissue} disabled={isPending}>
+                        {isPending ? "Opening..." : "Confirm Open"}
                     </Button>
                 </DialogFooter>
             </DialogContent>
