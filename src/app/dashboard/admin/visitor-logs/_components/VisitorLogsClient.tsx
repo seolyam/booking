@@ -533,7 +533,7 @@ export function VisitorLogsClient({
                 logs.map((log) => (
                   <tr
                     key={log.id}
-                    className={`group hover:bg-gray-50/50 transition-colors ${log.status !== "ACTIVE" ? "opacity-60" : ""}`}
+                    className="group hover:bg-gray-50/50 transition-colors"
                   >
                     <td className="py-5 pl-8 pr-4">
                       <span className="font-medium text-gray-900 text-sm">
@@ -541,12 +541,12 @@ export function VisitorLogsClient({
                       </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-900">
                         {log.company ?? "\u2014"}
                       </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-900">
                         {log.contact_number ?? "\u2014"}
                       </span>
                     </td>
@@ -556,17 +556,17 @@ export function VisitorLogsClient({
                       </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-900">
                         {formatDateTime(log.time_in)}
                       </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-900">
                         {formatDateTime(log.time_out)}
                       </span>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-900">
                         {formatDuration(log.expected_duration)}
                       </span>
                     </td>
