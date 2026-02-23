@@ -569,6 +569,13 @@ export async function updateRequestStatus(
     }
   }
 
+  // Admin/Superadmin permissions for terminal states
+  if (appUser.role === "admin" && (existing.status === "resolved" || existing.status === "cancelled")) {
+    if (existing.handled_by !== appUser.id) {
+      throw new Error("Only the assigned handler can reopen this ticket");
+    }
+  }
+
   // Transition validation
   const VALID_TRANSITIONS: Record<string, string[]> = {
     open: ["pending", "cancelled"],
