@@ -86,6 +86,9 @@ export function RequestsListClient(props: {
 
   // Sync search to URL
   useEffect(() => {
+    // Only update the URL if the deferredQuery differs from what's in the URL already
+    const currentSearchValue = searchParams.get("search") || "";
+    if (deferredQuery === currentSearchValue) return;
     const params = new URLSearchParams(searchParams);
     if (deferredQuery) {
       params.set("search", deferredQuery);
