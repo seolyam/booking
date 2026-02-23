@@ -4,12 +4,7 @@ export function requesterNav(): NavSection[] {
   return [
     {
       items: [
-        {
-          key: "dashboard",
-          label: "Dashboard",
-          href: "/dashboard",
-          activeMatch: (p) => p === "/dashboard",
-        },
+        
         {
           key: "create",
           label: "Create Ticket",
@@ -17,7 +12,7 @@ export function requesterNav(): NavSection[] {
         },
         {
           key: "requests",
-          label: "Your Tickets",
+          label: "My Tickets",
           href: "/dashboard/requests",
           activeMatch: (p) =>
             p === "/dashboard/requests" ||

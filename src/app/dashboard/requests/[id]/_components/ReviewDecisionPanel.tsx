@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import type { LucideIcon } from "lucide-react";
 import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
-import { updateRequestStatus } from "@/actions/request";
+import { updateRequestStatus, saveAttachments } from "@/actions/request";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -15,6 +15,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type DecisionId = "resolve" | "reopen" | "cancel";
 
@@ -178,7 +180,7 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
-    // Only show the correct decision buttons based on status
+    const [attachments, setAttachments] = useState<File[]>([]);
     const DECISION_OPTIONS: Record<string, DecisionId[]> = {
         pending: ["resolve", "cancel"],
         cancelled: ["resolve", "reopen"],
@@ -211,6 +213,27 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
                 let successTitle = "";
                 let successMessage = "";
 
+                // Attachment upload logic (only for resolve/cancel)
+                const attachmentMeta: { fileName: string; filePath: string; fileSize: number; fileType: string }[] = [];
+                if ((selectedDecision === "resolve" || selectedDecision === "cancel") && attachments.length > 0) {
+                    const supabase = createSupabaseBrowserClient();
+                    const bucket = "attachments";
+                    // Note: Could validate max file size/type here
+                    for (const file of attachments) {
+                        const path = `${requestId}/attachments/${Date.now()}-${file.name}`;
+                        const { error } = await supabase.storage.from(bucket).upload(path, file);
+                        if (!error) {
+                            attachmentMeta.push({
+                                fileName: file.name,
+                                filePath: path,
+                                fileSize: file.size,
+                                fileType: file.type,
+                            });
+                        } else {
+                            throw new Error(`Failed to upload ${file.name}: ${error.message}`);
+                        }
+                    }
+                }
                 switch (selectedDecision) {
                     case "resolve":
                         status = "resolved";
@@ -229,6 +252,9 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
                         break;
                 }
 
+                if (attachmentMeta.length > 0) {
+                    await saveAttachments(requestId, attachmentMeta);
+                }
                 if (status) {
                     await updateRequestStatus(requestId, status, comment);
 
@@ -343,7 +369,21 @@ export default function ReviewDecisionPanel({ requestId, currentStatus }: { requ
                                 className="w-full rounded-lg border-gray-200 text-base md:text-sm p-3 min-h-[100px] resize-none focus:border-gray-400 focus:ring-0 text-gray-900"
                             />
                         </div>
-
+                        {/* File attachment input */}
+                        <div className="mt-3">
+                            <label className="text-sm font-bold text-gray-900 block mb-2">Attachment (optional)</label>
+                            <Input
+                                type="file"
+                                multiple
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                    if (e.target.files) {
+                                        setAttachments(Array.from(e.target.files));
+                                    } else {
+                                        setAttachments([]);
+                                    }
+                                }}
+                            />
+                        </div>
                         <div className="mt-6 flex justify-center">
                             <button
                                 onClick={handleInitialSubmit}
