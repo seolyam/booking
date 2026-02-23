@@ -130,7 +130,7 @@ export default async function AuditLogsPage() {
                     <span className="truncate text-sm font-medium text-gray-800">{email}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span>{beautifyAction(log.action)}</span> {getStatusBadge(log.action)}
+                    <span className="text-gray-900 font-medium">{beautifyAction(log.action)}</span> {getStatusBadge(log.action)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 flex items-center gap-1">
                     <Calendar className="h-4 w-4 text-gray-400 mr-1" />
