@@ -8,7 +8,7 @@ import {
   Clock,
   FileText,
 } from "lucide-react";
-import { getRequestById, updateRequestStatus } from "@/actions/request";
+import { getRequestById } from "@/actions/request";
 import { getFormConfig } from "@/actions/form-config";
 import {
   CATEGORY_MAP,
@@ -20,14 +20,10 @@ import WorkflowProgress, {
 import { cn, formatDateShort } from "@/lib/utils";
 import AttachmentHandler from "./_components/AttachmentHandler";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
-import { db } from "@/db";
-import { adminBranches } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import RequestComments from "./_components/RequestComments";
 import RequestInfoCard from "./_components/RequestInfoCard";
 import ReviewDecisionPanel from "./_components/ReviewDecisionPanel";
 import ResubmitPanel from "./_components/ResubmitPanel";
-import ExportButton from "./_components/ExportButton";
 import ReopenButton from "./_components/ReopenButton";
 import OpenTicketButton from "./_components/OpenTicketButton";
 
@@ -161,23 +157,12 @@ export default async function RequestDetailPage({
 
   // Permissions Check & Auto-Transition
   let hasBranchAccess = false;
-  let canApprove = false;
   const isAdmin = appUser.role === "admin" || appUser.role === "superadmin";
 
   if (isAdmin) {
-    const actionableStatuses = ["open", "pending"];
-
     // All admins and superadmins can view & manage branch requests
     if (appUser.role === "superadmin" || appUser.role === "admin") {
       hasBranchAccess = true;
-    }
-
-    if (hasBranchAccess) {
-
-
-      if (actionableStatuses.includes(request.status)) {
-        canApprove = true;
-      }
     }
   }
 
@@ -194,15 +179,14 @@ export default async function RequestDetailPage({
     action: log.action,
   }));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const formData = request.form_data as any;
+
 
   // Determine if this is a Review View (Admin/Superadmin && Explicit Review Mode)
   // We strictly check for mode === "review" now, so default view is always Tracking
   const isReviewMode = isAdmin && hasBranchAccess && mode === "review";
 
   // Determine if the current user is the requester viewing their own request
-  const isRequester = appUser.id === request.requester_id;
+
   const canResubmit = false; // No longer applicable with simplified status system
 
   // Get the latest revision reason from activity logs (kept for historical data)
@@ -239,7 +223,7 @@ export default async function RequestDetailPage({
 
           {/* Manage Ticket or Reopen Button for Admins */}
           {!isReviewMode && isAdmin && hasBranchAccess && (
-            request.status === "resolved" ? (
+            ((request.status === "resolved" || request.status === "cancelled") && (appUser.id === request.handled_by || appUser.role === "superadmin")) ? (
               <ReopenButton requestId={id} />
             ) : (
               request.status === "open" ? (

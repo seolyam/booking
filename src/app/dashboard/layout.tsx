@@ -8,22 +8,19 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-const authUser = await getAuthUser();
-if (!authUser) redirect("/login");
+  const authUser = await getAuthUser();
+  if (!authUser) redirect("/login");
 
-const appUser = await getOrCreateAppUserFromAuthUser({
-  id: authUser.id,
-  email: authUser.email ?? null,
-  user_metadata: authUser.user_metadata ?? null,
-});
+  const appUser = await getOrCreateAppUserFromAuthUser({
+    id: authUser.id,
+    email: authUser.email ?? null,
+    user_metadata: authUser.user_metadata ?? null,
+  });
 
-if (appUser.role !== "superadmin" && appUser.approvalStatus !== "approved") {
-  redirect("/pending");
-}
-// Redirect requester away from dashboard overview
-if (appUser.role === "requester") {
-  redirect("/dashboard/requests");
-}
+  if (appUser.role !== "superadmin" && appUser.approvalStatus !== "approved") {
+    redirect("/pending");
+  }
+
 
 
   const profile = getDisplayProfileFromAuthUser({
