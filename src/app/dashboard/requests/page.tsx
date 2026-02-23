@@ -61,13 +61,19 @@ export default async function RequestsPage({
 
   const roleView = typeof params.roleView === "string" ? params.roleView : undefined;
 
-  const requests = await getRequests({
-    status: params.status,
-    category: params.category,
-    search: typeof params.search === 'string' ? params.search : undefined,
-    dateRange,
-    roleView: roleView as "requested" | "managed" | undefined,
-  });
+   // Sorting: expect sort (column: 'date'|'status') and order (asc|desc)
+   const sortCol = typeof params.sort === 'string' && ["date","status"].includes(params.sort) ? (params.sort as "date" | "status") : "date";
+   const order = typeof params.order === 'string' && ["asc","desc"].includes(params.order) ? (params.order as "asc" | "desc") : "desc";
+
+   const requests = await getRequests({
+     status: params.status,
+     category: params.category,
+     search: typeof params.search === 'string' ? params.search : undefined,
+     dateRange,
+     roleView: roleView as "requested" | "managed" | undefined,
+     sort: sortCol,
+     order,
+   });
 
   const rows: RequestsListRow[] = requests.map((req) => {
     const cat = CATEGORY_MAP[req.category];

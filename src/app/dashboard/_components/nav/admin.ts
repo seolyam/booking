@@ -19,7 +19,7 @@ export function adminNav(): NavSection[] {
 
         {
           key: "requests",
-          label: "Your Tickets",
+          label: "My Tickets",
           href: "/dashboard/requests",
           activeMatch: (p) =>
             p === "/dashboard/requests" ||

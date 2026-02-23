@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Eye, Plus, Search } from "lucide-react";
+import { Eye, Plus, Search, ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react";
 import {
   MobileCardList,
   type MobileCardData,
@@ -120,9 +120,13 @@ export function RequestsListClient(props: {
     } satisfies MobileCardData;
   });
 
-  return (
-    <div className="-m-4 md:-m-8 p-4 md:p-8 flex flex-col min-h-[calc(100vh-theme(spacing.16))]">
-      {/* Mobile Header */}
+    // Sort state
+    const currentSort = searchParams.get("sort") || "date";
+    const currentOrder = searchParams.get("order") || "desc";
+
+    return (
+      <div className="-m-4 md:-m-8 p-4 md:p-8 flex flex-col min-h-[calc(100vh-theme(spacing.16))]">
+        {/* Mobile Header */}
       <div className="md:hidden mb-4">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex items-center justify-between">
@@ -261,8 +265,54 @@ export function RequestsListClient(props: {
                   Handler
                 </th>
                 <th className="py-6 px-4 font-semibold w-[100px]">Priority</th>
-                <th className="py-6 px-4 font-semibold w-[120px]">Status</th>
-                <th className="py-6 px-4 font-semibold w-[120px]">Date</th>
+                <th
+                  className="py-6 px-4 font-semibold w-[120px] cursor-pointer select-none"
+                  onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    if (currentSort === "status") {
+                      params.set("sort", "status");
+                      params.set("order", currentOrder === "asc" ? "desc" : "asc");
+                    } else {
+                      params.set("sort", "status");
+                      params.set("order", "desc");
+                    }
+                    router.push(`${pathname}?${params.toString()}`);
+                  }}
+                  aria-sort={currentSort === "status" ? (currentOrder === "asc" ? "ascending" : "descending") : "none"}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Status
+                    {currentSort === "status"
+                      ? currentOrder === "asc"
+                        ? <ChevronUp className="inline h-4 w-4" />
+                        : <ChevronDown className="inline h-4 w-4" />
+                      : <ArrowUpDown className="inline h-4 w-4" />}
+                  </span>
+                </th>
+                <th
+                  className="py-6 px-4 font-semibold w-[120px] cursor-pointer select-none"
+                  onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    if (currentSort === "date") {
+                      params.set("sort", "date");
+                      params.set("order", currentOrder === "asc" ? "desc" : "asc");
+                    } else {
+                      params.set("sort", "date");
+                      params.set("order", "desc");
+                    }
+                    router.push(`${pathname}?${params.toString()}`);
+                  }}
+                  aria-sort={currentSort === "date" ? (currentOrder === "asc" ? "ascending" : "descending") : "none"}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Date
+                    {currentSort === "date"
+                      ? currentOrder === "asc"
+                        ? <ChevronUp className="inline h-4 w-4" />
+                        : <ChevronDown className="inline h-4 w-4" />
+                      : <ArrowUpDown className="inline h-4 w-4" />}
+                  </span>
+                </th>
                 <th className="py-6 px-4 pr-8 font-semibold text-right w-[100px]">
                   Action
                 </th>

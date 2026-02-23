@@ -144,6 +144,8 @@ export async function getRequests(filters?: {
   search?: string;
   dateRange?: { from?: Date; to?: Date };
   roleView?: "requested" | "managed";
+  sort?: "date" | "status";
+  order?: "asc" | "desc";
 }) {
   const appUser = await requireAppUser();
 
@@ -202,6 +204,15 @@ export async function getRequests(filters?: {
 
   const handlers = alias(users, "handlers");
 
+  // Sorting logic
+  let orderExpr;
+  if (filters?.sort === "status") {
+    orderExpr = filters.order === "asc" ? requests.status : desc(requests.status);
+  } else {
+    // Default and "date"
+    orderExpr = filters?.order === "asc" ? requests.created_at : desc(requests.created_at);
+  }
+
   const rows = await db
     .select({
       id: requests.id,
@@ -224,7 +235,7 @@ export async function getRequests(filters?: {
     .leftJoin(users, eq(requests.requester_id, users.id))
     .leftJoin(handlers, eq(requests.handled_by, handlers.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(requests.created_at));
+    .orderBy(orderExpr);
 
   return rows;
 }

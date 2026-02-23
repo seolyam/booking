@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { updateRequestStatus } from "@/actions/request";
+import { updateRequestStatus, saveAttachments } from "@/actions/request";
 import SuccessModal from "@/components/SuccessModal";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface ApprovalActionsProps {
   requestId: string;
@@ -40,6 +41,17 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState({ title: "", message: "" });
 
+  // Attachment upload
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setAttachments(files);
+  };
+
   const handleAction = async (actionType: string) => {
     if (actionType === "reject" && !comment.trim()) {
       alert("Rejection reason is required");
@@ -51,11 +63,38 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
 
     startTransition(async () => {
       try {
+
+        if (actionType === "resolve" && attachments.length > 0) {
+          setIsUploading(true);
+          const supabase = createSupabaseBrowserClient();
+          const uploadedFiles = [];
+          for (const file of attachments) {
+            const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            const filePath = `${requestId}/${Date.now()}-${sanitizedName}`;
+            const { error: uploadError } = await supabase.storage
+              .from("attachments")
+              .upload(filePath, file);
+            if (uploadError) {
+              setUploadError(`Failed to upload ${file.name}: ${uploadError.message}`);
+              setIsUploading(false);
+              return;
+            }
+            uploadedFiles.push({
+              fileName: file.name,
+              filePath,
+              fileSize: file.size,
+              fileType: file.type,
+            });
+          }
+          await saveAttachments(requestId, uploadedFiles);
+          setIsUploading(false);
+        }
         const result = await updateRequestStatus(requestId, mapping.status, comment);
 
         if (result?.success) {
           setOpenDialog(null);
           setComment("");
+          setAttachments([]);
           setSuccessMessage({
             title: `Request ${mapping.pastTense.charAt(0).toUpperCase() + mapping.pastTense.slice(1)}!`,
             message: `The request has been successfully ${mapping.pastTense}.`,
@@ -65,30 +104,31 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           alert((result as any)?.message || "Action failed");
         }
-      } catch {
-        alert("An unexpected error occurred");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "An unexpected error occurred";
+        alert(msg);
       }
     });
   };
 
   const openActionDialog = (type: string) => {
     setComment("");
+    setAttachments([]);
     setOpenDialog(type);
-  };
-
-  const handleModalClose = () => {
-    setShowSuccessModal(false);
-    router.refresh();
+    setUploadError(null);
   };
 
   return (
     <>
-      <SuccessModal
-        isOpen={showSuccessModal}
-        onClose={handleModalClose}
-        title={successMessage.title}
-        message={successMessage.message}
-      />
+<SuccessModal
+         isOpen={showSuccessModal}
+         onClose={() => {
+           setShowSuccessModal(false);
+           router.refresh();
+         }}
+         title={successMessage.title}
+         message={successMessage.message}
+       />
       <div className="flex flex-wrap gap-3">
       {/* Approve Button — transitions request from open → pending */}
       <Dialog open={openDialog === 'approve'} onOpenChange={(open) => !open && setOpenDialog(null)}>
@@ -193,15 +233,32 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
               Mark this request as resolved. This indicates the work has been completed.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 py-4">
-            <Label htmlFor="resolve-comment">Comment (Optional)</Label>
-            <Textarea
-              id="resolve-comment"
-              placeholder="Closing remarks..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-          </div>
+           <div className="space-y-2 py-4">
+             <Label htmlFor="resolve-comment">Comment (Optional)</Label>
+             <Textarea
+               id="resolve-comment"
+               placeholder="Closing remarks..."
+               value={comment}
+               onChange={(e) => setComment(e.target.value)}
+             />
+
+             <Label htmlFor="resolve-files">Attachments (Optional)</Label>
+             <input
+               id="resolve-files"
+               type="file"
+               multiple
+               onChange={handleFileChange}
+               className="mt-1"
+             />
+             {uploadError && (
+               <div className="text-xs text-red-600">{uploadError}</div>
+             )}
+             {isUploading && (
+               <div className="flex items-center gap-2 text-xs text-gray-500">
+                 <Loader2 className="animate-spin h-4 w-4" /> Uploading files...
+               </div>
+             )}
+           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(null)}>Cancel</Button>
             <Button
@@ -217,5 +274,7 @@ export default function ApprovalActions({ requestId }: ApprovalActionsProps) {
       </Dialog>
     </div>
     </>
-  );
+   );
 }
+
+
