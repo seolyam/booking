@@ -28,8 +28,8 @@ function formatDate(date: Date | string) {
 }
 
 const STATUS_CONFIG = {
-  open:   { label: "Open",    color: "success" },
-  pending:{ label: "Pending", color: "warning" },
+  open: { label: "Open", color: "success" },
+  pending: { label: "Pending", color: "warning" },
   resolved: { label: "Resolved", color: "info" },
   cancelled: { label: "Cancelled", color: "error" },
 } as const;
@@ -56,7 +56,7 @@ function beautifyAction(action: string) {
 }
 
 function isStatusKey(key: string): key is StatusKey {
-  return ["open","pending","resolved","cancelled"].includes(key);
+  return ["open", "pending", "resolved", "cancelled"].includes(key);
 }
 
 function getStatusBadge(action: string) {
@@ -70,8 +70,8 @@ function getStatusBadge(action: string) {
   return null;
 }
 
-function isEmptyObject(obj: any): boolean {
-  return obj && typeof obj === "object" && Object.keys(obj).length === 0;
+function isEmptyObject(obj: unknown): boolean {
+  return typeof obj === "object" && obj !== null && Object.keys(obj).length === 0;
 }
 
 export default async function AuditLogsPage() {
@@ -125,7 +125,7 @@ export default async function AuditLogsPage() {
                 <tr key={log.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 whitespace-nowrap flex items-center gap-3">
                     <span className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold mr-2">
-                      {initials.length > 1 ? initials.slice(0,2) : <User className="h-5 w-5" />}
+                      {initials.length > 1 ? initials.slice(0, 2) : <User className="h-5 w-5" />}
                     </span>
                     <span className="truncate text-sm font-medium text-gray-800">{email}</span>
                   </td>

@@ -99,7 +99,12 @@ function formatDateShort(input: Date | string) {
 }
 
 interface RequestInfoCardProps {
-    request: Request & { requester: { full_name: string | null; email: string }; branch: { name: string } | null; comments: (Comment & { user: { full_name: string | null; email: string } | null })[] };
+    request: Request & {
+        requester: { full_name: string | null; email: string };
+        handler?: { full_name: string | null; email: string } | null;
+        branch: { name: string } | null;
+        comments: (Comment & { user: { full_name: string | null; email: string } | null })[]
+    };
     hideComments?: boolean;
     configFields?: FieldSchema[];
 }
@@ -126,11 +131,17 @@ export default function RequestInfoCard({ request, hideComments = false, configF
                 </div>
 
                 <div className="bg-gray-50/80 rounded-xl md:rounded-2xl p-4 md:p-6 mb-6 md:mb-10">
-                    <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="flex flex-col">
                             <span className="text-xs text-gray-500 mb-1">Requester</span>
                             <span className="text-base font-semibold text-gray-900 break-words">
                                 {request.requester.full_name || request.requester.email}
+                            </span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-xs text-gray-500 mb-1">Handler</span>
+                            <span className="text-base font-semibold text-gray-900 break-words">
+                                {request.handler ? (request.handler.full_name || request.handler.email) : <span className="text-gray-400 italic font-normal text-sm">Unassigned</span>}
                             </span>
                         </div>
                         <div className="flex flex-col">

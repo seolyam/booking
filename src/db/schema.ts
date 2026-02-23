@@ -167,6 +167,7 @@ export const requests = pgTable(
     form_data: jsonb("form_data").notNull().default({}),
     remarks: text("remarks"),
     rejection_reason: text("rejection_reason"),
+    handled_by: uuid("handled_by").references(() => users.id),
     closed_at: timestamp("closed_at", { withTimezone: true }),
     closed_by: uuid("closed_by").references(() => users.id),
     created_at: timestamp("created_at", { withTimezone: true })
@@ -181,6 +182,7 @@ export const requests = pgTable(
     index("idx_requests_branch").on(table.branch_id),
     index("idx_requests_category").on(table.category),
     index("idx_requests_status").on(table.status),
+    index("idx_requests_handled_by").on(table.handled_by),
     index("idx_requests_created_at").on(table.created_at),
   ],
 );
@@ -365,7 +367,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.branch_id],
     references: [branches.id],
   }),
-  requests: many(requests),
+  requests: many(requests, { relationName: "requester_requests" }),
+  handledRequests: many(requests, { relationName: "handler_requests" }),
   comments: many(comments),
   notifications: many(notifications),
   adminBranches: many(adminBranches),
@@ -386,6 +389,12 @@ export const requestsRelations = relations(requests, ({ one, many }) => ({
   requester: one(users, {
     fields: [requests.requester_id],
     references: [users.id],
+    relationName: "requester_requests",
+  }),
+  handler: one(users, {
+    fields: [requests.handled_by],
+    references: [users.id],
+    relationName: "handler_requests",
   }),
   branch: one(branches, {
     fields: [requests.branch_id],

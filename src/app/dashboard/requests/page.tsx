@@ -59,11 +59,14 @@ export default async function RequestsPage({
     }
   }
 
+  const roleView = typeof params.roleView === "string" ? params.roleView : undefined;
+
   const requests = await getRequests({
     status: params.status,
     category: params.category,
     search: typeof params.search === 'string' ? params.search : undefined,
     dateRange,
+    roleView: roleView as "requested" | "managed" | undefined,
   });
 
   const rows: RequestsListRow[] = requests.map((req) => {
@@ -79,20 +82,12 @@ export default async function RequestsPage({
       statusLabel: statusCfg?.label ?? req.status,
       branchName: req.branch_name ?? "—",
       requesterName: req.requester_name ?? req.requester_email ?? "Unknown",
+      handlerName: req.handler_name ?? undefined,
       created_at_iso: req.created_at.toISOString(),
     };
   });
 
-  /* 
-    Adjust title logic:
-    - If admin, we want "My Tickets" because getRequests returns (created by me OR resolved by me).
-    - If requester, it defaults to "My Tickets" anyway.
-    - If superadmin, maybe stick to "All Tickets" or also "My Tickets" if they use this view?
-      Assuming superadmin sees everything via getRequests if not filtered? 
-      Actually getRequests enforces requester_id check for everyone except admin block I added.
-      Let's stick to "My Tickets" for Admin since that's the specific request.
-  */
-  const pageTitle = appUser?.role === "admin" ? "My Tickets" : undefined;
+  const pageTitle = appUser?.role === "admin" || appUser?.role === "superadmin" ? "My Tickets" : undefined;
 
   return (
     <RequestsListClient
@@ -101,6 +96,8 @@ export default async function RequestsPage({
       showRequester={showRequester}
       canCreate={appUser?.role === "requester" || appUser?.role === "superadmin"}
       title={pageTitle}
+      role={appUser?.role}
+      currentRoleView={roleView || "all"}
     />
   );
 }

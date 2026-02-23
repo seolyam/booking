@@ -12,10 +12,12 @@ import {
   CATEGORY_MAP,
   type Request,
 } from "@/db/schema";
+import { alias } from "drizzle-orm/pg-core";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getOrCreateAppUserFromAuthUser } from "@/lib/appUser";
 import { eq, desc, and, count, inArray, gte, lte, or, ilike, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z, ZodError } from "zod";
 import {
   sendNewRequestNotification,
@@ -141,20 +143,32 @@ export async function getRequests(filters?: {
   category?: string | string[];
   search?: string;
   dateRange?: { from?: Date; to?: Date };
+  roleView?: "requested" | "managed";
 }) {
   const appUser = await requireAppUser();
 
   const conditions = [];
 
   // Filter based on role
-  if (appUser.role === "admin") {
-    // Admins see their own requests OR requests they resolved/closed
-    conditions.push(
-      or(
-        eq(requests.requester_id, appUser.id),
-        eq(requests.closed_by, appUser.id)
-      )
-    );
+  if (appUser.role === "admin" || appUser.role === "superadmin") {
+    if (filters?.roleView === "requested") {
+      conditions.push(eq(requests.requester_id, appUser.id));
+    } else if (filters?.roleView === "managed") {
+      conditions.push(
+        or(
+          eq(requests.handled_by, appUser.id),
+          eq(requests.closed_by, appUser.id)
+        )
+      );
+    } else {
+      conditions.push(
+        or(
+          eq(requests.requester_id, appUser.id),
+          eq(requests.closed_by, appUser.id),
+          eq(requests.handled_by, appUser.id)
+        )
+      );
+    }
   } else {
     // Requesters only see their own
     conditions.push(eq(requests.requester_id, appUser.id));
@@ -186,6 +200,8 @@ export async function getRequests(filters?: {
     }
   }
 
+  const handlers = alias(users, "handlers");
+
   const rows = await db
     .select({
       id: requests.id,
@@ -200,10 +216,13 @@ export async function getRequests(filters?: {
       branch_name: branches.name,
       requester_name: users.full_name,
       requester_email: users.email,
+      handler_name: handlers.full_name,
+      handler_email: handlers.email,
     })
     .from(requests)
     .leftJoin(branches, eq(requests.branch_id, branches.id))
     .leftJoin(users, eq(requests.requester_id, users.id))
+    .leftJoin(handlers, eq(requests.handled_by, handlers.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(requests.created_at));
 
@@ -293,6 +312,7 @@ export async function getRequestById(id: string) {
     where: eq(requests.id, id),
     with: {
       requester: true,
+      handler: true,
       branch: true,
       attachments: {
         orderBy: (a, { desc }) => [desc(a.created_at)],
@@ -476,7 +496,7 @@ export async function pickUpTicket(requestId: string) {
   if (existing.status !== "open") {
     throw new Error("Can only pick up an open ticket");
   }
-  await db.update(requests).set({ status: "pending", updated_at: new Date() }).where(eq(requests.id, requestId));
+  await db.update(requests).set({ status: "pending", handled_by: appUser.id, updated_at: new Date() }).where(eq(requests.id, requestId));
   await db.insert(activityLogs).values({
     request_id: requestId,
     actor_id: appUser.id,
@@ -488,6 +508,31 @@ export async function pickUpTicket(requestId: string) {
   revalidatePath(`/dashboard/requests/${requestId}`);
   revalidatePath("/dashboard/requests");
   return { success: true };
+}
+
+export async function reissueTicket(requestId: string) {
+  const appUser = await requireAppUser();
+  const existing = await db.query.requests.findFirst({ where: eq(requests.id, requestId) });
+  if (!existing) throw new Error("Request not found");
+  if (!(appUser.role === "admin" || appUser.role === "superadmin")) {
+    throw new Error("Insufficient permissions");
+  }
+  if (existing.status !== "pending") {
+    throw new Error("Can only reissue a pending ticket");
+  }
+  await db.update(requests).set({ status: "open", handled_by: null, updated_at: new Date() }).where(eq(requests.id, requestId));
+  await db.insert(activityLogs).values({
+    request_id: requestId,
+    actor_id: appUser.id,
+    action: "REISSUED_TICKET",
+    previous_status: "pending",
+    new_status: "open",
+    comment: "Ticket reissued back to open by admin",
+  });
+  revalidatePath(`/dashboard/requests/${requestId}`);
+  revalidatePath("/dashboard/requests");
+
+  redirect(`/dashboard/requests/${requestId}`);
 }
 
 export async function updateRequestStatus(
